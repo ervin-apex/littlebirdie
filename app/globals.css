@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0f172a;
+  --color-ink-soft: #1e293b;
+  --color-brand: #f59e0b;
+  --color-brand-light: #fbbf24;
+  --color-brand-dark: #b45309;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-dmsans), system-ui, -apple-system, sans-serif;
+  background: #f6f7f9;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes birdee-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.birdee-float {
+  animation: birdee-float 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Wing-flap built from the 3 eye-aligned sprite frames, played as a
+   1→2→3→2 ping-pong so the loop has no hard snap. */
+@keyframes birdee-flap {
+  0%   { background-image: var(--birdee-flap-1); }
+  25%  { background-image: var(--birdee-flap-2); }
+  50%  { background-image: var(--birdee-flap-3); }
+  75%  { background-image: var(--birdee-flap-2); }
+  100% { background-image: var(--birdee-flap-1); }
+}
+.birdee-flap {
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation:
+    birdee-flap 0.8s step-end infinite,
+    birdee-float 3.6s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
