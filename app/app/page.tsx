@@ -16,6 +16,7 @@ import { Reveal } from "@/components/Reveal";
 import { ProfitTrend } from "@/components/ProfitTrend";
 import { DayBreakdown } from "@/components/DayBreakdown";
 import { Collapsible } from "@/components/Collapsible";
+import { TrafficLight } from "@/components/TrafficLight";
 import {
   DEFAULTS,
   GST_DIVISOR,
@@ -169,15 +170,9 @@ export default function DashboardPage() {
           }`}
         >
           <div className="max-w-sm">
-            <p
-              className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${
-                inProfit ? "text-emerald-700" : "text-red-700"
-              }`}
-            >
-              Predicted profit · next week
-            </p>
+            <TrafficLight inProfit={inProfit} />
             <motion.p
-              className={`tnum mt-1 font-display text-[60px] font-semibold leading-none tracking-tight transition-colors duration-300 sm:text-[80px] ${
+              className={`tnum mt-3 font-display text-[60px] font-semibold leading-none tracking-tight transition-colors duration-300 sm:text-[80px] ${
                 inProfit ? "text-emerald-600" : "text-red-600"
               }`}
             >
@@ -185,12 +180,12 @@ export default function DashboardPage() {
             </motion.p>
             <p
               className={`mt-4 text-[15px] leading-relaxed ${
-                inProfit ? "text-emerald-800/80" : "text-red-800/80"
+                inProfit ? "text-emerald-800" : "text-red-800"
               }`}
             >
               {inProfit
-                ? "If the week goes to plan, you're in the black. Bank it."
-                : "If the week goes to plan, you'll lose money. The good news: three small moves turn it around."}
+                ? "Chirp! You're on track for a profit next week. Keep it up and bank it."
+                : "Chirp! You're on track to lose money next week. Tap a tip below and watch it turn green."}
             </p>
           </div>
           {inProfit ? (
