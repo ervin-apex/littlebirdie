@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: #F4EEE1; }
+  input::placeholder { color: #A8A296; }
+  input:focus, select:focus { outline: none; }
+  @keyframes lbFloat { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-9px) rotate(-1deg); } }
+  @keyframes amountFloat {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); text-shadow: 0 5px 12px rgba(47, 125, 95, .14); }
+    50% { transform: translate3d(0, -3px, 0) scale(1.022); text-shadow: 0 11px 22px rgba(47, 125, 95, .22); }
+  }
+  .earn-callout {
+    font-size: clamp(18px, 4vw, 21px);
+    font-weight: 650;
+    letter-spacing: -0.2px;
+    line-height: 1.28;
+  }
+  .earn-callout .earn-amount {
+    display: inline-block;
+    color: #2F7D5F;
+    font-weight: 900;
+    font-size: 1.16em;
+    letter-spacing: -0.45px;
+    transform-origin: center bottom;
+    text-shadow: 0 5px 12px rgba(47, 125, 95, .14);
+    animation: amountFloat 4.2s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+  /* dashboard entrance choreography — sequenced by order of importance */
+  @keyframes lbRise   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes lbReveal { from { opacity: 0; transform: translateY(9px);  } to { opacity: 1; transform: translateY(0); } }
+  @keyframes lbPop    { 0% { opacity: 0; transform: translateY(8px) scale(.9); } 60% { opacity: 1; transform: translateY(0) scale(1.04); } 100% { transform: translateY(0) scale(1); } }
+  .lb-rise { animation: lbRise .55s cubic-bezier(.05,.7,.1,1) both; }
+  .lb-rev  { animation: lbReveal .5s cubic-bezier(.05,.7,.1,1) backwards; }
+  .lb-pop  { animation: lbPop .6s cubic-bezier(.2,.85,.25,1) both; }
+  @media (prefers-reduced-motion: reduce) {
+    .earn-callout .earn-amount, [style*="lbFloat"],
+    .lb-rise, .lb-rev, .lb-pop { animation: none !important; }
+  }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; width: 100%; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #26282E; background: #F4EEE1;">
+
+  <!-- ================= ONBOARDING ================= -->
+  <sc-if value="{{ onboardingOn }}" hint-placeholder-val="{{ true }}">
+  <div style="min-height: 100vh; display: flex; flex-direction: column;">
+
+    <div style="height: 64px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(18px, 5vw, 40px); border-bottom: 1px solid #E7DFCD;">
+      <div style="display: flex; align-items: center; gap: 9px;">{{ birdMini }}<span style="font-size: 14px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #26282E;">Little Birdie</span></div>
+      <sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+        <span style="font-size: 13px; font-weight: 700; color: #9A9384;">Step {{ stepNum }} of 4</span>
+      </sc-if>
+    </div>
+
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: clamp(20px, 4vw, 56px) clamp(18px, 5vw, 40px);">
+
+      <!-- WELCOME -->
+      <sc-if value="{{ s0 }}" hint-placeholder-val="{{ true }}">
+      <div style="width: 100%; max-width: 560px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 28px;">
+        <div style="animation: lbFloat 5s ease-in-out infinite;">{{ birdLarge }}</div>
+        <div style="display: flex; flex-direction: column; gap: 14px; align-items: center;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #B8902A;">Little Birdie</div>
+          <h1 style="font-size: clamp(30px, 6vw, 46px); line-height: 1.08; font-weight: 800; margin: 0; letter-spacing: -1px; max-width: 540px; text-wrap: balance;">Know next week's profit before it happens.</h1>
+          <p style="font-size: clamp(15px, 2.4vw, 18px); line-height: 1.5; color: #6C6657; margin: 6px 0 0; max-width: 420px;">A few quick numbers, then one clear answer: what next week really looks like — and the small move that fixes it.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px;">
+          <button onClick="{{ next }}" style="width: 100%; height: 56px; border: none; border-radius: 16px; background: #F7BE2C; color: #2A2410; font-size: 16.5px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px -6px rgba(247,190,44,.7);">Predict next week</button>
+          <button onClick="{{ useDemo }}" style="width: 100%; height: 52px; border: none; border-radius: 14px; background: transparent; color: #6C6657; font-size: 15px; font-weight: 600; cursor: pointer;">Use demo data</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- STEP CARD (1-4) -->
+      <sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+      <div style="width: 100%; max-width: 520px; background: #FFFFFF; border: 1px solid #EFE8D9; border-radius: 24px; box-shadow: 0 1px 2px rgba(40,36,28,.04), 0 24px 50px -28px rgba(40,36,28,.3); padding: clamp(24px, 4vw, 40px);">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <button onClick="{{ back }}" style="border: none; background: #F4EEE1; height: 36px; padding: 0 14px 0 10px; border-radius: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; color: #6C6657; font-family: inherit;">‹ Back</button>
+          <div style="display: flex; gap: 5px;">
+            <sc-for list="{{ dots }}" as="d" hint-placeholder-count="4">
+              <span style="width: {{ d.w }}; height: 6px; border-radius: 3px; background: {{ d.bg }}; transition: all .3s;"></span>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- STEP 1 BUSINESS -->
+        <sc-if value="{{ s1 }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <h2 style="font-size: clamp(22px, 3.4vw, 28px); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.4px; line-height: 1.14;">Tell Little Birdie about your business.</h2>
+          <p style="font-size: 15px; color: #8A8475; margin: 0 0 26px; line-height: 1.45;">This only needs to be close enough to guide decisions.</p>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #6C6657; margin: 0 0 8px;">Business name</label>
+          <input value="{{ businessName }}" onChange="{{ setName }}" placeholder="e.g. Maple &amp; Crumb" style="width: 100%; height: 54px; border: 1.5px solid #E7DFCD; background: #FFFFFF; border-radius: 13px; padding: 0 16px; font-size: 16px; font-weight: 600; color: #26282E; font-family: inherit;" />
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px;">
+            <div style="flex: 1; min-width: 180px;">
+              <label style="display: block; font-size: 13px; font-weight: 700; color: #6C6657; margin: 0 0 8px;">Industry</label>
+              <div style="position: relative;">
+                <select value="{{ industry }}" onChange="{{ setIndustry }}" style="width: 100%; height: 54px; border: 1.5px solid #E7DFCD; background: #FFFFFF; border-radius: 13px; padding: 0 16px; font-size: 16px; font-weight: 600; color: #26282E; font-family: inherit; -webkit-appearance: none; appearance: none; cursor: pointer;">
+                  <option>Café</option><option>Bakery</option><option>Restaurant</option><option>Vet clinic</option><option>Dance studio</option><option>Hair salon</option><option>Gym / studio</option><option>Retail shop</option>
+                </select>
+                <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #8A8475; font-size: 12px;">▼</span>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 180px;">
+              <label style="display: block; font-size: 13px; font-weight: 700; color: #6C6657; margin: 0 0 8px;">Currency</label>
+              <div style="height: 54px; border: 1.5px solid #E7DFCD; background: #F6F1E6; border-radius: 13px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 15px; font-weight: 700; color: #26282E;">🇦🇺 AUD</span>
+                <span style="font-size: 12px; font-weight: 700; color: #9A9384;">Dollar</span>
+              </div>
+            </div>
+          </div>
+          <label style="display: block; font-size: 13px; font-weight: 700; color: #6C6657; margin: 20px 0 8px;">GST included in your prices?</label>
+          <div style="display: flex; gap: 10px;">
+            <button onClick="{{ gstYes }}" style="flex: 1; height: 50px; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; border: 1.5px solid {{ gstYesBorder }}; background: {{ gstYesBg }}; color: {{ gstYesColor }};">Yes</button>
+            <button onClick="{{ gstNo }}" style="flex: 1; height: 50px; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 700; font-family: inherit; border: 1.5px solid {{ gstNoBorder }}; background: {{ gstNoBg }}; color: {{ gstNoColor }};">No</button>
+          </div>
+          <button onClick="{{ next }}" style="width: 100%; height: 54px; border: none; border-radius: 14px; background: #F7BE2C; color: #2A2410; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8); margin-top: 26px;">Continue</button>
+        </div>
+        </sc-if>
+
+        <!-- STEP 2 COSTS -->
+        <sc-if value="{{ s2 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size: clamp(22px, 3.4vw, 28px); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.4px; line-height: 1.14;">What does a normal week cost?</h2>
+          <p style="font-size: 15px; color: #8A8475; margin: 0 0 24px; line-height: 1.45;">Rough is fine. You can refine it any time.</p>
+          <div style="background: #FCFAF4; border: 1.5px solid #EFE8D9; border-radius: 16px; padding: 18px; margin-bottom: 14px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <span style="font-size: 14.5px; font-weight: 700;">Cost of goods</span>
+              <span style="font-size: 22px; font-weight: 800;">{{ cogsPct }}%</span>
+            </div>
+            <p style="font-size: 12.5px; color: #9A9384; margin: 2px 0 14px;">What you spend on stock to make a sale.</p>
+            <div onPointerDown="{{ cogsDown }}" style="position: relative; height: 26px; display: flex; align-items: center; cursor: pointer; touch-action: none;">
+              <div style="position: absolute; left: 0; right: 0; height: 8px; border-radius: 6px; background: #ECE5D6;"></div>
+              <div style="position: absolute; left: 0; height: 8px; border-radius: 6px; background: #F7BE2C; width: {{ cogsPct100 }};"></div>
+              <div style="position: absolute; left: {{ cogsPct100 }}; transform: translateX(-50%); width: 24px; height: 24px; border-radius: 50%; background: #F7BE2C; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(40,36,28,.28);"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; font-weight: 700; color: #B0A993;"><span>10%</span><span>70%</span></div>
+          </div>
+          <div style="background: #FCFAF4; border: 1.5px solid #EFE8D9; border-radius: 16px; padding: 18px;">
+            <span style="font-size: 14.5px; font-weight: 700; display: block; margin-bottom: 4px;">Fixed &amp; variable costs</span>
+            <p style="font-size: 12.5px; color: #9A9384; margin: 0 0 12px;">Rent, power, insurance, software — per week.</p>
+            <div style="height: 52px; border: 1.5px solid #E7DFCD; border-radius: 12px; display: flex; align-items: center; padding: 0 14px; background: #fff;">
+              <span style="font-size: 17px; font-weight: 700; color: #8A8475;">$</span>
+              <input type="number" value="{{ fixed }}" onChange="{{ setFixed }}" style="flex: 1; min-width: 0; border: none; background: transparent; font-size: 17px; font-weight: 700; color: #26282E; font-family: inherit; padding: 0 0 0 4px;" />
+              <span style="font-size: 13px; font-weight: 600; color: #9A9384;">/ week</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: flex-start; background: #FCF4DE; border: 1px solid #F4E4B6; border-radius: 14px; padding: 14px 16px; margin-top: 16px;">
+            {{ birdMini }}
+            <p style="margin: 0; font-family: 'Newsreader', serif; font-style: italic; font-size: 15px; line-height: 1.4; color: #6E5A1E;">Chirp — later I can learn all of this straight from your P&amp;L, Xero or MYOB.</p>
+          </div>
+          <button onClick="{{ next }}" style="width: 100%; height: 54px; border: none; border-radius: 14px; background: #F7BE2C; color: #2A2410; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8); margin-top: 22px;">Continue</button>
+        </div>
+        </sc-if>
+
+        <!-- STEP 3 BUILD WEEK -->
+        <sc-if value="{{ s3 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size: clamp(22px, 3.4vw, 28px); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.4px; line-height: 1.14;">What revenue do you expect next week?</h2>
+          <p style="font-size: 15px; color: #8A8475; margin: 0 0 20px; line-height: 1.45;">Mon 24 – Sun 30 Jun. Drag the bars to shape your week.</p>
+          <div style="background: #26282E; border-radius: 18px; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
+            <div>
+              <div style="font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #B6B0A0;">Weekly revenue</div>
+              <div style="font-size: clamp(30px, 6vw, 38px); font-weight: 800; color: #FBF8F1; letter-spacing: -1px; margin-top: 2px;">{{ revenueFmt }}</div>
+            </div>
+            {{ birdMiniLight }}
+          </div>
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: clamp(6px, 1.5vw, 12px); height: 210px;">
+            <sc-for list="{{ dayBars }}" as="day" hint-placeholder-count="7">
+              <div onPointerDown="{{ day.down }}" style="flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; cursor: ns-resize; touch-action: none;">
+                <div style="font-size: 10.5px; font-weight: 700; color: #6C6657; white-space: nowrap;">{{ day.amtShort }}</div>
+                <div style="width: 100%; background: #ECE5D6; border-radius: 8px; position: relative; height: 150px; overflow: hidden;">
+                  <div style="position: absolute; bottom: 0; left: 0; right: 0; height: {{ day.heightPct }}; background: linear-gradient(180deg, #FFD25A 0%, #F7BE2C 100%); border-radius: 8px;"></div>
+                </div>
+                <div style="font-size: 11px; font-weight: 700; color: #9A9384;">{{ day.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ next }}" style="width: 100%; height: 54px; border: none; border-radius: 14px; background: #F7BE2C; color: #2A2410; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8); margin-top: 24px;">Continue</button>
+        </div>
+        </sc-if>
+
+        <!-- STEP 4 LABOUR -->
+        <sc-if value="{{ s4 }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h2 style="font-size: clamp(22px, 3.4vw, 28px); font-weight: 800; margin: 0 0 8px; letter-spacing: -0.4px; line-height: 1.14;">What will labour cost next week?</h2>
+          <p style="font-size: 15px; color: #8A8475; margin: 0 0 24px; line-height: 1.45;">Just the one number. Wages, on-costs, the lot.</p>
+          <div style="background: #FCFAF4; border: 1.5px solid #EFE8D9; border-radius: 18px; padding: 28px 22px; text-align: center;">
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #9A9384; margin-bottom: 12px;">Total weekly labour</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+              <span style="font-size: 30px; font-weight: 800; color: #C9C2B2;">$</span>
+              <input type="number" value="{{ labour }}" onChange="{{ setLabour }}" style="width: 180px; max-width: 60vw; border: none; background: transparent; font-size: clamp(36px, 9vw, 46px); font-weight: 800; color: #26282E; font-family: inherit; text-align: center; letter-spacing: -1px;" />
+            </div>
+          </div>
+          <button onClick="{{ toggleSplit }}" style="width: 100%; margin-top: 14px; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; color: #6C6657; font-size: 14px; font-weight: 700; font-family: inherit; padding: 8px;">Split by day <span style="font-size: 11px;">{{ splitCaret }}</span></button>
+          <sc-if value="{{ splitOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #FCFAF4; border: 1.5px solid #EFE8D9; border-radius: 14px; padding: 4px 16px 8px;">
+            <sc-for list="{{ labourRows }}" as="row" hint-placeholder-count="7">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #EFE8D9;">
+                <span style="font-size: 14px; font-weight: 600; color: #6C6657;">{{ row.label }}</span>
+                <span style="font-size: 14px; font-weight: 700;">{{ row.amt }}</span>
+              </div>
+            </sc-for>
+            <p style="font-size: 12px; color: #9A9384; margin: 10px 2px; text-align: center;">Even split — fine-tune any day later.</p>
+          </div>
+          </sc-if>
+          <button onClick="{{ finishToDashboard }}" style="width: 100%; height: 54px; border: none; border-radius: 14px; background: #F7BE2C; color: #2A2410; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8); margin-top: 22px;">See next week's profit</button>
+        </div>
+        </sc-if>
+
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ================= PROFIT CHECK (single screen, no sidebar) ================= -->
+  <sc-if value="{{ dashboardOn }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height: 100vh; background: #F4EEE1; display: flex; flex-direction: column;">
+
+    <!-- header -->
+    <div style="position: sticky; top: 0; z-index: 5; background: #FBF8F1; border-bottom: 1px solid #E7DFCD; padding: 0 clamp(16px, 5vw, 28px); height: 60px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 9px;">{{ birdMini }}<span style="font-size: 14px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">Little Birdie</span></div>
+      <span style="font-size: 13px; font-weight: 700; color: #6C6657; background: #fff; border: 1px solid #E7DFCD; border-radius: 30px; padding: 7px 14px;">Next week</span>
+    </div>
+
+    <div style="flex: 1; display: flex; justify-content: center; padding: clamp(16px, 4vw, 28px) clamp(16px, 5vw, 24px) 56px;">
+      <div style="{{ contentWrap }}">
+        <div style="font-size: 12.5px; font-weight: 700; color: #9A9384; text-transform: uppercase; letter-spacing: 1px;">Next week · Mon 24 – Sun 30 Jun</div>
+
+        <!-- 1 — PREDICTION HERO (sticky, condenses on scroll) -->
+        <div style="{{ heroStyle }}">
+          <div class="lb-rev" style="animation-delay: .05s; display: inline-flex; align-items: center; gap: 9px; background: {{ lightPillBg }}; border-radius: 30px; padding: 8px 15px;">
+            <span style="display: inline-flex; gap: 4px; align-items: center;">
+              <span style="width: 9px; height: 9px; border-radius: 50%; background: {{ dotRed }};"></span>
+              <span style="width: 9px; height: 9px; border-radius: 50%; background: {{ dotAmber }};"></span>
+              <span style="width: 9px; height: 9px; border-radius: 50%; background: {{ dotGreen }};"></span>
+            </span>
+            <span style="font-size: 12.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: {{ lightColor }};">{{ lightLabel }}</span>
+          </div>
+          <div class="lb-rev" style="animation-delay: .14s; font-size: clamp(16px, 3.5vw, 18px); font-weight: 700; color: #6C6657; margin-top: 20px;">You're on track to {{ heroVerb }}</div>
+          <div class="lb-pop" style="animation-delay: .22s; {{ heroBigStyle }}">{{ heroBig }}</div>
+          <div class="lb-rev" style="animation-delay: .40s; {{ heroNoteStyle }}">
+            {{ birdMini }}
+            <p style="margin: 0; font-family: 'Newsreader', serif; font-style: italic; font-size: clamp(15px, 3.5vw, 17px); line-height: 1.42; color: {{ heroNoteColor }};">{{ predictionBird }}</p>
+          </div>
+        </div>
+
+        <!-- WORKBENCH (left: fixes + adjust)  +  PLAN RAIL (right: save + math) -->
+        <div style="{{ splitWrap }}">
+        <div style="{{ workbenchStyle }}">
+
+        <!-- 2 — FIXES -->
+        <div class="lb-rise" style="animation-delay: .28s; background: #fff; border: 1.5px solid #EFE8D9; border-radius: 22px; padding: clamp(20px, 5vw, 26px);">
+
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+            {{ birdMini }}
+            <div class="earn-callout">Do these 3 things and you'll <strong style="font-weight: 800;">{{ earnVerb }}</strong> <span class="earn-amount">{{ earnBack }}</span> next week</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr)); gap: 11px;">
+            <sc-for list="{{ fixes }}" as="f" hint-placeholder-count="3">
+              <button onClick="{{ f.toggle }}" style="background: {{ f.cardBg }}; border: 1.5px solid {{ f.cardBorder }}; border-radius: 14px; padding: 13px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; text-align: left; font-family: inherit; transition: background .15s, border-color .15s;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;">
+                  <span style="font-size: 13px; font-weight: 700; color: #26282E;">{{ f.titleFull }}</span>
+                  <span style="width: 20px; height: 20px; flex: none; border-radius: 50%; background: {{ f.checkBg }}; border: 1.5px solid {{ f.checkBorder }}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800;">{{ f.check }}</span>
+                </div>
+                <div style="font-size: 26px; font-weight: 800; color: #2F7D5F; letter-spacing: -1px;">{{ f.impact }}</div>
+                <div style="font-size: 12px; color: #8A8475; line-height: 1.35;">{{ f.note }}</div>
+              </button>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ applyAll }}" style="width: 100%; min-height: 48px; border: none; border-radius: 13px; background: #F7BE2C; color: #2A2410; font-size: 14.5px; font-weight: 700; cursor: pointer; margin-top: 14px; padding: 8px 16px; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8);">Apply all three → {{ profitAllAmt }}</button>
+        </div>
+
+        <!-- 3 — ADJUST THIS WEEK'S NUMBERS -->
+        <div class="lb-rise" style="animation-delay: .38s; background: #FCFAF4; border: 1.5px solid #EFE8D9; border-radius: 22px; padding: clamp(20px, 5vw, 26px);">
+          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 4px;">
+            <span style="font-size: 16px;">🎚️</span>
+            <span style="font-size: 15px; font-weight: 800;">Adjust this week's numbers</span>
+          </div>
+          <div style="font-size: 12.5px; color: #8A8475; font-weight: 600; margin-bottom: 16px;">Drag any lever to see your profit update live.</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;">
+            <sc-for list="{{ sliders }}" as="sl" hint-placeholder-count="4">
+              <div style="background: #fff; border: 1.5px solid #EFE8D9; border-radius: 13px; padding: 14px 15px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+                  <span style="font-size: 13px; font-weight: 700; color: #6C6657;">{{ sl.label }}</span>
+                  <span style="font-size: 15px; font-weight: 800; color: #B8902A;">{{ sl.value }}</span>
+                </div>
+                <div onPointerDown="{{ sl.down }}" style="position: relative; height: 22px; display: flex; align-items: center; cursor: pointer; touch-action: none;">
+                  <div style="position: absolute; left: 0; right: 0; height: 6px; border-radius: 4px; background: #ECE5D6;"></div>
+                  <div style="position: absolute; left: 0; height: 6px; border-radius: 4px; background: #F7BE2C; width: {{ sl.fill }};"></div>
+                  <div style="position: absolute; left: {{ sl.fill }}; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: #F7BE2C; border: 3px solid #fff; box-shadow: 0 1px 4px rgba(40,36,28,.3);"></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        </div><!-- /workbench -->
+        <div style="{{ railStyle }}">
+
+        <!-- 4 — SAVE PLAN (live summary) -->
+        <div class="lb-rise" style="animation-delay: .46s; background: #fff; border: 1.5px solid #EFE8D9; border-radius: 22px; padding: clamp(20px, 5vw, 26px);">
+          <div style="font-size: 15px; font-weight: 800; margin-bottom: 3px;">Your plan</div>
+          <div style="font-size: 12.5px; color: #8A8475; font-weight: 600; margin-bottom: 10px;">Targets update live as you adjust.</div>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ saveRows }}" as="r" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F1EADB;">
+                <span style="font-size: 14px; font-weight: 600; color: #6C6657;">{{ r.label }}</span>
+                <span style="font-size: 15px; font-weight: 800;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ notSaved }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ savePlan }}" style="width: 100%; height: 54px; border: none; border-radius: 14px; background: #F7BE2C; color: #2A2410; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 18px; box-shadow: 0 8px 18px -8px rgba(247,190,44,.8);">Save this plan</button>
+          </sc-if>
+
+          <sc-if value="{{ saved }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="background: #E2EEE8; border: 1.5px solid #C9E2D6; border-radius: 16px; padding: 18px; text-align: center; margin-top: 16px;">
+              <div style="display: inline-flex; align-items: center; gap: 8px; color: #2F7D5F; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;"><span style="width: 18px; height: 18px; border-radius: 50%; background: #2F7D5F; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">✓</span> Plan saved for next week</div>
+              <div style="font-size: 30px; font-weight: 800; color: #2F7D5F; letter-spacing: -1px; margin-top: 8px;">Target profit {{ afterAmt }}</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+              <button onClick="{{ goReplan }}" style="flex: 1; height: 48px; border: 1.5px solid #E2DAC8; border-radius: 13px; background: #fff; color: #26282E; font-size: 14.5px; font-weight: 700; cursor: pointer; font-family: inherit;">Edit plan</button>
+              <button onClick="{{ viewMath }}" style="flex: 1; height: 48px; border: 1.5px solid #E2DAC8; border-radius: 13px; background: #fff; color: #26282E; font-size: 14.5px; font-weight: 700; cursor: pointer; font-family: inherit;">View math</button>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <!-- 4b — SEE THE MATH -->
+        <div class="lb-rise" style="animation-delay: .54s; background: #FCFAF4; border: 1px solid #EFE8D9; border-radius: 18px; overflow: hidden;">
+          <button onClick="{{ toggleMath }}" style="width: 100%; border: none; background: transparent; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; font-size: 14px; font-weight: 700; color: #6C6657;">
+            <span>See the math</span><span style="font-size: 11px; color: #9A9384;">{{ mathCaret }}</span>
+          </button>
+          <sc-if value="{{ mathOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 0 20px 18px;">
+            <sc-for list="{{ mathRows }}" as="m" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFE8D9;">
+                <span style="font-size: 13.5px; font-weight: 600; color: #6C6657;">{{ m.label }}</span>
+                <span style="font-size: 14px; font-weight: 700; color: {{ m.color }};">{{ m.value }}</span>
+              </div>
+            </sc-for>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0 4px; border-top: 2px solid #E7DFCD; margin-top: 2px;">
+              <span style="font-size: 14px; font-weight: 800;">Net profit</span>
+              <span style="font-size: 16px; font-weight: 800; color: {{ afterColor }};">{{ afterAmt }}</span>
+            </div>
+            <p style="font-size: 12px; color: #9A9384; margin: 8px 0 0; line-height: 1.4;">{{ gstNote }}</p>
+          </div>
+          </sc-if>
+        </div>
+
+        </div><!-- /rail -->
+        </div><!-- /split -->
+
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 480, &quot;height&quot;: 900}}">
+class Component extends DCLogic {
+  state = {
+    step: 0,
+    width: (typeof window !== 'undefined' ? window.innerWidth : 1200),
+    businessName: 'Maple & Crumb',
+    industry: 'Café',
+    gst: true,
+    cogsPct: 32,
+    fixed: 4200,
+    labour: 10200,
+    days: [2400, 2300, 2800, 3000, 3500, 4000, 2000],
+    splitOpen: false,
+    revLever: 4, labourLever: 3, cogsLever: 2,
+    revOn: false, labourOn: false, cogsOn: false,
+    saved: false,
+    mathOpen: false,
+    heroPinned: false,
+  };
+
+  DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  componentDidMount() {
+    this._onResize = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+    window.addEventListener('scroll', this._onHeroScroll, { passive: true });
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('scroll', this._onHeroScroll);
+  }
+  // Condense the sticky hero on scroll. Two guards stop it oscillating:
+  //   - Hysteresis: pin above 70px, only release below 30px, so the condense
+  //     transition itself can't keep re-crossing a single threshold.
+  //   - Min-room guard: refuse to pin unless the page (measured at its EXPANDED
+  //     height, which is constant) has enough scroll room that condensing it can't
+  //     shorten the page back under the trigger. That was the case that flickered.
+  HERO_DELTA = 150; // approx px the hero shrinks when condensed
+  _onHeroScroll = () => {
+    const root = document.documentElement;
+    const y = window.scrollY;
+    const p = this.state.heroPinned;
+    const expandedScroll = root.scrollHeight + (p ? this.HERO_DELTA : 0) - window.innerHeight;
+    let next = p;
+    if (!p) { if (y > 70 && expandedScroll >= 240) next = true; }
+    else if (y < 30) next = false;
+    if (next !== p) this.setState({ heroPinned: next });
+  };
+
+  money(n) { return '$' + Math.round(n).toLocaleString('en-AU'); }
+  fmt(n) { const neg = n < 0; return (neg ? '\u2212$' : '$') + Math.round(Math.abs(n)).toLocaleString('en-AU'); }
+  sgn(n) { return (n < 0 ? '\u2212$' : '+$') + Math.round(Math.abs(n)).toLocaleString('en-AU'); }
+  signed(n) { return (n < 0 ? '\u2212$' : '+$') + Math.round(Math.abs(n)).toLocaleString('en-AU'); }
+  short(n) { return '$' + (Math.round(n / 100) / 10).toFixed(1) + 'k'; }
+  clamp(v, lo, hi) { v = Number(v); if (isNaN(v)) v = lo; return Math.max(lo, Math.min(hi, v)); }
+  scrollTop() { window.scrollTo(0, 0); }
+
+  next = () => { this.setState(s => ({ step: Math.min(4, s.step + 1) })); this.scrollTop(); };
+  back = () => { this.setState(s => ({ step: Math.max(0, s.step - 1) })); this.scrollTop(); };
+  useDemo = () => { this.setState({ step: 5 }); this.scrollTop(); };
+  finishToDashboard = () => { this.setState({ step: 5 }); this.scrollTop(); };
+  goReplan = () => { this.setState({ step: 3 }); this.scrollTop(); };
+
+  setName = (e) => this.setState({ businessName: e.target.value });
+  setIndustry = (e) => this.setState({ industry: e.target.value });
+  gstYes = () => this.setState({ gst: true });
+  gstNo = () => this.setState({ gst: false });
+  setFixed = (e) => this.setState({ fixed: this.clamp(e.target.value, 0, 1000000) });
+  setLabour = (e) => this.setState({ labour: this.clamp(e.target.value, 0, 1000000) });
+  toggleSplit = () => this.setState(s => ({ splitOpen: !s.splitOpen }));
+  savePlan = () => this.setState({ saved: true });
+  toggleMath = () => this.setState(s => ({ mathOpen: !s.mathOpen }));
+  viewMath = () => this.setState({ mathOpen: true });
+
+  cogsDown = (e) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const upd = (cx) => { let f = (cx - rect.left) / rect.width; f = Math.max(0, Math.min(1, f)); this.setState({ cogsPct: Math.round(10 + f * 60) }); };
+    upd(e.clientX);
+    const mv = (ev) => upd(ev.clientX);
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up);
+  };
+
+  barDown(i) {
+    return (e) => {
+      e.preventDefault();
+      const barEl = e.currentTarget.children[1];
+      const rect = barEl.getBoundingClientRect();
+      const upd = (cy) => {
+        let f = 1 - (cy - rect.top) / rect.height;
+        f = Math.max(0, Math.min(1, f));
+        const v = Math.round((f * 5000) / 50) * 50;
+        this.setState(s => { const d = s.days.slice(); d[i] = v; return { days: d }; });
+      };
+      upd(e.clientY);
+      const mv = (ev) => upd(ev.clientY);
+      const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', mv);
+      window.addEventListener('pointerup', up);
+    };
+  }
+
+  toggleLever(key) { return () => this.setState(s => ({ [key + 'On']: !s[key + 'On'] })); }
+  stepLever(key, dir) { return () => this.setState(s => ({ [key + 'Lever']: this.clamp(s[key + 'Lever'] + dir, 0, 15), [key + 'On']: true })); }
+  adjustLever(key, dir) { return () => this.setState(s => ({ [key + 'Lever']: this.clamp(s[key + 'Lever'] + dir, 0, 15) })); }
+  applyAll = () => this.setState({ revOn: true, labourOn: true, cogsOn: true });
+  stopProp = (e) => e.stopPropagation();
+
+  setRevenueTotal(v) {
+    const cur = this.state.days.reduce((a, b) => a + b, 0);
+    let days;
+    if (cur <= 0) { const e = v / 7; days = this.DAYS.map(() => Math.round(e / 10) * 10); }
+    else { const f = v / cur; days = this.state.days.map(d => Math.max(0, Math.round(d * f / 10) * 10)); }
+    this.setState({ days });
+  }
+  makeSlider(min, max, step, apply) {
+    return (e) => {
+      e.preventDefault();
+      const rect = e.currentTarget.getBoundingClientRect();
+      const upd = (cx) => { let f = (cx - rect.left) / rect.width; f = Math.max(0, Math.min(1, f)); let v = min + f * (max - min); v = Math.round(v / step) * step; apply(v); };
+      upd(e.clientX);
+      const mv = (ev) => upd(ev.clientX);
+      const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); };
+      window.addEventListener('pointermove', mv);
+      window.addEventListener('pointerup', up);
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const revenue = s.days.reduce((a, b) => a + b, 0);
+    const cogsD = revenue * s.cogsPct / 100;
+    const profit = revenue - cogsD - s.fixed - s.labour;
+    const isLoss = profit < 0;
+
+    const rl = s.revOn ? s.revLever : 0;
+    const ll = s.labourOn ? s.labourLever : 0;
+    const cl = s.cogsOn ? s.cogsLever : 0;
+    const revA = revenue * (1 + rl / 100);
+    const cogsPctA = Math.max(0, s.cogsPct - cl);
+    const cogsDA = revA * cogsPctA / 100;
+    const labourA = s.labour * (1 - ll / 100);
+    const profitA = revA - cogsDA - s.fixed - labourA;
+    const afterLoss = profitA < 0;
+
+    const RED = '#C24B3A', GREEN = '#2F7D5F';
+
+    // sticky prediction hero — condenses to a slim pinned band on scroll
+    const heroBg = afterLoss ? '#F8E7E2' : '#E2EEE8';
+    const heroBorder = afterLoss ? '#EFCDC4' : '#C9E2D6';
+    const heroColor = afterLoss ? RED : GREEN;
+    const pinned = s.heroPinned;
+    const heroStyle = 'background: ' + heroBg + '; border: 1.5px solid ' + heroBorder
+      + '; border-radius: 24px; text-align: center; position: sticky; top: 60px; z-index: 4; padding: '
+      + (pinned ? '13px clamp(22px, 5vw, 32px)' : 'clamp(26px, 6vw, 38px) clamp(22px, 5vw, 32px)')
+      + '; box-shadow: ' + (pinned ? '0 16px 32px -18px rgba(40, 36, 28, .45)' : '0 0 0 0 rgba(40, 36, 28, 0)')
+      + '; transition: padding .38s cubic-bezier(.4, 0, .2, 1), box-shadow .42s ease;';
+    const heroBigStyle = 'font-weight: 800; color: ' + heroColor + '; letter-spacing: -2.5px; line-height: 1; font-size: '
+      + (pinned ? 'clamp(34px, 9vw, 46px)' : 'clamp(54px, 16vw, 78px)')
+      + '; margin-top: ' + (pinned ? '2px' : '4px')
+      + '; transition: font-size .38s cubic-bezier(.4, 0, .2, 1), margin .38s cubic-bezier(.4, 0, .2, 1);';
+    const heroNoteStyle = 'display: flex; gap: 11px; align-items: flex-start; text-align: left; max-width: 420px; overflow: hidden; margin: '
+      + (pinned ? '0' : '22px') + ' auto 0; max-height: ' + (pinned ? '0' : '200px') + '; opacity: ' + (pinned ? '0' : '1')
+      + '; transition: max-height .42s cubic-bezier(.4, 0, .2, 1), opacity .3s ease, margin .42s cubic-bezier(.4, 0, .2, 1);';
+
+    const revImpact = (s.revLever / 100) * revenue * (1 - s.cogsPct / 100);
+    const labImpact = (s.labourLever / 100) * s.labour;
+    const cogsImpact = (s.cogsLever / 100) * revenue;
+    const leverCfg = [
+      { key: 'rev', short: 'Revenue', val: s.revLever, on: s.revOn, impact: revImpact, neg: false },
+      { key: 'labour', short: 'Labour', val: s.labourLever, on: s.labourOn, impact: labImpact, neg: true },
+      { key: 'cogs', short: 'COGS', val: s.cogsLever, on: s.cogsOn, impact: cogsImpact, neg: true },
+    ];
+    const levers = leverCfg.map(l => ({
+      short: l.short,
+      valLabel: l.on ? (l.neg ? '\u2212' : '+') + l.val + '%' : 'Off',
+      valColor: l.on ? '#26282E' : '#A8A296',
+      labelColor: l.on ? '#B8902A' : '#A8A296',
+      cardBg: l.on ? '#FCF8EC' : '#F6F1E6',
+      cardBorder: l.on ? '#F2E2B4' : '#EFE8D9',
+      toggle: this.toggleLever(l.key), inc: this.stepLever(l.key, 1), dec: this.stepLever(l.key, -1),
+    }));
+
+    const evenLab = s.labour / 7;
+    const labourRows = this.DAYS.map(d => ({ label: d, amt: this.money(evenLab) }));
+    const dayBars = s.days.map((amt, i) => ({
+      label: this.DAYS[i], amtShort: this.short(amt),
+      heightPct: Math.max(3, Math.min(100, amt / 5000 * 100)) + '%', down: this.barDown(i),
+    }));
+
+    let scenarioBird;
+    if (isLoss && !afterLoss) scenarioBird = 'Chirp \u2014 three tiny moves and you\u2019re back in the black. Made before the week even starts.';
+    else if (!afterLoss) scenarioBird = 'Chirp \u2014 small, steady tweaks. Not a miracle, just good planning compounding.';
+    else scenarioBird = 'Chirp \u2014 still short. Nudge revenue up a touch more, or ease off the labour.';
+
+    // all-three-applied projection
+    const revAll = revenue * (1 + s.revLever / 100);
+    const cogsPctAll = Math.max(0, s.cogsPct - s.cogsLever);
+    const cogsDAll = revAll * cogsPctAll / 100;
+    const labourAll = s.labour * (1 - s.labourLever / 100);
+    const profitAll = revAll - cogsDAll - s.fixed - labourAll;
+    const gain = profitAll - profit;
+    const labPctRev = revenue > 0 ? Math.round(s.labour / revenue * 100) : 0;
+
+    const fixDefs = [
+      { key: 'rev', title: 'Lift revenue', amount: s.revLever + '%', impact: revImpact, note: 'A small lift clears your break-even line.', on: s.revOn },
+      { key: 'cogs', title: 'Cut cost of goods', amount: s.cogsLever + 'pt', impact: cogsImpact, note: 'Cost of goods at ' + s.cogsPct + '% is squeezing your margin.', on: s.cogsOn },
+      { key: 'labour', title: 'Trim labour', amount: s.labourLever + '%', impact: labImpact, note: 'Labour is ' + labPctRev + '% of revenue, running a touch high.', on: s.labourOn },
+    ];
+    const fixes = fixDefs.map(f => ({
+      title: f.title,
+      titleFull: f.title + ' by ' + f.amount,
+      amount: f.amount,
+      impact: '+' + this.money(f.impact),
+      note: f.note,
+      toggle: this.toggleLever(f.key),
+      dec: this.adjustLever(f.key, -1),
+      inc: this.adjustLever(f.key, 1),
+      stop: this.stopProp,
+      cardBg: f.on ? '#FDEFC2' : '#FFFFFF',
+      cardBorder: f.on ? '#E6B52E' : '#E7DFCD',
+      check: f.on ? '\u2713' : '',
+      checkBg: f.on ? '#2F7D5F' : '#FFFFFF',
+      checkBorder: f.on ? '#2F7D5F' : '#D8D0BE',
+    }));
+
+    const slPct = (val, min, max) => Math.max(0, Math.min(100, (val - min) / (max - min) * 100)) + '%';
+    const revFactor = 1 + rl / 100, labFactor = 1 - ll / 100;
+    const sliders = [
+      { label: 'Revenue', value: this.money(revA), fill: slPct(revA, 5000, 40000), down: this.makeSlider(5000, 40000, 50, (v) => this.setRevenueTotal(v / revFactor)) },
+      { label: 'Labour', value: this.money(labourA), fill: slPct(labourA, 0, 20000), down: this.makeSlider(0, 20000, 50, (v) => this.setState({ labour: Math.round(v / labFactor) })) },
+      { label: 'Cost of goods', value: cogsPctA + '%', fill: slPct(cogsPctA, 10, 70), down: this.makeSlider(10, 70, 1, (v) => this.setState({ cogsPct: this.clamp(v + cl, 0, 90) })) },
+      { label: 'Fixed & variable', value: this.money(s.fixed), fill: slPct(s.fixed, 0, 10000), down: this.makeSlider(0, 10000, 50, (v) => this.setState({ fixed: v })) },
+    ];
+
+    const gstAmt = s.gst ? (revA - revA / 1.1) : (revA * 0.1);
+    const gstNote = s.gst
+      ? 'GST is already inside your prices and set aside (~' + this.money(gstAmt) + '/wk) \u2014 it doesn\u2019t change your profit.'
+      : 'GST (~' + this.money(gstAmt) + '/wk) is added on top and set aside \u2014 it doesn\u2019t change your profit.';
+
+    const mathRows = [
+      { label: 'Revenue', value: this.money(revA), color: '#26282E' },
+      { label: 'Cost of goods (' + cogsPctA + '%)', value: '\u2212' + this.money(cogsDA), color: '#8A8475' },
+      { label: 'Labour', value: '\u2212' + this.money(labourA), color: '#8A8475' },
+      { label: 'Fixed & variable', value: '\u2212' + this.money(s.fixed), color: '#8A8475' },
+    ];
+
+    return {
+      onboardingOn: s.step <= 4,
+      dashboardOn: s.step === 5,
+      contentWrap: (s.width >= 880)
+        ? 'width: 100%; max-width: 1080px; display: flex; flex-direction: column; gap: 14px;'
+        : 'width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 14px;',
+      splitWrap: (s.width >= 880)
+        ? 'display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; align-items: start;'
+        : 'display: flex; flex-direction: column; gap: 14px;',
+      workbenchStyle: 'display: flex; flex-direction: column; gap: 14px; min-width: 0;',
+      railStyle: 'display: flex; flex-direction: column; gap: 14px; min-width: 0;',
+      inApp: s.step >= 1 && s.step <= 4,
+      s0: s.step === 0, s1: s.step === 1, s2: s.step === 2, s3: s.step === 3, s4: s.step === 4,
+      stepNum: Math.max(1, s.step),
+      dots: [1, 2, 3, 4].map(i => ({ w: i === s.step ? '20px' : '6px', bg: i <= s.step ? '#F7BE2C' : '#E7DFCD' })),
+
+      next: this.next, back: this.back, useDemo: this.useDemo, finishToDashboard: this.finishToDashboard, goReplan: this.goReplan,
+
+      birdLarge: this.bird(112), birdMini: this.bird(30), birdMiniLight: this.bird(42, true),
+
+      businessName: s.businessName, setName: this.setName,
+      industry: s.industry, setIndustry: this.setIndustry,
+      cogsPct: s.cogsPct, cogsDown: this.cogsDown, cogsPct100: ((s.cogsPct - 10) / 60 * 100) + '%',
+      fixed: s.fixed, setFixed: this.setFixed,
+      labour: s.labour, setLabour: this.setLabour,
+      gstYes: this.gstYes, gstNo: this.gstNo,
+      gstYesBg: s.gst ? '#F7BE2C' : '#FFFFFF', gstYesBorder: s.gst ? '#F7BE2C' : '#E7DFCD', gstYesColor: s.gst ? '#2A2410' : '#8A8475',
+      gstNoBg: !s.gst ? '#F7BE2C' : '#FFFFFF', gstNoBorder: !s.gst ? '#F7BE2C' : '#E7DFCD', gstNoColor: !s.gst ? '#2A2410' : '#8A8475',
+
+      revenueFmt: this.money(revenue), dayBars,
+      splitOpen: s.splitOpen, toggleSplit: this.toggleSplit, splitCaret: s.splitOpen ? '\u25B2' : '\u25BC', labourRows,
+
+      // hero (live plan — reflects applied changes)
+      heroStyle, heroBigStyle, heroNoteStyle,
+      lightColor: afterLoss ? RED : GREEN,
+      lightLabel: afterLoss ? 'Red light' : 'Green light',
+      lightPillBg: afterLoss ? '#F2D7D0' : '#D2E7DD',
+      dotRed: afterLoss ? RED : '#E4C9C2',
+      dotAmber: '#E7DBC2',
+      dotGreen: afterLoss ? '#CFE0D6' : GREEN,
+      heroBg: afterLoss ? '#F8E7E2' : '#E2EEE8',
+      heroBorder: afterLoss ? '#EFCDC4' : '#C9E2D6',
+      heroVerb: afterLoss ? 'lose' : 'make',
+      heroBig: (afterLoss ? '\u2212$' : '+$') + Math.round(Math.abs(profitA)).toLocaleString('en-AU'),
+      heroNoteColor: afterLoss ? '#8A4A3E' : '#2F6A52',
+      predictionBird: afterLoss
+        ? 'Chirp \u2014 labour is a little heavy for the revenue you\u2019re expecting. Apply a fix below and watch this move.'
+        : 'Chirp \u2014 those moves tip you into the black. Lock it in before the week starts.',
+
+      // scenario
+      currentAmt: (isLoss ? '\u2212$' : '+$') + Math.round(Math.abs(profit)).toLocaleString('en-AU'),
+      currentColor: isLoss ? '#E6A79C' : '#9ED0BC',
+      afterAmt: (afterLoss ? '\u2212$' : '+$') + Math.round(Math.abs(profitA)).toLocaleString('en-AU'),
+      afterColor: afterLoss ? RED : GREEN,
+      levers, scenarioBird,
+      fixes, sliders, applyAll: this.applyAll,
+      earnVerb: 'earn back',
+      earnBack: this.money(Math.max(0, gain)),
+      profitAllAmt: (profitAll < 0 ? '\u2212$' : '+$') + Math.round(Math.abs(profitAll)).toLocaleString('en-AU'),
+
+      // save
+      saveRows: [
+        { label: 'Revenue target', value: this.money(revA) },
+        { label: 'Labour target', value: this.money(labourA) },
+        { label: 'COGS target', value: cogsPctA + '%' },
+      ],
+      notSaved: !s.saved, saved: s.saved, savePlan: this.savePlan, viewMath: this.viewMath,
+
+      // math
+      mathOpen: s.mathOpen, toggleMath: this.toggleMath, mathCaret: s.mathOpen ? '\u25B2' : '\u25BC',
+      mathRows, gstNote,
+    };
+  }
+
+  bird(size, light) {
+    const body = light ? '#FFD25A' : '#F7BE2C';
+    const dark = light ? '#FBF8F1' : '#26282E';
+    return React.createElement('svg', { width: size, height: size, viewBox: '0 0 100 100', style: { display: 'block', flex: 'none' } },
+      React.createElement('circle', { cx: 50, cy: 50, r: 50, fill: light ? 'rgba(255,255,255,.12)' : '#FCF4DE' }),
+      React.createElement('path', { d: 'M52 47 C 40 24, 70 20, 64 46 C 62 54, 56 54, 52 47 Z', fill: body, opacity: light ? 0.85 : 0.9 }),
+      React.createElement('path', { d: 'M34 52 C 30 40, 46 38, 58 44 C 70 50, 64 64, 50 66 C 42 67, 36 60, 34 52 Z', fill: body }),
+      React.createElement('path', { d: 'M36 56 L 20 70 L 38 62 Z', fill: body }),
+      React.createElement('path', { d: 'M58 45 L 84 36 L 59 50 Z', fill: dark }),
+      React.createElement('circle', { cx: 54, cy: 48, r: 3, fill: dark })
+    );
+  }
+}
+</script>
+</body>
+</html>
