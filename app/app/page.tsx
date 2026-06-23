@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "motion/react";
 import { SlidersHorizontal } from "@phosphor-icons/react";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { Flap } from "@/components/Flap";
@@ -27,80 +33,120 @@ import {
 export default function DashboardPage() {
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [engaged, setEngaged] = useState(false);
-  const [introVal, setIntroVal] = useState<number | null>(0);
   const baseRef = useRef<Week>(DEFAULTS);
+  const weekRef = useRef<Week>(week);
+  weekRef.current = week;
   const rafRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const introDone = useRef(false);
   const reduce = useReducedMotion();
+
+  // Verdict number driven by a Motion value: it animates outside the React
+  // render cycle, so the count-up and live updates don't re-render the tree.
+  const profitMV = useMotionValue(0);
+  const profitText = useTransform(profitMV, (v) => signedProfit(v));
+
+  const p = profit(week);
+  const inProfit = p >= 0;
 
   useEffect(() => {
     const w = loadWeek();
     baseRef.current = w;
+    weekRef.current = w;
     setWeek(w);
-    // Count the verdict up on load — motion ON the number, so the eye lands
-    // there first instead of on the bird.
     const target = profit(w);
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      setIntroVal(null);
+    if (reduce) {
+      profitMV.set(target);
+      introDone.current = true;
       return;
     }
-    let raf = 0;
-    const t0 = performance.now();
-    const dur = 850;
-    const tick = (now: number) => {
-      const k = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - k, 3);
-      setIntroVal(target * e);
-      if (k < 1) raf = requestAnimationFrame(tick);
-      else setIntroVal(null);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const controls = animate(profitMV, target, {
+      duration: 0.85,
+      ease: [0.16, 1, 0.3, 1],
+      onComplete: () => {
+        introDone.current = true;
+      },
+    });
+    return () => controls.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const animateTo = (target: Partial<Week>) => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    const start: Week = { ...week };
-    const goal: Week = { ...week, ...target };
-    if (reduce) {
-      setWeek(goal);
-      return;
-    }
-    const dur = 560;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      const k = Math.min(1, (now - t0) / dur);
-      const e = 1 - Math.pow(1 - k, 3);
-      setWeek({
-        ...goal,
-        rev: start.rev + (goal.rev - start.rev) * e,
-        lab: start.lab + (goal.lab - start.lab) * e,
-        fix: start.fix + (goal.fix - start.fix) * e,
-        cogs: start.cogs + (goal.cogs - start.cogs) * e,
-      });
-      if (k < 1) rafRef.current = requestAnimationFrame(tick);
-      else setWeek(goal);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    timerRef.current = setTimeout(() => setWeek(goal), dur + 80);
-  };
+  // After the intro, keep the number synced to live edits and applies.
+  useEffect(() => {
+    if (introDone.current) profitMV.set(p);
+  }, [p, profitMV]);
 
-  const p = profit(week);
-  const shownP = introVal === null ? p : introVal;
-  const inProfit = p >= 0;
+  const animateTo = useCallback(
+    (target: Partial<Week>) => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      const start = weekRef.current;
+      const goal: Week = { ...start, ...target };
+      if (reduce) {
+        setWeek(goal);
+        return;
+      }
+      const dur = 560;
+      const t0 = performance.now();
+      const tick = (now: number) => {
+        const k = Math.min(1, (now - t0) / dur);
+        const e = 1 - Math.pow(1 - k, 3);
+        setWeek({
+          ...goal,
+          rev: start.rev + (goal.rev - start.rev) * e,
+          lab: start.lab + (goal.lab - start.lab) * e,
+          fix: start.fix + (goal.fix - start.fix) * e,
+          cogs: start.cogs + (goal.cogs - start.cogs) * e,
+        });
+        if (k < 1) rafRef.current = requestAnimationFrame(tick);
+        else setWeek(goal);
+      };
+      rafRef.current = requestAnimationFrame(tick);
+      timerRef.current = setTimeout(() => setWeek(goal), dur + 80);
+    },
+    [reduce],
+  );
+
   const base = baseRef.current;
-  const sugg = suggestions(base);
-  const allWeek = applyAll(base);
+  const sugg = useMemo(() => suggestions(base), [base]);
+  const allWeek = useMemo(() => applyAll(base), [base]);
   const allResult = profit(allWeek);
   const earnBack = allResult - profit(base);
   const netRevenue = week.rev / GST_DIVISOR;
   const gst = week.rev - netRevenue;
   const cogsAmount = (week.cogs / 100) * week.rev;
   const cogsPct = week.cogs % 1 === 0 ? `${week.cogs}%` : `${week.cogs.toFixed(1)}%`;
+
+  // Memoised so slider drags / the count-up don't re-render the cards
+  // (they depend only on the saved base week, not the live edits).
+  const cards = useMemo(
+    () =>
+      sugg.map((s, i) => (
+        <motion.button
+          key={s.key}
+          onClick={() => {
+            setEngaged(true);
+            animateTo(s.apply);
+          }}
+          initial={reduce ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.7 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+          whileHover={reduce ? undefined : { y: -3 }}
+          className="group rounded-2xl border border-black/10 bg-white p-4 text-left transition-colors hover:border-amber-300 hover:shadow-[0_10px_30px_-14px_rgba(15,23,42,0.3)]"
+        >
+          <div className="font-display text-[14px] font-medium text-ink">
+            {s.action}
+          </div>
+          <div className="tnum mt-2 font-display text-[28px] font-semibold leading-none tracking-tight text-emerald-600">
+            +{money(s.gain)}
+          </div>
+          <div className="mt-2 text-[12.5px] leading-snug text-ink/65">
+            {s.reason}
+          </div>
+        </motion.button>
+      )),
+    [sugg, animateTo, reduce],
+  );
 
   return (
     <div>
@@ -130,13 +176,13 @@ export default function DashboardPage() {
             >
               Predicted profit · next week
             </p>
-            <p
+            <motion.p
               className={`tnum mt-1 font-display text-[60px] font-semibold leading-none tracking-tight transition-colors duration-300 sm:text-[80px] ${
                 inProfit ? "text-emerald-600" : "text-red-600"
               }`}
             >
-              {signedProfit(shownP)}
-            </p>
+              {profitText}
+            </motion.p>
             <p
               className={`mt-4 text-[15px] leading-relaxed ${
                 inProfit ? "text-emerald-800/80" : "text-red-800/80"
@@ -167,32 +213,7 @@ export default function DashboardPage() {
         </div>
       </Reveal>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {sugg.map((s, i) => (
-          <motion.button
-            key={s.key}
-            onClick={() => {
-              setEngaged(true);
-              animateTo(s.apply);
-            }}
-            initial={reduce ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.7 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={reduce ? undefined : { y: -3 }}
-            className="group rounded-2xl border border-black/10 bg-white p-4 text-left transition-colors hover:border-amber-300 hover:shadow-[0_10px_30px_-14px_rgba(15,23,42,0.3)]"
-          >
-            <div className="font-display text-[14px] font-medium text-ink">
-              {s.action}
-            </div>
-            <div className="tnum mt-2 font-display text-[28px] font-semibold leading-none tracking-tight text-emerald-600">
-              +{money(s.gain)}
-            </div>
-            <div className="mt-2 text-[12.5px] leading-snug text-ink/65">
-              {s.reason}
-            </div>
-          </motion.button>
-        ))}
-      </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">{cards}</div>
 
       <Reveal delay={0.9}>
         <button
