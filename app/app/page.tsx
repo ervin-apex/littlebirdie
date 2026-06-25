@@ -2,80 +2,116 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import {
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react";
-import { SlidersHorizontal } from "@phosphor-icons/react";
+  ArrowDown,
+  ArrowUp,
+  CalendarBlank,
+  SlidersHorizontal,
+  Target,
+} from "@phosphor-icons/react";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { Flap } from "@/components/Flap";
 import { Reveal } from "@/components/Reveal";
-import { ProfitTrend } from "@/components/ProfitTrend";
-import { DayBreakdown } from "@/components/DayBreakdown";
+import { DayTracker } from "@/components/DayTracker";
+import { NeedsAttention } from "@/components/NeedsAttention";
+import { BudgetVsActualHistory } from "@/components/BudgetVsActualHistory";
+import { RevenueBars } from "@/components/RevenueBars";
 import { Collapsible } from "@/components/Collapsible";
 import { TrafficLight } from "@/components/TrafficLight";
 import {
   DEFAULTS,
   GST_DIVISOR,
   applyAll,
-  dayBreakdown,
+  dailyLedger,
+  loadActuals,
   loadWeek,
   money,
   profit,
-  scaleRevenue,
+  saveActuals,
+  seedActuals,
+  setDay,
   signedProfit,
   suggestions,
+  weekStatus,
   type Week,
+  type WeekActuals,
 } from "@/lib/profit";
 
 export default function DashboardPage() {
   const [week, setWeek] = useState<Week>(DEFAULTS);
+  const [actuals, setActuals] = useState<WeekActuals>(() => seedActuals(DEFAULTS));
   const [engaged, setEngaged] = useState(false);
+  // Pre-select the day before today (the most recent finished day); no slideshow.
+  const [selectedDay, setSelectedDay] = useState<number | null>(() =>
+    Math.max(0, seedActuals(DEFAULTS).todayIndex - 1),
+  );
   const baseRef = useRef<Week>(DEFAULTS);
   const weekRef = useRef<Week>(week);
   weekRef.current = week;
   const rafRef = useRef<number | null>(null);
+  const introRafRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introDone = useRef(false);
   const reduce = useReducedMotion();
 
-  // Verdict number driven by a Motion value: it animates outside the React
-  // render cycle, so the count-up and live updates don't re-render the tree.
-  const profitMV = useMotionValue(0);
-  const profitText = useTransform(profitMV, (v) => signedProfit(v));
+  // Verdict number. A short count-up on mount, then instant on edits. We drive
+  // a raw `animate(0, target, {onUpdate})` into local state — the heavy bits
+  // (cards, status, ledger) are memoised, so the per-frame render stays cheap.
+  const [profitText, setProfitText] = useState(() => signedProfit(0));
 
+  // The headline = actual-to-date + predicted-for-the-rest.
+  const status = useMemo(() => weekStatus(week, actuals), [week, actuals]);
+  const ledger = useMemo(() => dailyLedger(week, actuals), [week, actuals]);
+  const inProfit = status.inProfit;
+
+  // Pure predicted plan — used for the "See the math" breakdown.
   const p = profit(week);
-  const inProfit = p >= 0;
 
   useEffect(() => {
     const w = loadWeek();
+    const a = loadActuals(w);
     baseRef.current = w;
     weekRef.current = w;
     setWeek(w);
-    const target = profit(w);
+    setActuals(a);
+    setSelectedDay(Math.max(0, a.todayIndex - 1));
+    const target = weekStatus(w, a).projectedNet;
     if (reduce) {
-      profitMV.set(target);
+      setProfitText(signedProfit(target));
       introDone.current = true;
       return;
     }
-    const controls = animate(profitMV, target, {
-      duration: 0.85,
-      ease: [0.16, 1, 0.3, 1],
-      onComplete: () => {
+    // Count up from 0 to the projected figure with a manual rAF tween.
+    const dur = 850;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      setProfitText(signedProfit(target * e));
+      if (k < 1) introRafRef.current = requestAnimationFrame(tick);
+      else introDone.current = true;
+    };
+    introRafRef.current = requestAnimationFrame(tick);
+    // Fallback: rAF is suspended in a background/hidden tab, so land on the
+    // final figure via a timer too — the verdict is never stuck at $0.
+    const settle = setTimeout(() => {
+      if (!introDone.current) {
+        setProfitText(signedProfit(target));
         introDone.current = true;
-      },
-    });
-    return () => controls.stop();
+      }
+    }, 1100);
+    return () => {
+      if (introRafRef.current) cancelAnimationFrame(introRafRef.current);
+      clearTimeout(settle);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // After the intro, keep the number synced to live edits and applies.
+  // After the intro, keep the number synced to live edits, applies and actuals.
   useEffect(() => {
-    if (introDone.current) profitMV.set(p);
-  }, [p, profitMV]);
+    if (introDone.current) setProfitText(signedProfit(status.projectedNet));
+  }, [status.projectedNet]);
 
   const animateTo = useCallback(
     (target: Partial<Week>) => {
@@ -108,6 +144,26 @@ export default function DashboardPage() {
     [reduce],
   );
 
+  const onEditActual = useCallback(
+    (i: number, patch: { rev?: number; lab?: number }) => {
+      setActuals((a) => {
+        const next: WeekActuals = {
+          ...a,
+          actuals: a.actuals.map((d, idx) =>
+            idx === i ? { rev: d?.rev ?? 0, lab: d?.lab ?? 0, ...patch } : d,
+          ),
+        };
+        saveActuals(next);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const selectDay = useCallback((i: number) => {
+    setSelectedDay(i);
+  }, []);
+
   const base = baseRef.current;
   const sugg = useMemo(() => suggestions(base), [base]);
   const allWeek = useMemo(() => applyAll(base), [base]);
@@ -117,6 +173,9 @@ export default function DashboardPage() {
   const gst = week.rev - netRevenue;
   const cogsAmount = (week.cogs / 100) * week.rev;
   const cogsPct = week.cogs % 1 === 0 ? `${week.cogs}%` : `${week.cogs.toFixed(1)}%`;
+
+  // How the projection compares to the plan (>0 = tracking under plan).
+  const behind = status.predictedNet - status.projectedNet;
 
   // Memoised so slider drags / the count-up don't re-render the cards
   // (they depend only on the saved base week, not the live edits).
@@ -131,7 +190,7 @@ export default function DashboardPage() {
           }}
           initial={reduce ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.7 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.4, delay: 0.05 + i * 0.06, ease: [0.16, 1, 0.3, 1] }}
           whileHover={reduce ? undefined : { y: -3 }}
           className="group rounded-2xl border border-black/10 bg-white p-4 text-left transition-colors hover:border-amber-300 hover:shadow-[0_10px_30px_-14px_rgba(15,23,42,0.3)]"
         >
@@ -157,158 +216,244 @@ export default function DashboardPage() {
             This week
           </h1>
           <p className="text-[13px] text-ink/60">
-            Mon 23 to Sun 29 Jun · your predicted profit, before it happens
+            Mon 23 to Sun 29 Jun
+            {status.daysIn > 0 ? ` · ${status.daysIn} days in` : ""}
           </p>
         </div>
       </Reveal>
 
-      {/* verdict */}
+      {/* verdict + what needs attention */}
       <Reveal delay={0.05}>
-        <section
-          className={`flex items-center justify-between gap-6 rounded-3xl p-6 transition-colors duration-300 sm:p-8 ${
-            inProfit ? "bg-emerald-50" : "bg-red-50"
-          }`}
-        >
-          <div className="max-w-sm">
-            <TrafficLight inProfit={inProfit} />
-            <motion.p
-              className={`tnum mt-3 font-display text-[60px] font-semibold leading-none tracking-tight transition-colors duration-300 sm:text-[80px] ${
-                inProfit ? "text-emerald-600" : "text-red-600"
-              }`}
-            >
-              {profitText}
-            </motion.p>
-            <p
-              className={`mt-4 text-[15px] leading-relaxed ${
-                inProfit ? "text-emerald-800" : "text-red-800"
-              }`}
-            >
-              {inProfit
-                ? "Chirp! You're on track for a profit next week. Keep it up and bank it."
-                : "Chirp! You're on track to lose money next week. Tap a tip below and watch it turn green."}
+        <div className="grid gap-4 lg:grid-cols-5">
+          <section
+            className={`rounded-3xl border p-6 transition-colors duration-300 sm:p-7 lg:col-span-3 ${
+              inProfit ? "border-emerald-200 bg-emerald-50/60" : "border-red-200 bg-red-50/60"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <TrafficLight inProfit={inProfit} />
+                <p
+                  className={`tnum mt-3 font-display text-[52px] font-semibold leading-none tracking-tight transition-colors duration-300 sm:text-[68px] ${
+                    inProfit ? "text-emerald-600" : "text-red-600"
+                  }`}
+                >
+                  {profitText}
+                </p>
+                <p className="mt-3 max-w-sm text-[14px] leading-relaxed text-ink/70">
+                  {inProfit ? (
+                    <>
+                      Projected profit looks healthy
+                      {behind > 0 ? (
+                        <>
+                          , but you&apos;re{" "}
+                          <span className="font-semibold text-red-700">
+                            {money(behind)} behind forecast
+                          </span>{" "}
+                          so far
+                        </>
+                      ) : behind < 0 ? (
+                        <>
+                          {" "}
+                          and{" "}
+                          <span className="font-semibold text-emerald-700">
+                            {money(-behind)} ahead of forecast
+                          </span>
+                        </>
+                      ) : null}
+                      .
+                    </>
+                  ) : (
+                    <>
+                      You&apos;re heading for a loss
+                      {behind > 0 ? (
+                        <>
+                          ,{" "}
+                          <span className="font-semibold text-red-700">
+                            {money(behind)} behind forecast
+                          </span>
+                        </>
+                      ) : null}
+                      . The fixes are at the bottom.
+                    </>
+                  )}
+                </p>
+              </div>
+              {inProfit ? (
+                <Flap size={84} className="shrink-0 opacity-90" />
+              ) : (
+                <BirdeeMascot state="loss" size={84} float className="shrink-0 opacity-90" />
+              )}
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-black/10 pt-4">
+              <MiniStat
+                icon={<Target size={15} weight="bold" />}
+                label="Forecast said"
+                value={signedProfit(status.predictedNet)}
+              />
+              <MiniStat
+                icon={
+                  behind > 0 ? (
+                    <ArrowDown size={15} weight="bold" />
+                  ) : (
+                    <ArrowUp size={15} weight="bold" />
+                  )
+                }
+                label={behind > 0 ? "Behind forecast" : behind < 0 ? "Ahead of forecast" : "On forecast"}
+                value={behind === 0 ? "On track" : money(Math.abs(behind))}
+                tone={behind > 0 ? "text-red-700" : behind < 0 ? "text-emerald-700" : "text-ink"}
+              />
+              <MiniStat
+                icon={<CalendarBlank size={15} weight="bold" />}
+                label="Days in"
+                value={`${status.daysIn} of 7`}
+              />
+            </div>
+          </section>
+
+          <aside className="lg:col-span-2">
+            <NeedsAttention rows={ledger} status={status} />
+          </aside>
+        </div>
+      </Reveal>
+
+      {/* the day-by-day budget vs actual tracker — the centerpiece */}
+      <Reveal delay={0.12}>
+        <div className="mt-8">
+          <DayTracker
+            rows={ledger}
+            selected={selectedDay}
+            onSelect={selectDay}
+            onEditActual={onEditActual}
+          />
+        </div>
+      </Reveal>
+
+      {/* see the math, tucked under the day tracker, collapsed */}
+      <Reveal delay={0.18}>
+        <div className="mt-8">
+          <Collapsible title="See the math">
+            <div className="text-[13px]">
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-ink/70">Predicted revenue</span>
+                <span className="tnum font-display text-ink">{money(week.rev)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-ink/70">GST removed (10% off the top)</span>
+                <span className="tnum font-display text-ink/70">−{money(gst)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-ink/70">Cost of goods ({cogsPct} of revenue)</span>
+                <span className="tnum font-display text-ink/70">−{money(cogsAmount)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-ink/70">Labour</span>
+                <span className="tnum font-display text-ink/70">−{money(week.lab)}</span>
+              </div>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-ink/70">Fixed &amp; variable</span>
+                <span className="tnum font-display text-ink/70">−{money(week.fix)}</span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between border-t border-black/10 pt-2.5">
+                <span className="font-medium text-ink">Predicted profit</span>
+                <span
+                  className={`tnum font-display font-semibold ${
+                    p >= 0 ? "text-emerald-600" : "text-red-600"
+                  }`}
+                >
+                  {signedProfit(p)}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-[12px] leading-relaxed text-ink/60">
+              GST comes off the top line first. Cost of goods is a share of
+              revenue; labour and fixed costs come straight off. It all updates as
+              you change your numbers below.
+            </p>
+          </Collapsible>
+        </div>
+      </Reveal>
+
+      {/* adjust: controllable predicted numbers */}
+      <Reveal delay={0.2}>
+        <div className="mb-4 mt-8 flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+            <SlidersHorizontal size={18} weight="bold" />
+          </span>
+          <div>
+            <h2 className="font-display text-[18px] font-semibold tracking-tight">
+              Adjust this week&apos;s predicted numbers
+            </h2>
+            <p className="text-[12.5px] text-ink/60">
+              These move the days that haven&apos;t happened yet. Past days stay
+              as your actuals.
             </p>
           </div>
-          {inProfit ? (
-            <Flap size={96} className="shrink-0 opacity-90" />
-          ) : (
-            <BirdeeMascot state="loss" size={96} float className="shrink-0 opacity-90" />
-          )}
-        </section>
-      </Reveal>
-
-      {/* Birdie's plan: the gains, second focal point */}
-      <Reveal delay={0.55}>
-        <div className="mt-10 flex items-center gap-3">
-          <BirdeeMascot state="profit" size={40} className="shrink-0" />
-          <h2 className="font-display text-[20px] font-semibold leading-tight tracking-tight sm:text-[23px]">
-            Do these 3 things and you&apos;ll earn back{" "}
-            <span className="tnum text-emerald-600">{money(earnBack)}</span> next
-            week
-          </h2>
         </div>
-      </Reveal>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">{cards}</div>
-
-      <Reveal delay={0.9}>
-        <button
-          onClick={() => {
-            setEngaged(true);
-            animateTo(allWeek);
-          }}
-          className={`tnum mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl px-4 py-3.5 font-display text-[15px] font-semibold transition active:scale-[0.99] ${
-            engaged
-              ? "bg-amber-400 text-amber-950 hover:bg-amber-300"
-              : "border border-amber-300 bg-transparent text-amber-700 hover:bg-amber-50"
-          }`}
-        >
-          Do all three and next week becomes {signedProfit(allResult)}
-        </button>
-      </Reveal>
-
-      {/* adjust: controllable variables */}
-      <Reveal delay={1.0}>
-        <div className="mb-4 mt-10 flex items-center gap-2.5">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-          <SlidersHorizontal size={18} weight="bold" />
-        </span>
-        <div>
-          <h2 className="font-display text-[18px] font-semibold tracking-tight">
-            Adjust this week&apos;s numbers
-          </h2>
-          <p className="text-[12.5px] text-ink/60">
-            Drag any lever to see your profit update live.
-          </p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Lever label="Revenue" display={money(week.rev)} min={10000} max={35000} step={100} value={week.rev} onChange={(v) => setWeek(scaleRevenue(week, v))} />
-        <Lever label="Labour" display={money(week.lab)} min={3000} max={9000} step={20} value={week.lab} onChange={(v) => setWeek((w) => ({ ...w, lab: v }))} />
-        <Lever label="Cost of goods" display={`${week.cogs % 1 === 0 ? week.cogs : week.cogs.toFixed(1)}%`} min={20} max={45} step={0.5} value={week.cogs} onChange={(v) => setWeek((w) => ({ ...w, cogs: v }))} />
-        <Lever label="Fixed & variable" display={money(week.fix)} min={3000} max={9000} step={20} value={week.fix} onChange={(v) => setWeek((w) => ({ ...w, fix: v }))} />
-        </div>
-      </Reveal>
-
-      {/* optional detail */}
-      <Reveal delay={1.1}>
-        <div className="mt-8 space-y-3">
-        <Collapsible title="See the math">
-          <div className="text-[13px]">
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink/70">Predicted revenue</span>
-              <span className="tnum font-display text-ink">{money(week.rev)}</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink/70">GST removed (10% off the top)</span>
-              <span className="tnum font-display text-ink/70">−{money(gst)}</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink/70">Cost of goods ({cogsPct} of revenue)</span>
-              <span className="tnum font-display text-ink/70">−{money(cogsAmount)}</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink/70">Labour</span>
-              <span className="tnum font-display text-ink/70">−{money(week.lab)}</span>
-            </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-ink/70">Fixed &amp; variable</span>
-              <span className="tnum font-display text-ink/70">−{money(week.fix)}</span>
-            </div>
-            <div className="mt-1.5 flex items-center justify-between border-t border-black/10 pt-2.5">
-              <span className="font-medium text-ink">Predicted profit</span>
-              <span
-                className={`tnum font-display font-semibold ${
-                  inProfit ? "text-emerald-600" : "text-red-600"
-                }`}
-              >
-                {signedProfit(p)}
+        <div className="lg:flex lg:items-stretch lg:gap-4">
+          <div className="rounded-2xl border border-black/10 bg-white p-4 sm:p-5 lg:flex-1">
+            <div className="mb-3 flex items-baseline justify-between">
+              <span className="text-[13px] font-medium text-ink/80">Revenue, by day</span>
+              <span className="tnum font-display text-[15px] font-semibold text-amber-700">
+                {money(week.rev)} / week
               </span>
             </div>
+            <RevenueBars
+              days={week.days}
+              height={140}
+              onChange={(i, val) => setWeek(setDay(week, i, val))}
+            />
           </div>
-          <p className="mt-3 text-[12px] leading-relaxed text-ink/60">
-            GST comes off the top line first. Cost of goods is a share of
-            revenue; labour and fixed costs come straight off. It all updates as
-            you drag the levers above.
-          </p>
-        </Collapsible>
-        <Collapsible title="Revenue, day by day">
-          <div className="mb-3 flex items-baseline justify-between">
-            <span className="text-[12px] text-ink/60">Predicted revenue per day</span>
-            <span className="tnum text-[12px] text-ink/60">{money(week.rev)} / week</span>
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:mt-0 lg:w-72 lg:shrink-0 lg:grid-cols-1">
+            <Lever label="Labour" display={money(week.lab)} min={0} max={9000} step={20} value={week.lab} onChange={(v) => setWeek((w) => ({ ...w, lab: v }))} />
+            <Lever label="Cost of what you sell" display={`${week.cogs % 1 === 0 ? week.cogs : week.cogs.toFixed(1)}%`} min={0} max={99} step={0.5} value={week.cogs} onChange={(v) => setWeek((w) => ({ ...w, cogs: v }))} />
+            <Lever label="Rent, power and bills" display={money(week.fix)} min={0} max={9000} step={20} value={week.fix} onChange={(v) => setWeek((w) => ({ ...w, fix: v }))} />
           </div>
-          <DayBreakdown days={dayBreakdown(week)} />
-        </Collapsible>
-        <Collapsible title="Net profit, last 6 weeks">
-          <p className="mb-3 text-[12px] text-ink/60">
-            This week&apos;s plan is your weakest, so act now.
-          </p>
-          <ProfitTrend />
-        </Collapsible>
         </div>
       </Reveal>
 
-      <Reveal delay={1.2}>
-        <div className="mt-6 flex items-center justify-between">
+      {/* Birdie's 3 tips, right under the levers */}
+      <Reveal delay={0.26}>
+        <div className="mt-8">
+          <Collapsible title="Birdie's 3 tips to earn more">
+            <div className="flex items-center gap-3">
+              <BirdeeMascot state="profit" size={36} className="shrink-0" />
+              <h3 className="font-display text-[16px] font-semibold leading-tight tracking-tight">
+                Do these 3 things and you&apos;ll earn back{" "}
+                <span className="tnum text-emerald-600">{money(earnBack)}</span>{" "}
+                next week
+              </h3>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">{cards}</div>
+            <button
+              onClick={() => {
+                setEngaged(true);
+                animateTo(allWeek);
+              }}
+              className={`tnum mt-3 flex w-full items-center justify-center gap-1.5 rounded-2xl px-4 py-3.5 font-display text-[15px] font-semibold transition active:scale-[0.99] ${
+                engaged
+                  ? "bg-amber-400 text-amber-950 hover:bg-amber-300"
+                  : "border border-amber-300 bg-transparent text-amber-700 hover:bg-amber-50"
+              }`}
+            >
+              Do all three and next week becomes {signedProfit(allResult)}
+            </button>
+          </Collapsible>
+        </div>
+      </Reveal>
+
+      {/* forecast vs actual history */}
+      <Reveal delay={0.32}>
+        <div className="mt-8">
+          <Collapsible title="Forecast vs actual history">
+            <BudgetVsActualHistory />
+          </Collapsible>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.4}>
+        <div className="mt-8 flex items-center justify-between">
           <button
             onClick={() => animateTo(baseRef.current)}
             className="inline-flex min-h-[44px] items-center text-[13px] font-medium text-ink/60 underline underline-offset-2 transition-colors hover:text-ink/70"
@@ -320,6 +465,30 @@ export default function DashboardPage() {
           </Link>
         </div>
       </Reveal>
+    </div>
+  );
+}
+
+function MiniStat({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 text-ink/55">
+        <span className="text-ink/45">{icon}</span>
+        <span className="truncate text-[11px] font-medium">{label}</span>
+      </div>
+      <div className={`tnum mt-0.5 font-display text-[16px] font-semibold leading-tight ${tone ?? "text-ink"}`}>
+        {value}
+      </div>
     </div>
   );
 }

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { LinkSimple } from "@phosphor-icons/react";
 import { AppShell } from "@/components/AppShell";
 import { StepVisual } from "@/components/StepVisual";
 import { RevenueBars } from "@/components/RevenueBars";
+import { InfoPopover } from "@/components/InfoPopover";
 import {
   DEFAULTS,
   money,
@@ -22,6 +24,8 @@ const FULL_ORDER: Step[] = ["revenue", "labour", "connect", "cogs", "fixed"];
 type InputConfig = {
   title: string;
   blurb: string;
+  whatThisMeans: string;
+  connectLabel?: string;
   visual: string;
   key: Exclude<keyof Week, "days">;
   min: number;
@@ -32,10 +36,14 @@ type InputConfig = {
   back: Step | "welcome";
 };
 
+const REVENUE_INFO =
+  "This is the total money you expect to take across the whole week, before any costs come out. A rough guess is fine.";
+
 const INPUTS: Record<Exclude<Step, "connect">, InputConfig> = {
   revenue: {
     title: "What revenue do you expect next week?",
-    blurb: "Your best guess for the whole week. Birdie learns your real numbers over time.",
+    blurb: "Your best guess for the whole week, before any costs.",
+    whatThisMeans: REVENUE_INFO,
     visual: assetPath("/brand/step-revenue.png"),
     key: "rev",
     min: 10000,
@@ -48,9 +56,12 @@ const INPUTS: Record<Exclude<Step, "connect">, InputConfig> = {
   labour: {
     title: "How much will you spend on labour?",
     blurb: "Total wages for the week from your roster.",
+    whatThisMeans:
+      "All the wages you will pay your team for the week, straight off your roster. Include yourself if you draw a wage.",
+    connectLabel: "Link your rostering software",
     visual: assetPath("/brand/step-labour.png"),
     key: "lab",
-    min: 3000,
+    min: 0,
     max: 9000,
     step: 20,
     unit: "money",
@@ -59,11 +70,13 @@ const INPUTS: Record<Exclude<Step, "connect">, InputConfig> = {
   },
   cogs: {
     title: "What's your cost of goods?",
-    blurb: "As a share of revenue. Usually 28–38% for hospitality.",
+    blurb: "The cost of what you sell, as a share of revenue. It varies a lot from business to business.",
+    whatThisMeans:
+      "Cost of goods is what the things you sell cost you to make or buy, written as a share of your revenue. Businesses that sell physical products usually sit higher than ones that mostly sell services or time. Use whatever matches your own numbers.",
     visual: assetPath("/brand/step-cogs.png"),
     key: "cogs",
-    min: 20,
-    max: 45,
+    min: 0,
+    max: 99,
     step: 0.5,
     unit: "pct",
     next: "fixed",
@@ -72,9 +85,11 @@ const INPUTS: Record<Exclude<Step, "connect">, InputConfig> = {
   fixed: {
     title: "What are your fixed & variable costs?",
     blurb: "Everything that isn't labour or cost of goods, like rent, power and insurance, per week.",
+    whatThisMeans:
+      "The steady costs that do not move much with your sales, like rent, power, insurance and subscriptions. Use the weekly figure from your yearly profit and loss.",
     visual: assetPath("/brand/step-fixed.png"),
     key: "fix",
-    min: 3000,
+    min: 0,
     max: 9000,
     step: 20,
     unit: "money",
@@ -185,9 +200,10 @@ function InputStep({
         <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
           {cfg.blurb}
         </p>
+        <InfoPopover text={cfg.whatThisMeans} />
       </div>
 
-      <div className="mt-7 rounded-2xl border border-black/10 bg-white p-5">
+      <div className="mt-5 rounded-2xl border border-black/10 bg-white p-5">
         <div className="tnum text-center font-display text-[42px] font-semibold leading-none tracking-tight text-ink">
           {fmt(cfg, value)}
         </div>
@@ -206,6 +222,8 @@ function InputStep({
           <span>{fmt(cfg, cfg.max)}</span>
         </div>
       </div>
+
+      {cfg.connectLabel && <ConnectHint label={cfg.connectLabel} />}
 
       <div className="flex-1" />
 
@@ -245,8 +263,9 @@ function RevenueStep({
       <p className="mt-2 text-[13px] leading-relaxed text-ink/65">
         Mon 23 to Sun 29 Jun. Drag the bars to shape your week.
       </p>
+      <InfoPopover text={REVENUE_INFO} />
 
-      <div className="mt-6 flex items-center justify-between rounded-2xl bg-ink p-5 text-white">
+      <div className="mt-5 flex items-center justify-between rounded-2xl bg-ink p-5 text-white">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
             Weekly revenue
@@ -268,6 +287,8 @@ function RevenueStep({
         />
       </div>
 
+      <ConnectHint label="Link your point of sale" />
+
       <div className="flex-1" />
 
       <button
@@ -277,6 +298,23 @@ function RevenueStep({
         Continue
       </button>
     </div>
+  );
+}
+
+/** A placeholder "link your POS / rostering" affordance. The real integration
+ *  lands in a later phase; for now it shows the intent and reads as coming soon. */
+function ConnectHint({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="mt-5 inline-flex min-h-[44px] w-full items-center gap-2.5 rounded-xl border border-dashed border-amber-300 bg-amber-50/50 px-3.5 text-left text-[13px] font-medium text-amber-800 transition-colors hover:bg-amber-50"
+    >
+      <LinkSimple size={17} weight="bold" className="shrink-0" />
+      <span className="flex-1">{label}</span>
+      <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+        Soon
+      </span>
+    </button>
   );
 }
 

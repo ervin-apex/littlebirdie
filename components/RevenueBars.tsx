@@ -4,20 +4,22 @@ import { useRef } from "react";
 import { DAY_LABELS } from "@/lib/profit";
 
 /**
- * Draggable Mon–Sun revenue bars. Drag a bar up/down (or focus + arrow keys)
- * to set that day's revenue; the weekly total is the sum. Amber fill on a
- * light track, on-brand.
+ * Draggable Mon–Sun revenue bars. Amber fill on a neutral slate track so the
+ * value reads as filled-vs-empty; drag up/down (or focus + arrow keys) to set
+ * a day's revenue. The weekly total is the sum.
  */
 export function RevenueBars({
   days,
   onChange,
   max = 6000,
   step = 50,
+  height = 196,
 }: {
   days: number[];
   onChange: (i: number, val: number) => void;
   max?: number;
   step?: number;
+  height?: number;
 }) {
   const refs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -31,12 +33,12 @@ export function RevenueBars({
   };
 
   return (
-    <div className="flex select-none items-end gap-2" style={{ height: 196 }}>
+    <div className="flex select-none items-end gap-2.5" style={{ height }}>
       {days.map((d, i) => {
-        const pct = Math.max(3, Math.min(100, (d / max) * 100));
+        const pct = Math.max(2, Math.min(100, (d / max) * 100));
         return (
-          <div key={i} className="flex h-full flex-1 flex-col items-center gap-2">
-            <span className="tnum font-display text-[11px] font-medium text-ink/70">
+          <div key={i} className="group flex h-full flex-1 flex-col items-center gap-2">
+            <span className="tnum font-display text-[12px] font-semibold text-ink transition-colors group-focus-within:text-amber-600">
               ${(d / 1000).toFixed(1)}k
             </span>
             <div
@@ -67,16 +69,17 @@ export function RevenueBars({
                   onChange(i, Math.max(0, d - step));
                 }
               }}
-              className="relative w-full flex-1 cursor-ns-resize touch-none overflow-hidden rounded-xl bg-amber-100 outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              className="relative w-full flex-1 cursor-ns-resize touch-none overflow-hidden rounded-xl bg-slate-100 outline-none ring-1 ring-inset ring-slate-200/70 transition-shadow hover:ring-slate-300 focus-visible:ring-2 focus-visible:ring-amber-500"
             >
               <div
-                className="absolute inset-x-0 bottom-0 rounded-xl bg-amber-400"
+                className="absolute inset-x-0 bottom-0 rounded-t-lg bg-amber-500"
                 style={{ height: `${pct}%` }}
               >
-                <div className="absolute inset-x-2 top-1 h-1 rounded-full bg-amber-600/50" />
+                <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-lg bg-white/25" />
+                <div className="absolute left-1/2 top-1 h-1 w-5 -translate-x-1/2 rounded-full bg-white/70 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
             </div>
-            <span className="text-[11px] text-ink/60">{DAY_LABELS[i]}</span>
+            <span className="text-[11px] font-medium text-ink/60">{DAY_LABELS[i]}</span>
           </div>
         );
       })}

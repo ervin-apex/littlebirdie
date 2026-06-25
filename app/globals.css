@@ -107,6 +107,15 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
 }
 .fade-up { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+/* Horizontal day strip on mobile scrolls without a visible scrollbar. */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

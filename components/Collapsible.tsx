@@ -1,20 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CaretDown } from "@phosphor-icons/react";
 
-/** A subtle, optional disclosure — collapsed by default. */
+/** A subtle, optional disclosure — collapsed by default. Pass a changing
+ *  `openSignal` to force it open from elsewhere (e.g. a deep link). */
 export function Collapsible({
   title,
   children,
   defaultOpen = false,
+  openSignal,
 }: {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  openSignal?: number;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const firstSignal = useRef(true);
+  useEffect(() => {
+    if (openSignal === undefined) return;
+    if (firstSignal.current) {
+      firstSignal.current = false;
+      return;
+    }
+    setOpen(true);
+  }, [openSignal]);
   return (
     <div className="rounded-2xl border border-black/10 bg-white">
       <button
