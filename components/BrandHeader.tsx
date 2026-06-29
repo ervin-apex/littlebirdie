@@ -38,7 +38,7 @@ export function BrandHeader() {
         </span>
       </Link>
 
-      <div className="flex items-center gap-0.5 sm:gap-1">
+      <div className="flex items-center gap-1 sm:gap-2">
         <nav className="flex items-center gap-0.5 sm:gap-1">
           {NAV.map((item) => {
             const active = pathname === item.href;
@@ -64,7 +64,7 @@ export function BrandHeader() {
 
         <Link
           href="/profit"
-          className="ml-0.5 hidden items-center gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-[13px] font-medium text-ink/70 transition-colors hover:bg-amber-100 sm:inline-flex"
+          className="ml-0.5 hidden items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-50 px-3 py-2 text-[13px] font-medium text-ink/70 transition-colors hover:bg-amber-100 sm:inline-flex"
         >
           <CalendarBlank size={16} weight="bold" className="text-amber-600" />
           <span className="hidden md:inline">Week of 23 to 29 Jun</span>

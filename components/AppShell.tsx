@@ -22,7 +22,7 @@ export function AppShell({
       <PageBackground />
 
       {!hideHeader && (
-        <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6">
+        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-5 sm:px-6">
           <BrandHeader />
         </div>
       )}
