@@ -13,7 +13,7 @@ const FRAMES = [
 ];
 
 /**
- * Little Birdie flaps a few times on mount, then settles to a resting frame
+ * Little Birdee flaps a few times on mount, then settles to a resting frame
  * with only a faint float. Motion is brief and deliberate so it doesn't steal
  * attention from the numbers. Static under prefers-reduced-motion.
  */
@@ -55,7 +55,7 @@ export function Flap({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={reduce ? FRAMES[0] : FRAMES[i]}
-        alt="Little Birdie"
+        alt="Little Birdee"
         style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
     </motion.div>

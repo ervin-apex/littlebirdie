@@ -109,16 +109,21 @@ export default function SetupWizard() {
 
   const finish = (next: Week) => {
     saveWeek(next);
-    router.push("/app");
+    router.push("/home");
   };
 
   const goBack = (to: Step | "welcome") => {
-    if (to === "welcome") router.push("/");
-    else setStep(to);
+    // First-step back returns to the home hub (where "enter/update numbers"
+    // launches setup); inner steps just step back through the wizard.
+    if (to === "welcome") {
+      router.push("/home");
+    } else {
+      setStep(to);
+    }
   };
 
   return (
-    <AppShell maxWidth="max-w-md">
+    <AppShell maxWidth="max-w-xl" hideHeader>
       <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
         <div
           className="h-full rounded-full bg-amber-400 transition-all duration-300"
@@ -331,15 +336,15 @@ function ConnectedStep({ provider }: { provider: string }) {
         Connected to {provider}
       </h1>
       <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
-        Birdie pulled your cost of goods and fixed costs from your P&amp;L.
+        Birdee pulled your cost of goods and fixed costs from your P&amp;L.
         You can tweak them anytime.
       </p>
       <div className="flex-1" />
       <Link
-        href="/app"
+        href="/home"
         className="mt-7 block w-full rounded-xl bg-amber-400 py-3.5 text-center font-display text-[15px] font-medium text-amber-950 transition hover:bg-amber-300 active:scale-[0.98]"
       >
-        See my week
+        Continue
       </Link>
     </div>
   );
@@ -380,7 +385,7 @@ function ConnectStep({
         </h1>
         <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
           Your cost of goods and fixed costs come straight from your P&amp;L.
-          Connect once and Birdie fills them in automatically, or enter them
+          Connect once and Birdee fills them in automatically, or enter them
           yourself.
         </p>
       </div>

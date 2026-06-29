@@ -1,37 +1,36 @@
-import Link from "next/link";
-import { assetPath } from "@/lib/site";
+import { PageBackground } from "@/components/PageBackground";
+import { BrandHeader } from "@/components/BrandHeader";
 
 /**
- * Responsive web-app shell: a sticky top bar + a centered content column.
- * Full-width and comfortable on mobile, a real web layout on desktop —
- * deliberately NOT a phone mockup.
+ * Shared app shell: the generated cream background + a floating brand header,
+ * with a centered content column. Used across the welcome / onboarding / numbers
+ * flow and the home hub so they all share the same chrome.
  */
 export function AppShell({
   children,
-  maxWidth = "max-w-2xl",
+  maxWidth = "max-w-3xl",
   center = false,
+  headerRight,
+  hideHeader = false,
 }: {
   children: React.ReactNode;
   maxWidth?: string;
   center?: boolean;
+  headerRight?: React.ReactNode;
+  hideHeader?: boolean;
 }) {
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#f6f7f9] text-ink">
-      <header className="sticky top-0 z-20 border-b border-black/5 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetPath("/brand/birdee-mark.png")} width={26} height={26} alt="" />
-            <span className="font-display text-[16px] font-semibold">
-              <span className="text-ink">Little </span>
-              <span className="text-amber-600">Birdie</span>
-            </span>
-          </Link>
-          <span className="text-[12px] text-ink/60">Week of 23 to 29 Jun</span>
+    <div className="relative flex min-h-[100dvh] flex-col text-ink">
+      <PageBackground />
+
+      {!hideHeader && (
+        <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6">
+          <BrandHeader right={headerRight} />
         </div>
-      </header>
+      )}
+
       <main
-        className={`mx-auto flex w-full flex-1 flex-col px-4 py-6 sm:px-6 sm:py-10 ${maxWidth} ${
+        className={`relative z-10 mx-auto flex w-full flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8 ${maxWidth} ${
           center ? "justify-center" : ""
         }`}
       >

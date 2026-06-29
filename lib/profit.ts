@@ -88,7 +88,7 @@ export type Suggestion = {
   result: number; // resulting weekly profit if applied alone
 };
 
-/** Birdie's three what-ifs for the current week, biggest gain first. */
+/** Birdee's three what-ifs for the current week, biggest gain first. */
 export function suggestions(w: Week): Suggestion[] {
   const base = profit(w);
   const labPct = Math.round((w.lab / w.rev) * 100);
@@ -143,6 +143,18 @@ export function saveWeek(w: Week): void {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(w));
   } catch {
     // ignore — storage is a convenience, not required
+  }
+}
+
+/** Has the user actually saved their own numbers yet? The week key is only ever
+ *  written when setup completes, so its presence gates the "How's my profit
+ *  looking?" path (without it, loadWeek falls back to the demo DEFAULTS). */
+export function hasSavedWeek(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) !== null;
+  } catch {
+    return false;
   }
 }
 

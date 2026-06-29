@@ -17,9 +17,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Little Birdie",
+  title: "Little Birdee",
   description:
-    "See next week's profit before the week starts. A little birdie tells you what to change to stay in the black.",
+    "See next week's profit before the week starts. A little birdee tells you what to change to stay in the black.",
 };
 
 export const viewport: Viewport = {

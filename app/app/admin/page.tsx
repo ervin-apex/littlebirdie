@@ -54,7 +54,7 @@ export default function AdminPage() {
           <div>
             <h1 className="font-display text-[22px] font-semibold tracking-tight">Admin</h1>
             <p className="mt-0.5 text-[13px] text-ink/60">
-              Manage access and see how operators use Little Birdie.
+              Manage access and see how operators use Little Birdee.
             </p>
           </div>
           <button

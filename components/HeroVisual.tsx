@@ -5,7 +5,7 @@ import { FlapBirdee } from "@/components/FlapBirdee";
 import { assetPath } from "@/lib/site";
 
 /**
- * Welcome hero: the finance-themed Birdie illustration (bird leading a rising
+ * Welcome hero: the finance-themed Birdee illustration (bird leading a rising
  * profit chart). Falls back to the flapping bird if the asset is missing.
  */
 export function HeroVisual({ size = 200 }: { size?: number }) {
@@ -21,7 +21,7 @@ export function HeroVisual({ size = 200 }: { size?: number }) {
       src={assetPath("/brand/birdee-hero.png")}
       width={size}
       height={size}
-      alt="Little Birdie leading a rising profit chart"
+      alt="Little Birdee leading a rising profit chart"
       onError={() => setFailed(true)}
       className="birdee-float"
       style={{ objectFit: "contain" }}

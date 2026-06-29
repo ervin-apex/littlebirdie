@@ -6,10 +6,10 @@ import {
 import { Reveal } from "@/components/Reveal";
 
 const INVOICES = [
-  { date: "1 Jun 2026", desc: "Little Birdie Pro · monthly", amount: "$49.00" },
-  { date: "1 May 2026", desc: "Little Birdie Pro · monthly", amount: "$49.00" },
-  { date: "1 Apr 2026", desc: "Little Birdie Pro · monthly", amount: "$49.00" },
-  { date: "1 Mar 2026", desc: "Little Birdie Pro · monthly", amount: "$49.00" },
+  { date: "1 Jun 2026", desc: "Little Birdee Pro · monthly", amount: "$49.00" },
+  { date: "1 May 2026", desc: "Little Birdee Pro · monthly", amount: "$49.00" },
+  { date: "1 Apr 2026", desc: "Little Birdee Pro · monthly", amount: "$49.00" },
+  { date: "1 Mar 2026", desc: "Little Birdee Pro · monthly", amount: "$49.00" },
 ];
 
 export default function BillingPage() {
@@ -36,7 +36,7 @@ export default function BillingPage() {
               </p>
               <div className="mt-2 flex items-center gap-2.5">
                 <h2 className="font-display text-[16px] font-semibold text-ink">
-                  Little Birdie Pro
+                  Little Birdee Pro
                 </h2>
                 <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
                   Active

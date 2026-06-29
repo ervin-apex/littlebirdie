@@ -11,9 +11,9 @@ const SRC: Record<BirdeeState, string> = {
 };
 
 const ALT: Record<BirdeeState, string> = {
-  profit: "Little Birdie, happy",
-  neutral: "Little Birdie",
-  loss: "Little Birdie, worried",
+  profit: "Little Birdee, happy",
+  neutral: "Little Birdee",
+  loss: "Little Birdee, worried",
 };
 
 /**

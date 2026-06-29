@@ -18,7 +18,7 @@ export default function ConnectionsPage() {
               Connections
             </h1>
             <p className="mt-0.5 text-[13px] text-ink/60">
-              Connect your accounting and Birdie fills in your costs
+              Connect your accounting and Birdee fills in your costs
               automatically, just once.
             </p>
           </div>
@@ -139,7 +139,7 @@ export default function ConnectionsPage() {
         </div>
       </section>
 
-      {/* What Birdie pulls */}
+      {/* What Birdee pulls */}
       <section className="mt-8">
         <div className="rounded-2xl border border-black/10 bg-white p-5">
           <div className="flex items-start gap-4">
@@ -148,7 +148,7 @@ export default function ConnectionsPage() {
             </div>
             <div>
               <h2 className="font-display text-[15px] font-semibold text-ink">
-                What Birdie pulls
+                What Birdee pulls
               </h2>
               <p className="mt-1 max-w-prose text-[13px] leading-relaxed text-ink/65">
                 12 months of your P&amp;L → your cost-of-goods % and a weekly

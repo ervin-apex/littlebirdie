@@ -1,7 +1,7 @@
 export type BirdeeState = "profit" | "neutral" | "loss";
 
 /**
- * Little Birdie — the yellow hummingbird mascot, drawn to match the locked
+ * Little Birdee — the yellow hummingbird mascot, drawn to match the locked
  * brand sheet. Implemented as SVG so it stays crisp at every size, themeable,
  * and can change expression live as the predicted profit moves.
  */
@@ -25,10 +25,10 @@ export function LittleBirdee({
       role="img"
       aria-label={
         state === "profit"
-          ? "Little Birdie, happy"
+          ? "Little Birdee, happy"
           : state === "loss"
-            ? "Little Birdie, worried"
-            : "Little Birdie"
+            ? "Little Birdee, worried"
+            : "Little Birdee"
       }
       className={className}
     >

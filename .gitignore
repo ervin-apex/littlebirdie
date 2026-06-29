@@ -8,3 +8,8 @@ npm-install.log
 .DS_Store
 .env*.local
 next-env.d.ts
+
+# Internal project material — kept out of the public repo
+# (client meeting transcripts, requirements/architecture notes, local tooling)
+/docs
+/.claude

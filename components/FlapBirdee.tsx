@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { assetPath } from "@/lib/site";
 
 /**
- * Little Birdie mid-flight, wings flapping — a 3-frame loop built from the
+ * Little Birdee mid-flight, wings flapping — a 3-frame loop built from the
  * Codex-generated spritesheet (birdee-flap-1..3.png), cycled via CSS plus a
  * gentle float. Pure CSS, so it pauses under prefers-reduced-motion.
  */
@@ -26,7 +26,7 @@ export function FlapBirdee({
       className={`birdee-flap ${className ?? ""}`}
       style={style}
       role="img"
-      aria-label="Little Birdie"
+      aria-label="Little Birdee"
     />
   );
 }
