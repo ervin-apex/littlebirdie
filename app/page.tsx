@@ -8,7 +8,7 @@ import { HeroVisual } from "@/components/HeroVisual";
  */
 export default function WelcomePage() {
   return (
-    <AppShell maxWidth="max-w-2xl" center>
+    <AppShell maxWidth="max-w-2xl" center hideHeader>
       <div className="fade-up flex flex-col items-center text-center">
         <HeroVisual size={208} />
         <h1 className="mt-7 font-display text-[40px] font-semibold leading-[1.04] tracking-tight text-ink sm:text-[48px]">

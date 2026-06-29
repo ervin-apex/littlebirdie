@@ -9,7 +9,7 @@ import { assetPath } from "@/lib/site";
  */
 export function PageBackground({ faint = false }: { faint?: boolean }) {
   return (
-    <div aria-hidden className="fixed inset-0 z-0 bg-[#fbf3e6]">
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-[#fbf3e6]">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity"
         style={{

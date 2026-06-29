@@ -10,13 +10,11 @@ export function AppShell({
   children,
   maxWidth = "max-w-3xl",
   center = false,
-  headerRight,
   hideHeader = false,
 }: {
   children: React.ReactNode;
   maxWidth?: string;
   center?: boolean;
-  headerRight?: React.ReactNode;
   hideHeader?: boolean;
 }) {
   return (
@@ -25,7 +23,7 @@ export function AppShell({
 
       {!hideHeader && (
         <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pt-5 sm:px-6">
-          <BrandHeader right={headerRight} />
+          <BrandHeader />
         </div>
       )}
 
