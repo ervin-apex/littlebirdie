@@ -316,6 +316,96 @@ export function saveActuals(a: WeekActuals): void {
   }
 }
 
+// ── Periods: yesterday / this week / last week / next week ─────────────────
+export type PeriodKey = "yesterday" | "this-week" | "last-week" | "next-week";
+
+export const PERIODS: { key: PeriodKey; label: string }[] = [
+  { key: "yesterday", label: "Yesterday" },
+  { key: "last-week", label: "Last week" },
+  { key: "this-week", label: "This week" },
+  { key: "next-week", label: "Next week" },
+];
+
+// A believable completed prior week — the predicted plan; actuals are seeded for
+// all seven days so it reads as a finished week (came in a touch under).
+export const LAST_WEEK: Week = {
+  rev: 19000,
+  lab: 6100,
+  fix: 5620,
+  cogs: 35,
+  days: [2200, 2300, 2500, 2800, 3100, 3200, 2900],
+};
+
+/** No actuals yet — every day shows budget only (a pure forecast). todayIndex
+ *  is -1 so no day is flagged "today"; all seven read as upcoming. */
+export function forecastActuals(): WeekActuals {
+  return { todayIndex: -1, actuals: Array.from({ length: 7 }, () => null) };
+}
+
+export type PeriodView = {
+  key: PeriodKey;
+  title: string;
+  dateLabel: string;
+  week: Week;
+  actuals: WeekActuals;
+  scope: "week" | "day";
+  dayIndex: number | null; // set when scope === "day"
+};
+
+/** Resolve a period key to the week + actuals (and framing) the dashboard
+ *  renders. `baseWeek` / `baseActuals` are the user's saved current week. */
+export function buildPeriodView(
+  key: PeriodKey,
+  baseWeek: Week,
+  baseActuals: WeekActuals,
+): PeriodView {
+  switch (key) {
+    case "last-week":
+      return {
+        key,
+        title: "Last week",
+        dateLabel: "Mon 16 to Sun 22 Jun",
+        week: LAST_WEEK,
+        actuals: seedActuals(LAST_WEEK, 7),
+        scope: "week",
+        dayIndex: null,
+      };
+    case "next-week":
+      return {
+        key,
+        title: "Next week",
+        dateLabel: "Mon 30 Jun to Sun 6 Jul",
+        week: baseWeek,
+        actuals: forecastActuals(),
+        scope: "week",
+        dayIndex: null,
+      };
+    case "yesterday": {
+      const yi = Math.max(0, baseActuals.todayIndex - 1);
+      return {
+        key,
+        title: "Yesterday",
+        dateLabel: dayDateLabel(yi),
+        week: baseWeek,
+        actuals: baseActuals,
+        scope: "day",
+        dayIndex: yi,
+      };
+    }
+    case "this-week":
+    default:
+      return {
+        key,
+        title: "This week",
+        dateLabel: "Mon 23 to Sun 29 Jun",
+        week: baseWeek,
+        actuals: baseActuals,
+        scope: "week",
+        dayIndex: null,
+      };
+  }
+}
+
 // ── History: budget vs actual over recent weeks ───────────────────────────
 export type HistoryBit = { predicted: number; actual: number };
 export type HistoryWeek = {

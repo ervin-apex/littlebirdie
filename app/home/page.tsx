@@ -26,7 +26,7 @@ export default function HomeHub() {
 
   return (
     <AppShell maxWidth="max-w-2xl" center>
-      <div className="fade-up w-full rounded-[28px] bg-white/95 p-6 shadow-[0_36px_70px_-34px_rgba(15,23,42,0.4)] sm:p-8">
+      <div className="fade-up w-full rounded-[28px] bg-white/95 p-6 shadow-[0_36px_70px_-34px_rgba(15,23,42,0.4)] sm:p-8 sm:px-10">
         <div className="flex flex-col items-center text-center">
           <BirdeeMascot state={hasNumbers ? "profit" : "neutral"} size={96} float />
 
@@ -35,23 +35,11 @@ export default function HomeHub() {
             <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-[#f6f7f9]" />
             {ready && !hasNumbers
               ? "First, pop in your weekly numbers and I'll show you your profit."
-              : `You're all set${name ? `, ${name}` : ""} — let's see how your week is tracking.`}
+              : "Ready to check your week?"}
           </div>
-
-          {/* business label + name */}
-          <div className="mt-6 flex w-full items-center gap-3">
-            <span className="h-px flex-1 bg-black/10" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink/40">
-              Business
-            </span>
-            <span className="h-px flex-1 bg-black/10" />
-          </div>
-          <h1 className="mt-2 font-display text-[24px] font-semibold tracking-tight text-ink">
-            {name || "Your business"}
-          </h1>
 
           {/* actions */}
-          <div className="mt-6 flex w-full flex-col gap-3.5">
+          <div className="mt-7 flex w-full flex-col gap-3.5">
             {hasNumbers ? (
               <HubButton
                 href="/profit"
@@ -78,6 +66,16 @@ export default function HomeHub() {
               icon={<PencilSimple size={18} weight="bold" />}
               label={hasNumbers ? "Update my numbers" : "Enter my numbers"}
             />
+          </div>
+
+          {/* business footer */}
+          <div className="mt-7 flex w-full items-center gap-3">
+            <span className="h-px flex-1 bg-black/10" />
+            <span className="text-[12.5px] text-ink/45">
+              Business:{" "}
+              <span className="font-semibold text-ink/70">{name || "—"}</span>
+            </span>
+            <span className="h-px flex-1 bg-black/10" />
           </div>
         </div>
       </div>

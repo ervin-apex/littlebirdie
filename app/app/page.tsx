@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { Flap } from "@/components/Flap";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { WeekSpreadsheet } from "@/components/WeekSpreadsheet";
 import {
   DEFAULTS,
+  buildPeriodView,
   dailyLedger,
   loadActuals,
   loadWeek,
@@ -15,16 +17,28 @@ import {
   seedActuals,
   signedProfit,
   weekStatus,
+  type PeriodKey,
   type Week,
   type WeekActuals,
 } from "@/lib/profit";
 
 /**
- * New dashboard (round 2) — budget vs actual, right in your face. Leads with the
- * projected-profit verdict and the day-by-day spreadsheet. The detailed v1
- * dashboard (levers, tips, history) lives at /app/v1.
+ * Dashboard (round 2) — budget vs actual for the period chosen on /profit
+ * (?period=yesterday|this-week|last-week|next-week). Leads with a profit verdict
+ * and the day-by-day P&L spreadsheet.
  */
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardInner />
+    </Suspense>
+  );
+}
+
+function DashboardInner() {
+  const params = useSearchParams();
+  const periodKey = ((params.get("period") as PeriodKey) || "this-week") as PeriodKey;
+
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [actuals, setActuals] = useState<WeekActuals>(() => seedActuals(DEFAULTS));
 
@@ -34,11 +48,56 @@ export default function DashboardPage() {
     setActuals(loadActuals(w));
   }, []);
 
-  const status = weekStatus(week, actuals);
-  const ledger = dailyLedger(week, actuals);
-  const inProfit = status.inProfit;
-  // > 0 = tracking behind the forecast so far.
-  const behind = status.predictedNet - status.projectedNet;
+  const view = buildPeriodView(periodKey, week, actuals);
+  const ledger = dailyLedger(view.week, view.actuals);
+  const isDay = view.scope === "day" && view.dayIndex != null;
+  const rows = isDay ? [ledger[view.dayIndex as number]] : ledger;
+
+  // Verdict figure + framing per period.
+  let verdictLabel: string;
+  let verdictValue: number;
+  let budgetValue: number;
+  let inProfit: boolean;
+  let mode: "compare" | "forecast";
+
+  if (isDay) {
+    const row = ledger[view.dayIndex as number];
+    const actualNet = row.actual ? row.actual.net : row.predicted.net;
+    verdictLabel = "Yesterday's profit";
+    verdictValue = actualNet;
+    budgetValue = row.predicted.net;
+    inProfit = actualNet >= 0;
+    mode = row.actual ? "compare" : "forecast";
+  } else if (periodKey === "next-week") {
+    const status = weekStatus(view.week, view.actuals);
+    verdictLabel = "Next week's forecast";
+    verdictValue = status.predictedNet;
+    budgetValue = status.predictedNet;
+    inProfit = status.predictedNet >= 0;
+    mode = "forecast";
+  } else {
+    const status = weekStatus(view.week, view.actuals);
+    verdictLabel =
+      periodKey === "last-week" ? "Last week's profit" : "Projected profit this week";
+    verdictValue = status.projectedNet;
+    budgetValue = status.predictedNet;
+    inProfit = status.inProfit;
+    mode = "compare";
+  }
+
+  const behind = budgetValue - verdictValue; // > 0 = tracking behind the forecast
+
+  const heading = isDay
+    ? "Yesterday's breakdown"
+    : periodKey === "next-week"
+      ? "Forecast, by day"
+      : "Budget vs actual, by day";
+
+  const note = isDay
+    ? "Big number = actual, small = budget."
+    : periodKey === "next-week"
+      ? "Every day shows your budgeted forecast. Swipe sideways to see the whole week."
+      : "Big number = actual, small = budget. Upcoming days show budget only. Swipe sideways to see the whole week.";
 
   return (
     <div>
@@ -46,12 +105,9 @@ export default function DashboardPage() {
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <h1 className="font-display text-[22px] font-semibold tracking-tight">
-              This week
+              {view.title}
             </h1>
-            <p className="text-[13px] text-ink/60">
-              Mon 23 to Sun 29 Jun
-              {status.daysIn > 0 ? ` · ${status.daysIn} days in` : ""}
-            </p>
+            <p className="text-[13px] text-ink/60">{view.dateLabel}</p>
           </div>
           <Link
             href="/profit"
@@ -62,7 +118,7 @@ export default function DashboardPage() {
         </div>
       </Reveal>
 
-      {/* budget vs actual verdict — front and centre */}
+      {/* profit verdict */}
       <Reveal delay={0.05}>
         <section
           className={`rounded-3xl border bg-white p-6 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)] transition-colors sm:p-7 ${
@@ -72,32 +128,40 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="text-[12px] font-medium uppercase tracking-wide text-ink/50">
-                Projected profit this week
+                {verdictLabel}
               </div>
               <p
                 className={`tnum mt-1 font-display text-[52px] font-semibold leading-none tracking-tight sm:text-[64px] ${
                   inProfit ? "text-emerald-600" : "text-red-600"
                 }`}
               >
-                {signedProfit(status.projectedNet)}
+                {signedProfit(verdictValue)}
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
-                <span className="inline-flex items-center rounded-full bg-[#f6f7f9] px-3 py-1.5 font-medium text-ink/65">
-                  Budget said {signedProfit(status.predictedNet)}
-                </span>
-                <span
-                  className={`inline-flex items-center rounded-full px-3 py-1.5 font-semibold ${
-                    behind > 0
-                      ? "bg-red-100 text-red-700"
-                      : behind < 0
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-[#f6f7f9] text-ink/70"
-                  }`}
-                >
-                  {behind === 0
-                    ? "On forecast"
-                    : `${money(Math.abs(behind))} ${behind > 0 ? "behind forecast" : "ahead of forecast"}`}
-                </span>
+                {mode === "compare" ? (
+                  <>
+                    <span className="inline-flex items-center rounded-full bg-[#f6f7f9] px-3 py-1.5 font-medium text-ink/65">
+                      Budget said {signedProfit(budgetValue)}
+                    </span>
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1.5 font-semibold ${
+                        behind > 0
+                          ? "bg-red-100 text-red-700"
+                          : behind < 0
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-[#f6f7f9] text-ink/70"
+                      }`}
+                    >
+                      {behind === 0
+                        ? "On forecast"
+                        : `${money(Math.abs(behind))} ${behind > 0 ? "behind forecast" : "ahead of forecast"}`}
+                    </span>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-[#f6f7f9] px-3 py-1.5 font-medium text-ink/65">
+                    Forecast from your predicted numbers
+                  </span>
+                )}
               </div>
             </div>
             {inProfit ? (
@@ -109,27 +173,24 @@ export default function DashboardPage() {
         </section>
       </Reveal>
 
-      {/* day-by-day budget vs actual spreadsheet */}
+      {/* day-by-day spreadsheet */}
       <Reveal delay={0.12}>
         <div className="mt-6">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="font-display text-[16px] font-semibold tracking-tight">
-              Budget vs actual, by day
-            </h2>
-            <div className="flex items-center gap-3 text-[11px] text-ink/50">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" /> beat
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500" /> under
-              </span>
-            </div>
+            <h2 className="font-display text-[16px] font-semibold tracking-tight">{heading}</h2>
+            {mode === "compare" && !isDay && (
+              <div className="flex items-center gap-3 text-[11px] text-ink/50">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> beat
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> under
+                </span>
+              </div>
+            )}
           </div>
-          <WeekSpreadsheet rows={ledger} cogsPct={week.cogs} />
-          <p className="mt-2 text-[11.5px] leading-relaxed text-ink/45">
-            Big number = actual, small = budget. Upcoming days show budget only.
-            Swipe sideways to see the whole week.
-          </p>
+          <WeekSpreadsheet rows={rows} cogsPct={view.week.cogs} />
+          <p className="mt-2 text-[11.5px] leading-relaxed text-ink/45">{note}</p>
         </div>
       </Reveal>
 

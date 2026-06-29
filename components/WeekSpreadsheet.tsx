@@ -55,9 +55,16 @@ function tone(m: Metric, actual: number, budget: number): string {
 export function WeekSpreadsheet({ rows, cogsPct }: { rows: LedgerRow[]; cogsPct: number }) {
   const cogsLabel = cogsPct % 1 === 0 ? `${cogsPct}%` : `${cogsPct.toFixed(1)}%`;
 
+  // Min width scales with the number of day columns: a single day (Yesterday)
+  // fits a phone with no scroll; the full 7-day week scrolls as needed.
+  const minWidth = 116 + rows.length * 76;
+
   return (
     <div className="overflow-x-auto rounded-2xl border border-black/10 bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.3)]">
-      <table className="w-full min-w-[680px] border-collapse text-left">
+      <table
+        className="w-full border-collapse text-left"
+        style={{ minWidth: `${minWidth}px` }}
+      >
         <thead>
           <tr>
             <th className="sticky left-0 z-10 bg-white p-3 align-bottom">
