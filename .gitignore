@@ -2,6 +2,7 @@
 /.next
 /out
 /build
+/.vercel
 *.log
 npm-install.log
 *.tsbuildinfo
