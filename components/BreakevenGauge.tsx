@@ -53,6 +53,11 @@ export function BreakevenGauge({
     state === "past" ? "Actual revenue" : state === "future" ? "Forecast revenue" : "Projected revenue";
   const showGoal = Math.abs(goal - revenue) >= 1;
 
+  // Scott's colour rule: red only for an actual loss. A finished period that's
+  // short IS a banked loss → red; a live/future shortfall is still chaseable →
+  // amber; cleared → green.
+  const tone: "good" | "chase" | "bad" = cleared ? "good" : state === "past" ? "bad" : "chase";
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-1.5">
@@ -114,7 +119,11 @@ export function BreakevenGauge({
           <span>
             <span
               className={`tnum block text-[13px] font-bold ${
-                cleared ? "text-emerald-700" : "text-amber-700"
+                tone === "good"
+                  ? "text-emerald-700"
+                  : tone === "bad"
+                    ? "text-red-600"
+                    : "text-amber-700"
               }`}
             >
               {money(revenue)}
@@ -133,25 +142,37 @@ export function BreakevenGauge({
       {/* summary chip — kept to a single tight line */}
       <div
         className={`mt-2.5 flex items-center gap-2.5 rounded-xl border px-3 py-1.5 ${
-          cleared ? "border-emerald-200/80 bg-emerald-50" : "border-amber-200/80 bg-amber-50"
+          tone === "good"
+            ? "border-emerald-200/80 bg-emerald-50"
+            : tone === "bad"
+              ? "border-red-200/80 bg-red-50"
+              : "border-amber-200/80 bg-amber-50"
         }`}
       >
         <span
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ${
-            cleared ? "text-emerald-600" : "text-amber-600"
+            tone === "good" ? "text-emerald-600" : tone === "bad" ? "text-red-600" : "text-amber-600"
           }`}
         >
-          {cleared ? <CheckIcon /> : <ArrowUpIcon />}
+          {tone === "good" ? <CheckIcon /> : tone === "bad" ? <XIcon /> : <ArrowUpIcon />}
         </span>
         <span className="min-w-0 leading-tight">
           <span
             className={`font-display text-[12.5px] font-bold ${
-              cleared ? "text-emerald-900" : "text-amber-950"
+              tone === "good" ? "text-emerald-900" : tone === "bad" ? "text-red-900" : "text-amber-950"
             }`}
           >
             {headline}
           </span>
-          <span className={`text-[11px] ${cleared ? "text-emerald-800/70" : "text-amber-900/60"}`}>
+          <span
+            className={`text-[11px] ${
+              tone === "good"
+                ? "text-emerald-800/70"
+                : tone === "bad"
+                  ? "text-red-800/60"
+                  : "text-amber-900/60"
+            }`}
+          >
             {" "}
             · {sub}
           </span>
@@ -165,6 +186,14 @@ function ArrowUpIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 256 256" fill="currentColor" aria-hidden>
       <path d="M205.66,117.66a8,8,0,0,1-11.32,0L136,59.31V216a8,8,0,0,1-16,0V59.31L61.66,117.66a8,8,0,0,1-11.32-11.32l72-72a8,8,0,0,1,11.32,0l72,72A8,8,0,0,1,205.66,117.66Z" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 256 256" fill="currentColor" aria-hidden>
+      <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
     </svg>
   );
 }
