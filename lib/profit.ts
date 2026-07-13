@@ -27,11 +27,13 @@ export function dayDateLabel(i: number): string {
 export const GST_DIVISOR = 1.1;
 
 // A typical café week (example data). days sum to rev; weekends run hotter.
+// Tuned to a healthy weekly profit so the demo shows the full colour range
+// (a beat, an in-profit-but-under day, and a loss) rather than an all-red week.
 export const DEFAULTS: Week = {
   rev: 20000,
-  lab: 6000,
-  fix: 5620,
-  cogs: 35,
+  lab: 5200,
+  fix: 4400,
+  cogs: 30,
   days: [2400, 2400, 2600, 2900, 3300, 3400, 3000],
 };
 
@@ -167,9 +169,10 @@ export type WeekActuals = {
 };
 
 // Seeded variance vs the predicted day (only the first `todayIndex` are used).
-// Tuned so a typical café week reads believably: revenue running under,
-// labour running over, with one green beat (Tue) in the mix.
-const SEED_REV_FACTORS = [0.9, 1.1, 0.86, 0.96, 0.94, 1.04, 0.98];
+// Tuned so the demo week shows the full profit-colour range across Mon–Wed:
+// Mon lands in profit but under budget (light green), Tue beats budget (deep
+// green + check), Wed tips into a loss (red).
+const SEED_REV_FACTORS = [0.9, 1.1, 0.82, 0.96, 0.94, 1.04, 0.98];
 const SEED_LAB_FACTORS = [1.12, 0.98, 1.15, 1.08, 1.06, 1.04, 1.07];
 
 /** Believable mock actuals for the days before `todayIndex` (demo data). */
@@ -294,6 +297,61 @@ export function weekStatus(w: Week, a: WeekActuals): WeekStatus {
     daysIn,
     variance: v,
   };
+}
+
+// ── Break-even (Scott, round 3) ───────────────────────────────────────────
+// Break-even = the revenue at which profit is exactly $0. GST and cost of goods
+// scale with revenue, so they live in the "margin rate"; wages + fixed are the
+// lump that revenue's margin has to cover. Profit = margin × (revenue − b/e),
+// so the gauge can never contradict the profit figure. Uses actual wages once a
+// day has them (projected for the week), budget otherwise — matching the
+// numbers already on screen. See docs / breakeven design.
+export type Breakeven = {
+  breakeven: number; // revenue needed to hit $0 profit
+  revenue: number; // revenue achieved / projected / forecast for the scope
+  clearedBy: number; // revenue − breakeven (negative = short)
+  cleared: boolean;
+};
+
+/** Share of each revenue dollar left after GST and cost of goods. */
+function marginRate(cogsPct: number): number {
+  return 1 / GST_DIVISOR - cogsPct / 100;
+}
+
+/** Break-even revenue = (wages + fixed) / margin rate. */
+export function breakevenRevenue(wages: number, fix: number, cogsPct: number): number {
+  const m = marginRate(cogsPct);
+  return m > 0 ? (wages + fix) / m : Infinity;
+}
+
+/** One day's break-even: actual wages once the day has them, else budget;
+ *  fixed is the static allocation either way. */
+export function dayBreakeven(row: LedgerRow, cogsPct: number): Breakeven {
+  const cell = row.actual ?? row.predicted;
+  const breakeven = breakevenRevenue(cell.lab, cell.fix, cogsPct);
+  return {
+    breakeven,
+    revenue: cell.rev,
+    clearedBy: cell.rev - breakeven,
+    cleared: cell.rev >= breakeven,
+  };
+}
+
+/** Break-even for a whole scope (a week, or a single day). Sums projected wages
+ *  (actuals-to-date + budget for the rest) and total fixed vs projected revenue,
+ *  so it always agrees with the projected profit. */
+export function scopeBreakeven(rows: LedgerRow[], cogsPct: number): Breakeven {
+  let wages = 0;
+  let fix = 0;
+  let revenue = 0;
+  for (const r of rows) {
+    const cell = r.actual ?? r.predicted;
+    wages += cell.lab;
+    fix += r.predicted.fix;
+    revenue += cell.rev;
+  }
+  const breakeven = breakevenRevenue(wages, fix, cogsPct);
+  return { breakeven, revenue, clearedBy: revenue - breakeven, cleared: revenue >= breakeven };
 }
 
 const ACTUALS_KEY = "little-birdee-actuals";

@@ -7,6 +7,8 @@ import { Reveal } from "@/components/Reveal";
 import { Flap } from "@/components/Flap";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { WeekSpreadsheet } from "@/components/WeekSpreadsheet";
+import { BreakevenGauge } from "@/components/BreakevenGauge";
+import { CellExplainer } from "@/components/CellExplainer";
 import {
   DEFAULTS,
   buildPeriodView,
@@ -14,6 +16,7 @@ import {
   loadActuals,
   loadWeek,
   money,
+  scopeBreakeven,
   seedActuals,
   signedProfit,
   weekStatus,
@@ -41,6 +44,7 @@ function DashboardInner() {
 
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [actuals, setActuals] = useState<WeekActuals>(() => seedActuals(DEFAULTS));
+  const [beInfo, setBeInfo] = useState(false);
 
   useEffect(() => {
     const w = loadWeek();
@@ -87,6 +91,12 @@ function DashboardInner() {
 
   const behind = budgetValue - verdictValue; // > 0 = tracking behind the forecast
 
+  // Break-even for the current scope, framed by tense (item 7).
+  const be = scopeBreakeven(rows, view.week.cogs);
+  const beState: "past" | "present" | "future" =
+    periodKey === "next-week" ? "future" : periodKey === "this-week" ? "present" : "past";
+  const targetRev = rows.reduce((s, r) => s + r.predicted.rev, 0);
+
   const heading = isDay
     ? "Yesterday's breakdown"
     : periodKey === "next-week"
@@ -118,10 +128,11 @@ function DashboardInner() {
         </div>
       </Reveal>
 
-      {/* profit verdict */}
-      <Reveal delay={0.05}>
+      {/* profit verdict + break-even, side by side on wide screens */}
+      <div className="lg:grid lg:grid-cols-[1.4fr_1fr] lg:items-stretch lg:gap-4">
+      <Reveal delay={0.05} className="h-full">
         <section
-          className={`rounded-3xl border bg-white p-6 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)] transition-colors sm:p-7 ${
+          className={`h-full rounded-3xl border bg-white p-6 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.35)] transition-colors sm:p-7 ${
             inProfit ? "border-emerald-200" : "border-red-200"
           }`}
         >
@@ -173,6 +184,20 @@ function DashboardInner() {
         </section>
       </Reveal>
 
+      <Reveal delay={0.09} className="h-full">
+        <section className="mt-4 h-full rounded-3xl border border-black/10 bg-white p-5 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.28)] sm:p-6 lg:mt-0">
+          <BreakevenGauge
+            be={be}
+            state={beState}
+            target={targetRev}
+            onInfo={() => setBeInfo(true)}
+          />
+        </section>
+      </Reveal>
+      </div>
+
+      {beInfo && <CellExplainer explainerKey="breakeven" onClose={() => setBeInfo(false)} />}
+
       {/* day-by-day spreadsheet */}
       <Reveal delay={0.12}>
         <div className="mt-6">
@@ -181,10 +206,13 @@ function DashboardInner() {
             {mode === "compare" && !isDay && (
               <div className="flex items-center gap-3 text-[11px] text-ink/50">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> beat
+                  <span className="h-2 w-2 rounded-full bg-emerald-700" /> beat budget
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-500" /> under
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> in profit, under
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500" /> loss
                 </span>
               </div>
             )}
