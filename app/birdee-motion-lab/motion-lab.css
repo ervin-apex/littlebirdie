@@ -478,7 +478,8 @@
 
 @media (max-width: 980px) {
   .motion-lab {
-    overflow: auto;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .motion-lab__workspace {

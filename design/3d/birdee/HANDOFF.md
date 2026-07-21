@@ -65,6 +65,36 @@ bone moved. The original files remain untouched for provenance; use v2 below.
   its reserved `glTF_not_exported` collection on import; it is an importer rig
   display helper, not packaged Birdee geometry.
 
+## Web animation set
+
+The first product-facing motion library and its review page were completed on
+2026-07-21.
+
+- `exports/birdee-web-animated-v1.blend`
+  - Blender 5.2 animation master derived from the corrected v2 rig.
+  - Six actions authored at 30 fps: `ready_hover`, `encouraging_lift`,
+    `concerned_settle`, `focused_lean`, `curious_tilt`, and
+    `attentive_settle`.
+- `../../../../public/models/birdee-web-animated-v1.glb`
+  - Website asset with all six named clips and an embedded 1K JPEG texture.
+  - 476,936 bytes (477 KB), 14 bones, and no more than two skin influences per
+    vertex.
+  - Clean-import validation found zero unweighted or non-normalized vertices,
+    a seamless `ready_hover` loop, and zero tested edges above `2x` stretch.
+- `../../../../app/birdee-motion-lab/page.tsx`
+  - Separate review route at `/birdee-motion-lab` with manual state selection,
+    replay, and an optional auto tour.
+  - The Three.js stage lazy-loads the GLB, caps device pixel ratio, pauses when
+    hidden or offscreen, and uses a static final pose when reduced motion is
+    requested.
+  - Desktop and 390 x 844 mobile layouts were visually reviewed. Reduced-motion
+    hydration, replay, auto-tour pause/advance, and the single-scroll mobile
+    flow were browser-tested.
+
+Rebuild the web files with `scripts/create_birdee_web_animations.py` against the
+corrected v2 `.blend`. Verify the resulting GLB in a clean Blender session with
+`scripts/verify_birdee_web_animations.py`.
+
 ## Source views
 
 The Tripo multiview order was Front, Left, Right, Back. See
@@ -74,9 +104,9 @@ The Tripo multiview order was Front, Left, Right, Back. See
 
 - The generated beak texture has slight mottling and should be cleaned before
   final production renders.
-- No matching stock animation clips were available. Create the
-  interaction-specific idle, wing flap, point, celebrate, peek, and exit clips
-  in Blender using the v2 controls.
+- The six web clips cover the current scoreboard information states. Add point,
+  peek, and exit clips only after their exact UI placements and triggers are
+  approved; do not turn Birdee into ambient decoration across every screen.
 - The v2 weights are mechanically validated. An animator can still make small
   artistic weight refinements after the first animation blocking pass, if the
   desired poses call for softer shoulder or neck deformation.
