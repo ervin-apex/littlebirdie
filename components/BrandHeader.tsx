@@ -2,76 +2,65 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  CalendarBlank,
-  CaretDown,
-  CreditCard,
-  House,
-  PlugsConnected,
-  UsersThree,
-} from "@phosphor-icons/react";
+import { PencilSimpleLine } from "@phosphor-icons/react";
 import { assetPath, withoutBasePath } from "@/lib/site";
 
 const NAV = [
-  { href: "/home", label: "Home", icon: House },
-  { href: "/app/connections", label: "Connections", icon: PlugsConnected },
-  { href: "/app/billing", label: "Billing", icon: CreditCard },
-  { href: "/app/admin", label: "Admin", icon: UsersThree },
+  { href: "/setup", matchPath: "/setup", label: "Update numbers", icon: PencilSimpleLine },
 ];
 
 /**
- * Floating brand header used across the in-app screens (home, period selector,
- * dashboard). Wordmark + nav (labels show on lg+, icons on mobile) + a "this
- * week" pill that jumps to the period selector (hidden on the smallest screens).
+ * Core product header. Scott's 20 July direction keeps the navigation focused
+ * on the two real operator jobs: checking profit and updating numbers.
  */
-export function BrandHeader() {
+export function BrandHeader({ variant = "default" }: { variant?: "default" | "home" }) {
   const pathname = withoutBasePath(usePathname());
+  const isHomeReference = variant === "home";
 
   return (
-    <header className="flex items-center justify-between gap-2 rounded-2xl bg-white/90 px-3 py-2.5 shadow-[0_12px_34px_-20px_rgba(15,23,42,0.4)] backdrop-blur sm:px-4">
-      <Link href="/home" className="flex shrink-0 items-center gap-2 pl-1">
+    <header className="flex items-center justify-between gap-3 border-b border-black/10 px-1 py-4 sm:px-0">
+      <Link href={isHomeReference ? "/home" : "/app?period=this-week"} className={`flex shrink-0 items-center pl-1 ${isHomeReference ? "gap-3" : "gap-2"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assetPath("/brand/birdee-mark.png")} width={26} height={26} alt="" />
-        <span className="font-display text-[16px] font-semibold sm:text-[17px]">
+        <img
+          src={assetPath("/brand/birdee-mark.png")}
+          width={isHomeReference ? 40 : 26}
+          height={isHomeReference ? 40 : 26}
+          alt=""
+        />
+        <span
+          className={
+            isHomeReference
+              ? "text-[24px] font-bold tracking-[-0.02em] text-ink"
+              : "font-display text-[16px] font-semibold sm:text-[17px]"
+          }
+        >
           <span className="text-ink">Little </span>
-          <span className="text-amber-500">Birdee</span>
+          <span className={isHomeReference ? "text-ink" : "text-amber-500"}>Birdee</span>
         </span>
       </Link>
 
-      <div className="flex items-center gap-1 sm:gap-2">
-        <nav className="flex items-center gap-0.5 sm:gap-1">
-          {NAV.map((item) => {
-            const active = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                title={item.label}
-                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-colors ${
-                  active
-                    ? "bg-amber-100 text-amber-900"
-                    : "text-ink/60 hover:bg-black/[0.04] hover:text-ink"
-                }`}
-              >
-                <Icon size={18} weight={active ? "fill" : "regular"} />
-                <span className="hidden lg:inline">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <Link
-          href="/profit"
-          className="ml-0.5 hidden items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-50 px-3 py-2 text-[13px] font-medium text-ink/70 transition-colors hover:bg-amber-100 sm:inline-flex"
-        >
-          <CalendarBlank size={16} weight="bold" className="text-amber-600" />
-          <span className="hidden md:inline">Week of 23 to 29 Jun</span>
-          <span className="md:hidden">This week</span>
-          <CaretDown size={13} weight="bold" className="text-ink/40" />
-        </Link>
-      </div>
+      {!isHomeReference && <nav className="flex items-center gap-1 sm:gap-3" aria-label="Product">
+        {NAV.map((item) => {
+          const active = pathname === item.matchPath;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 sm:text-[14px] ${
+                active
+                  ? "bg-amber-100 text-amber-950"
+                  : "text-ink/70 hover:bg-black/[0.04] hover:text-ink"
+              }`}
+            >
+              <Icon size={18} weight={active ? "fill" : "regular"} aria-hidden />
+              <span className="hidden sm:inline">{item.label}</span>
+              <span className="sm:hidden">Update</span>
+            </Link>
+          );
+        })}
+      </nav>}
     </header>
   );
 }

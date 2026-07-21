@@ -1,444 +1,229 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LinkSimple } from "@phosphor-icons/react";
-import { AppShell } from "@/components/AppShell";
-import { StepVisual } from "@/components/StepVisual";
-import { RevenueBars } from "@/components/RevenueBars";
-import { InfoPopover } from "@/components/InfoPopover";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { ArrowLeft, ArrowRight, Check, Question, X } from "@phosphor-icons/react";
+import { PageBackground } from "@/components/PageBackground";
+import { ProductButton } from "@/components/ProductButton";
 import {
   DEFAULTS,
+  loadWeek,
   money,
   saveWeek,
   setDay,
   type Week,
 } from "@/lib/profit";
 import { assetPath } from "@/lib/site";
+import "./setup.css";
 
-type Step = "revenue" | "labour" | "connect" | "cogs" | "fixed";
+type StepKey = "revenue" | "wages" | "cogs" | "fixed";
 
-const FULL_ORDER: Step[] = ["revenue", "labour", "connect", "cogs", "fixed"];
-
-type InputConfig = {
+type StepDefinition = {
+  key: StepKey;
+  label: string;
   title: string;
-  blurb: string;
-  whatThisMeans: string;
-  connectLabel?: string;
-  visual: string;
-  key: Exclude<keyof Week, "days">;
-  min: number;
-  max: number;
-  step: number;
-  unit: "money" | "pct";
-  next: Step | "done";
-  back: Step | "welcome";
+  description: string;
+  help: string;
 };
 
-const REVENUE_INFO =
-  "This is the total money you expect to take across the whole week, before any costs come out. A rough guess is fine.";
-
-const INPUTS: Record<Exclude<Step, "connect">, InputConfig> = {
-  revenue: {
+const STEPS: StepDefinition[] = [
+  {
+    key: "revenue",
+    label: "Revenue",
     title: "What revenue do you expect next week?",
-    blurb: "Your best guess for the whole week, before any costs.",
-    whatThisMeans: REVENUE_INFO,
-    visual: assetPath("/brand/step-revenue.png"),
-    key: "rev",
-    min: 10000,
-    max: 35000,
-    step: 100,
-    unit: "money",
-    next: "labour",
-    back: "welcome",
+    description: "Your best estimate before any costs.",
+    help: "Revenue is the total money you expect to take across the week, before GST and costs come out. A rough but realistic estimate is enough.",
   },
-  labour: {
-    title: "How much will you spend on labour?",
-    blurb: "Total wages for the week from your roster.",
-    whatThisMeans:
-      "All the wages you will pay your team for the week, straight off your roster. Include yourself if you draw a wage.",
-    connectLabel: "Link your rostering software",
-    visual: assetPath("/brand/step-labour.png"),
-    key: "lab",
-    min: 0,
-    max: 9000,
-    step: 20,
-    unit: "money",
-    next: "connect",
-    back: "revenue",
+  {
+    key: "wages",
+    label: "Wages",
+    title: "What will wages cost next week?",
+    description: "Use the total from your roster, including your own wage if applicable.",
+    help: "Enter the full weekly wage cost you expect from the roster. Little Birdee uses it to compare labour with net revenue.",
   },
-  cogs: {
-    title: "What's your cost of goods?",
-    blurb: "The cost of what you sell, as a share of revenue. It varies a lot from business to business.",
-    whatThisMeans:
-      "Cost of goods is what the things you sell cost you to make or buy, written as a share of your revenue. Businesses that sell physical products usually sit higher than ones that mostly sell services or time. Use whatever matches your own numbers.",
-    visual: assetPath("/brand/step-cogs.png"),
+  {
     key: "cogs",
-    min: 0,
-    max: 99,
-    step: 0.5,
-    unit: "pct",
-    next: "fixed",
-    back: "connect",
+    label: "COGS",
+    title: "What percentage is cost of goods?",
+    description: "The share of revenue spent producing what you sell.",
+    help: "Cost of goods is entered as a percentage of revenue. It can be anywhere from 0% to 99%, depending on the business.",
   },
-  fixed: {
-    title: "What are your fixed & variable costs?",
-    blurb: "Everything that isn't labour or cost of goods, like rent, power and insurance, per week.",
-    whatThisMeans:
-      "The steady costs that do not move much with your sales, like rent, power, insurance and subscriptions. Use the weekly figure from your yearly profit and loss.",
-    visual: assetPath("/brand/step-fixed.png"),
-    key: "fix",
-    min: 0,
-    max: 9000,
-    step: 20,
-    unit: "money",
-    next: "done",
-    back: "connect",
+  {
+    key: "fixed",
+    label: "Fixed & variable",
+    title: "What are your other weekly costs?",
+    description: "Rent, power, insurance, subscriptions and other operating costs.",
+    help: "Use the weekly amount for costs that are not wages or cost of goods. Your annual profit and loss can help you estimate it.",
   },
-};
-
-export default function SetupWizard() {
-  const router = useRouter();
-  const [week, setWeek] = useState<Week>(DEFAULTS);
-  const [step, setStep] = useState<Step>("revenue");
-  const [connected, setConnected] = useState<string | null>(null);
-
-  const set = (k: keyof Week, v: number) => setWeek((w) => ({ ...w, [k]: v }));
-  const progress = ((FULL_ORDER.indexOf(step) + 1) / FULL_ORDER.length) * 100;
-
-  const finish = (next: Week) => {
-    saveWeek(next);
-    router.push("/home");
-  };
-
-  const goBack = (to: Step | "welcome") => {
-    // First-step back returns to the home hub (where "enter/update numbers"
-    // launches setup); inner steps just step back through the wizard.
-    if (to === "welcome") {
-      router.push("/home");
-    } else {
-      setStep(to);
-    }
-  };
-
-  return (
-    <AppShell maxWidth="max-w-xl" hideHeader>
-      <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
-        <div
-          className="h-full rounded-full bg-amber-400 transition-all duration-300"
-          style={{ width: connected ? "100%" : `${progress}%` }}
-        />
-      </div>
-
-      {connected ? (
-        <ConnectedStep provider={connected} />
-      ) : step === "connect" ? (
-        <ConnectStep
-          onProvider={(name) => {
-            const next: Week = { ...week, cogs: 35, fix: 5620 };
-            setWeek(next);
-            saveWeek(next);
-            setConnected(name);
-          }}
-          onManual={() => setStep("cogs")}
-          onBack={() => setStep("labour")}
-        />
-      ) : step === "revenue" ? (
-        <RevenueStep
-          week={week}
-          setWeek={setWeek}
-          onNext={() => setStep("labour")}
-          onBack={() => goBack("welcome")}
-        />
-      ) : (
-        <InputStep
-          key={step}
-          cfg={INPUTS[step]}
-          value={week[INPUTS[step].key]}
-          onChange={(v) => set(INPUTS[step].key, v)}
-          onNext={() => {
-            const n = INPUTS[step].next;
-            if (n === "done") finish(week);
-            else setStep(n);
-          }}
-          onBack={() => goBack(INPUTS[step].back)}
-        />
-      )}
-    </AppShell>
-  );
-}
-
-function fmt(cfg: InputConfig, v: number) {
-  return cfg.unit === "money"
-    ? money(v)
-    : `${v % 1 === 0 ? v : v.toFixed(1)}%`;
-}
-
-function InputStep({
-  cfg,
-  value,
-  onChange,
-  onNext,
-  onBack,
-}: {
-  cfg: InputConfig;
-  value: number;
-  onChange: (v: number) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <div className="fade-up flex flex-1 flex-col">
-      <button
-        onClick={onBack}
-        className="mb-3 -ml-1 inline-flex min-h-[44px] w-fit items-center gap-1 px-1 text-[13px] text-ink/60 hover:text-ink/80"
-      >
-        <span aria-hidden>←</span> Back
-      </button>
-
-      <div className="flex flex-col items-center text-center">
-        <StepVisual src={cfg.visual} size={128} />
-        <h1 className="mt-4 font-display text-[23px] font-semibold leading-snug tracking-tight text-ink">
-          {cfg.title}
-        </h1>
-        <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
-          {cfg.blurb}
-        </p>
-        <InfoPopover text={cfg.whatThisMeans} />
-      </div>
-
-      <div className="mt-5 rounded-2xl border border-black/10 bg-white p-5">
-        <div className="tnum text-center font-display text-[42px] font-semibold leading-none tracking-tight text-ink">
-          {fmt(cfg, value)}
-        </div>
-        <input
-          type="range"
-          className="mt-4"
-          min={cfg.min}
-          max={cfg.max}
-          step={cfg.step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          aria-label={cfg.title}
-        />
-        <div className="mt-1 flex justify-between text-[11px] text-ink/60">
-          <span>{fmt(cfg, cfg.min)}</span>
-          <span>{fmt(cfg, cfg.max)}</span>
-        </div>
-      </div>
-
-      {cfg.connectLabel && <ConnectHint label={cfg.connectLabel} />}
-
-      <div className="flex-1" />
-
-      <button
-        onClick={onNext}
-        className="mt-7 w-full rounded-xl bg-amber-400 py-3.5 font-display text-[15px] font-medium text-amber-950 transition hover:bg-amber-300 active:scale-[0.98]"
-      >
-        Continue
-      </button>
-    </div>
-  );
-}
-
-function RevenueStep({
-  week,
-  setWeek,
-  onNext,
-  onBack,
-}: {
-  week: Week;
-  setWeek: (w: Week) => void;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <div className="fade-up flex flex-1 flex-col">
-      <button
-        onClick={onBack}
-        className="mb-3 -ml-1 inline-flex min-h-[44px] w-fit items-center gap-1 px-1 text-[13px] text-ink/60 hover:text-ink/80"
-      >
-        <span aria-hidden>←</span> Back
-      </button>
-
-      <h1 className="mt-1 font-display text-[25px] font-semibold leading-tight tracking-tight text-ink">
-        What revenue do you expect next week?
-      </h1>
-      <p className="mt-2 text-[13px] leading-relaxed text-ink/65">
-        Mon 23 to Sun 29 Jun. Drag the bars to shape your week.
-      </p>
-      <InfoPopover text={REVENUE_INFO} />
-
-      <div className="mt-5 flex items-center justify-between rounded-2xl bg-ink p-5 text-white">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">
-            Weekly revenue
-          </p>
-          <p className="tnum mt-1 font-display text-[34px] font-semibold leading-none tracking-tight">
-            {money(week.rev)}
-          </p>
-        </div>
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={assetPath("/brand/birdee-mark.png")} width={26} height={26} alt="" />
-        </span>
-      </div>
-
-      <div className="mt-6">
-        <RevenueBars
-          days={week.days}
-          onChange={(i, val) => setWeek(setDay(week, i, val))}
-        />
-      </div>
-
-      <ConnectHint label="Link your point of sale" />
-
-      <div className="flex-1" />
-
-      <button
-        onClick={onNext}
-        className="mt-7 w-full rounded-xl bg-amber-400 py-3.5 font-display text-[15px] font-medium text-amber-950 transition hover:bg-amber-300 active:scale-[0.98]"
-      >
-        Continue
-      </button>
-    </div>
-  );
-}
-
-/** A placeholder "link your POS / rostering" affordance. The real integration
- *  lands in a later phase; for now it shows the intent and reads as coming soon. */
-function ConnectHint({ label }: { label: string }) {
-  return (
-    <button
-      type="button"
-      className="mt-5 inline-flex min-h-[44px] w-full items-center gap-2.5 rounded-xl border border-dashed border-amber-300 bg-amber-50/50 px-3.5 text-left text-[13px] font-medium text-amber-800 transition-colors hover:bg-amber-50"
-    >
-      <LinkSimple size={17} weight="bold" className="shrink-0" />
-      <span className="flex-1">{label}</span>
-      <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-        Soon
-      </span>
-    </button>
-  );
-}
-
-const PROVIDERS = [
-  { name: "Xero", color: "#13B5EA", label: "xero" },
-  { name: "MYOB", color: "#6100A5", label: "myob" },
 ];
 
-function ConnectedStep({ provider }: { provider: string }) {
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+export default function SetupPage() {
+  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const [week, setWeek] = useState<Week>(DEFAULTS);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  useEffect(() => {
+    setWeek(loadWeek());
+  }, []);
+
+  const step = STEPS[stepIndex];
+  const progress = ((stepIndex + 1) / STEPS.length) * 100;
+
+  const goBack = () => {
+    setHelpOpen(false);
+    if (stepIndex === 0) router.push("/home");
+    else setStepIndex((index) => index - 1);
+  };
+
+  const goNext = () => {
+    setHelpOpen(false);
+    if (stepIndex === STEPS.length - 1) {
+      saveWeek(week);
+      router.push("/app?period=this-week");
+      return;
+    }
+    setStepIndex((index) => index + 1);
+  };
+
   return (
-    <div className="fade-up flex flex-1 flex-col items-center text-center">
-      <StepVisual src={assetPath("/brand/spot-success.png")} size={156} />
-      <h1 className="mt-4 font-display text-[23px] font-semibold tracking-tight text-ink">
-        Connected to {provider}
-      </h1>
-      <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
-        Birdee pulled your cost of goods and fixed costs from your P&amp;L.
-        You can tweak them anytime.
-      </p>
-      <div className="flex-1" />
-      <Link
-        href="/home"
-        className="mt-7 block w-full rounded-xl bg-amber-400 py-3.5 text-center font-display text-[15px] font-medium text-amber-950 transition hover:bg-amber-300 active:scale-[0.98]"
-      >
-        Continue
-      </Link>
+    <div className="setup-page">
+      <PageBackground />
+      <header className="setup-header">
+        <Link href="/home" className="setup-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={assetPath("/brand/birdee-mark.png")} width={28} height={28} alt="" />
+          <span>Little <strong>Birdee</strong></span>
+        </Link>
+        <ProductButton href="/home" variant="tertiary" size="compact" className="exit-setup">
+          Exit setup
+        </ProductButton>
+      </header>
+
+      <main className="setup-stage">
+        <div className="setup-progress-copy"><strong>{stepIndex + 1} of {STEPS.length}</strong><span>·</span><span>{step.label}</span></div>
+        <div className="setup-progress-track"><span style={{ width: `${progress}%` }} /></div>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.section
+            key={step.key}
+            className="setup-screen"
+            initial={reduceMotion ? false : { opacity: 0, x: 30, filter: "blur(5px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={reduceMotion ? { opacity: 1 } : { opacity: 0, x: -18, filter: "blur(3px)" }}
+            transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="setup-question">
+              <h1>{step.title}</h1>
+              <p>{step.description}</p>
+              <button type="button" className="setup-help" onClick={() => setHelpOpen((open) => !open)} aria-expanded={helpOpen}>
+                <Question weight="bold" /> What does this mean?
+              </button>
+              {helpOpen && (
+                <div className="setup-help-panel" role="status">
+                  <span>{step.help}</span>
+                  <button type="button" onClick={() => setHelpOpen(false)} aria-label="Close help"><X /></button>
+                </div>
+              )}
+            </div>
+
+            <div className="setup-input-area">
+              {step.key === "revenue" ? (
+                <RevenueInputs week={week} onChange={setWeek} />
+              ) : (
+                <SingleInput step={step.key} week={week} onChange={setWeek} />
+              )}
+            </div>
+
+            <div className="setup-actions">
+              <ProductButton
+                variant="secondary"
+                className="setup-back"
+                onClick={goBack}
+                leadingIcon={<ArrowLeft weight="bold" />}
+              >
+                Back
+              </ProductButton>
+              <ProductButton
+                variant="primary"
+                className="setup-continue"
+                onClick={goNext}
+                trailingIcon={<ArrowRight weight="bold" />}
+              >
+                {stepIndex === STEPS.length - 1 ? "Save numbers" : "Continue"}
+              </ProductButton>
+            </div>
+          </motion.section>
+        </AnimatePresence>
+      </main>
     </div>
   );
 }
 
-function ConnectStep({
-  onProvider,
-  onManual,
-  onBack,
-}: {
-  onProvider: (name: string) => void;
-  onManual: () => void;
-  onBack: () => void;
-}) {
-  const [connecting, setConnecting] = useState<string | null>(null);
-  // Simulate the OAuth round-trip so the connect button has a real loading
-  // state. A real integration would await the provider and surface errors here.
-  const connect = (name: string) => {
-    if (connecting) return;
-    setConnecting(name);
-    setTimeout(() => onProvider(name), 900);
-  };
-
+function RevenueInputs({ week, onChange }: { week: Week; onChange: (week: Week) => void }) {
   return (
-    <div className="fade-up flex flex-1 flex-col">
-      <button
-        onClick={onBack}
-        disabled={!!connecting}
-        className="mb-3 -ml-1 inline-flex min-h-[44px] w-fit items-center gap-1 px-1 text-[13px] text-ink/60 hover:text-ink/80 disabled:opacity-50"
-      >
-        <span aria-hidden>←</span> Back
-      </button>
+    <>
+      <section className="week-total">
+        <span>Week total</span>
+        <strong className="tnum">{money(week.rev)}</strong>
+        <small>Updates automatically from the daily amounts.</small>
+      </section>
 
-      <div className="flex flex-col items-center text-center">
-        <StepVisual src={assetPath("/brand/spot-connect.png")} size={156} />
-        <h1 className="mt-4 font-display text-[23px] font-semibold leading-snug tracking-tight text-ink">
-          Now connect your accounting
-        </h1>
-        <p className="mt-2 max-w-sm text-[13px] leading-relaxed text-ink/65">
-          Your cost of goods and fixed costs come straight from your P&amp;L.
-          Connect once and Birdee fills them in automatically, or enter them
-          yourself.
-        </p>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3">
-        {PROVIDERS.map((p) => {
-          const busy = connecting === p.name;
-          return (
-            <button
-              key={p.name}
-              onClick={() => connect(p.name)}
-              disabled={!!connecting}
-              aria-busy={busy}
-              className="flex items-center gap-3 rounded-xl border border-black/10 bg-white p-3 text-left transition-colors hover:border-black/20 hover:bg-black/[0.02] disabled:cursor-default disabled:hover:border-black/10 disabled:hover:bg-white"
-            >
-              <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg font-display text-[12px] font-semibold text-white"
-                style={{ backgroundColor: p.color }}
-              >
-                {p.label}
-              </span>
-              <span className="flex-1">
-                <span className="block text-[15px] font-medium text-ink">
-                  {busy ? `Connecting to ${p.name}…` : `Connect ${p.name}`}
-                </span>
-                <span className="block text-[12px] text-ink/60">
-                  Auto-fills cost of goods &amp; fixed costs
-                </span>
-              </span>
-              {busy ? (
-                <span
-                  aria-hidden
-                  className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-ink/20 border-t-ink/70"
-                />
-              ) : (
-                <span aria-hidden className="text-ink/60">
-                  →
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex-1" />
-
-      <button
-        onClick={onManual}
-        disabled={!!connecting}
-        className="mt-6 flex min-h-[44px] w-full items-center justify-center text-center text-[13px] text-ink/65 underline underline-offset-2 hover:text-ink/80 disabled:opacity-50"
-      >
-        I&apos;ll enter them manually
-      </button>
-    </div>
+      <section className="daily-revenue">
+        <div><h2>Daily revenue</h2><p>Enter your best estimate for each day.</p></div>
+        <div className="daily-input-grid">
+          {week.days.map((value, index) => (
+            <label key={DAY_LABELS[index]}>
+              <span>{DAY_LABELS[index]}</span>
+              <div><i>$</i><input className="tnum" inputMode="numeric" value={formatInputMoney(value)} onChange={(event) => onChange(setDay(week, index, parseMoney(event.target.value)))} aria-label={`${DAY_LABELS[index]} revenue`} /></div>
+            </label>
+          ))}
+        </div>
+        <p className="input-confirmation"><span><Check weight="bold" /></span> Daily amounts add up to {money(week.rev)}.</p>
+      </section>
+    </>
   );
+}
+
+function SingleInput({ step, week, onChange }: { step: Exclude<StepKey, "revenue">; week: Week; onChange: (week: Week) => void }) {
+  const config = step === "wages"
+    ? { label: "Weekly wages", key: "lab" as const, prefix: "$", suffix: "", min: 0, max: 100000 }
+    : step === "cogs"
+      ? { label: "Cost of goods", key: "cogs" as const, prefix: "", suffix: "%", min: 0, max: 99 }
+      : { label: "Weekly fixed & variable costs", key: "fix" as const, prefix: "$", suffix: "", min: 0, max: 100000 };
+  const value = week[config.key];
+  return (
+    <section className="single-input-panel">
+      <label htmlFor={`setup-${step}`}>{config.label}</label>
+      <div className="single-money-input">
+        {config.prefix && <span>{config.prefix}</span>}
+        <input
+          id={`setup-${step}`}
+          className="tnum"
+          inputMode={step === "cogs" ? "decimal" : "numeric"}
+          value={step === "cogs" ? value : formatInputMoney(value)}
+          onChange={(event) => {
+            const parsed = step === "cogs" ? Number(event.target.value.replace(/[^0-9.]/g, "")) : parseMoney(event.target.value);
+            onChange({ ...week, [config.key]: Math.max(config.min, Math.min(config.max, Number.isFinite(parsed) ? parsed : 0)) });
+          }}
+        />
+        {config.suffix && <span>{config.suffix}</span>}
+      </div>
+      <p>{step === "cogs" ? "Use the percentage that matches your business." : "Enter one total for the full week."}</p>
+    </section>
+  );
+}
+
+function formatInputMoney(value: number) {
+  return new Intl.NumberFormat("en-AU", { maximumFractionDigits: 0 }).format(Math.round(value));
+}
+
+function parseMoney(value: string) {
+  const parsed = Number(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }

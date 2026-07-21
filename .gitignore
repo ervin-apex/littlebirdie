@@ -10,6 +10,12 @@ npm-install.log
 .env*.local
 next-env.d.ts
 
+# Local agent and design-tool state (not part of the product)
+/.agents
+/.codex
+/.hallmark
+/.impeccable
+
 # Internal project material — kept out of the public repo
 # (client meeting transcripts, requirements/architecture notes, local tooling)
 /docs

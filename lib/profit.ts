@@ -375,13 +375,28 @@ export function saveActuals(a: WeekActuals): void {
 }
 
 // ── Periods: yesterday / this week / last week / next week ─────────────────
-export type PeriodKey = "yesterday" | "this-week" | "last-week" | "next-week";
+export type PeriodKey =
+  | "yesterday"
+  | "this-week"
+  | "last-week"
+  | "next-week"
+  | "month"
+  | "custom";
+
+export type HistoryRange = { from: string; to: string };
+
+export const DEMO_HISTORY_RANGE: HistoryRange = {
+  from: "2026-06-01",
+  to: "2026-06-30",
+};
 
 export const PERIODS: { key: PeriodKey; label: string }[] = [
   { key: "yesterday", label: "Yesterday" },
   { key: "last-week", label: "Last week" },
   { key: "this-week", label: "This week" },
   { key: "next-week", label: "Next week" },
+  { key: "month", label: "Month" },
+  { key: "custom", label: "Custom" },
 ];
 
 // A believable completed prior week — the predicted plan; actuals are seeded for
@@ -406,9 +421,158 @@ export type PeriodView = {
   dateLabel: string;
   week: Week;
   actuals: WeekActuals;
-  scope: "week" | "day";
+  scope: "week" | "day" | "history";
   dayIndex: number | null; // set when scope === "day"
+  historyRows?: LedgerRow[];
+  isDemo?: boolean;
+  scenarioDays?: number;
 };
+
+type DemoHistoryRecord = {
+  id: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  predicted: DayCell;
+  actual: DayCell;
+};
+
+function historyCell(rev: number, lab: number, fix: number, cogsPct = 30): DayCell {
+  const cogs = (cogsPct / 100) * rev;
+  return { rev, cogs, lab, fix, net: rev / GST_DIVISOR - cogs - lab - fix };
+}
+
+/** Dated concept records used only to exercise the Month and Custom flows. */
+const DEMO_HISTORY_RECORDS: DemoHistoryRecord[] = [
+  { id: "2026-06-01", label: "1–7 Jun", startDate: "2026-06-01", endDate: "2026-06-07", predicted: historyCell(19000, 5000, 4400), actual: historyCell(17800, 5300, 4400) },
+  { id: "2026-06-08", label: "8–14 Jun", startDate: "2026-06-08", endDate: "2026-06-14", predicted: historyCell(20500, 5200, 4400), actual: historyCell(19600, 5450, 4400) },
+  { id: "2026-06-15", label: "15–21 Jun", startDate: "2026-06-15", endDate: "2026-06-21", predicted: historyCell(21000, 5300, 4400), actual: historyCell(21400, 5200, 4400) },
+  { id: "2026-06-22", label: "22–28 Jun", startDate: "2026-06-22", endDate: "2026-06-28", predicted: historyCell(20000, 5200, 4400), actual: historyCell(19200, 5400, 4400) },
+  { id: "2026-06-29", label: "29–30 Jun", startDate: "2026-06-29", endDate: "2026-06-30", predicted: historyCell(6000, 1500, 1260), actual: historyCell(5900, 1560, 1260) },
+];
+
+const DAY_MS = 86_400_000;
+
+function isoTime(value: string): number {
+  return Date.parse(`${value}T00:00:00Z`);
+}
+
+function isoFromTime(value: number): string {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function inclusiveDays(from: string, to: string): number {
+  return Math.max(0, Math.round((isoTime(to) - isoTime(from)) / DAY_MS) + 1);
+}
+
+function clampHistoryRange(range?: HistoryRange): HistoryRange {
+  const requestedFrom = range?.from && !Number.isNaN(isoTime(range.from)) ? range.from : DEMO_HISTORY_RANGE.from;
+  const requestedTo = range?.to && !Number.isNaN(isoTime(range.to)) ? range.to : DEMO_HISTORY_RANGE.to;
+  const from = isoFromTime(Math.max(isoTime(DEMO_HISTORY_RANGE.from), isoTime(requestedFrom)));
+  const to = isoFromTime(Math.min(isoTime(DEMO_HISTORY_RANGE.to), isoTime(requestedTo)));
+  return isoTime(from) <= isoTime(to) ? { from, to } : DEMO_HISTORY_RANGE;
+}
+
+function scaleCell(source: DayCell, factor: number): DayCell {
+  return {
+    rev: source.rev * factor,
+    cogs: source.cogs * factor,
+    lab: source.lab * factor,
+    fix: source.fix * factor,
+    net: source.net * factor,
+  };
+}
+
+function historyRows(range: HistoryRange): LedgerRow[] {
+  const rows = DEMO_HISTORY_RECORDS.flatMap((record) => {
+    const from = isoFromTime(Math.max(isoTime(range.from), isoTime(record.startDate)));
+    const to = isoFromTime(Math.min(isoTime(range.to), isoTime(record.endDate)));
+    if (isoTime(from) > isoTime(to)) return [];
+
+    const factor = inclusiveDays(from, to) / inclusiveDays(record.startDate, record.endDate);
+    const predicted = scaleCell(record.predicted, factor);
+    const actual = scaleCell(record.actual, factor);
+    const revDelta = actual.rev - predicted.rev;
+    const labDelta = actual.lab - predicted.lab;
+    const revImpact = revDelta / GST_DIVISOR - 0.3 * revDelta;
+    const labImpact = -labDelta;
+    const driver: "revenue" | "labour" | "both" =
+      Math.abs(revImpact) >= Math.abs(labImpact) * 1.25
+        ? "revenue"
+        : Math.abs(labImpact) >= Math.abs(revImpact) * 1.25
+          ? "labour"
+          : "both";
+    const isFullRecord = from === record.startDate && to === record.endDate;
+    const label = isFullRecord ? record.label : formatDemoDateRange(from, to);
+
+    return [{
+      index: 0,
+      label,
+      share: 0,
+      predicted,
+      actual,
+      status: "past" as const,
+      light: actual.net >= predicted.net ? "green" as const : "red" as const,
+      variance: { net: actual.net - predicted.net, rev: revDelta, lab: labDelta, driver },
+    }];
+  });
+
+  const totalRevenue = rows.reduce((sum, row) => sum + row.predicted.rev, 0) || 1;
+  return rows.map((row, index) => ({
+    ...row,
+    index,
+    share: row.predicted.rev / totalRevenue,
+  }));
+}
+
+function formatDemoDateRange(from: string, to: string): string {
+  const formatter = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", timeZone: "UTC" });
+  const start = formatter.format(new Date(`${from}T00:00:00Z`));
+  const end = formatter.format(new Date(`${to}T00:00:00Z`));
+  return start === end ? start : `${start}–${end}`;
+}
+
+function aggregateCells(rows: LedgerRow[], source: "predicted" | "actual"): DayCell {
+  return rows.reduce<DayCell>((sum, row) => {
+    const value = source === "predicted" ? row.predicted : row.actual;
+    if (!value) return sum;
+    return {
+      rev: sum.rev + value.rev,
+      cogs: sum.cogs + value.cogs,
+      lab: sum.lab + value.lab,
+      fix: sum.fix + value.fix,
+      net: sum.net + value.net,
+    };
+  }, { rev: 0, cogs: 0, lab: 0, fix: 0, net: 0 });
+}
+
+function buildHistoryPeriod(key: "month" | "custom", requestedRange?: HistoryRange): PeriodView {
+  const range = key === "month" ? DEMO_HISTORY_RANGE : clampHistoryRange(requestedRange);
+  const rows = historyRows(range);
+  const predicted = aggregateCells(rows, "predicted");
+  const cogsPct = predicted.rev ? (predicted.cogs / predicted.rev) * 100 : 30;
+  const weights = DEFAULTS.days.map((day) => day / DEFAULTS.rev);
+  const week: Week = {
+    rev: predicted.rev,
+    lab: predicted.lab,
+    fix: predicted.fix,
+    cogs: cogsPct,
+    days: weights.map((weight) => predicted.rev * weight),
+  };
+
+  return {
+    key,
+    title: key === "month" ? "June 2026" : "Custom range",
+    dateLabel: `${formatDemoDateRange(range.from, range.to)} · Demo data`,
+    week,
+    actuals: forecastActuals(),
+    scope: "history",
+    dayIndex: null,
+    historyRows: rows,
+    isDemo: true,
+    scenarioDays: inclusiveDays(range.from, range.to),
+  };
+}
 
 /** Resolve a period key to the week + actuals (and framing) the dashboard
  *  renders. `baseWeek` / `baseActuals` are the user's saved current week. */
@@ -416,8 +580,12 @@ export function buildPeriodView(
   key: PeriodKey,
   baseWeek: Week,
   baseActuals: WeekActuals,
+  historyRange?: HistoryRange,
 ): PeriodView {
   switch (key) {
+    case "month":
+    case "custom":
+      return buildHistoryPeriod(key, historyRange);
     case "last-week":
       return {
         key,
