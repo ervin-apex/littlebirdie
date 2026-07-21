@@ -75,13 +75,13 @@ The first product-facing motion library and its review page were completed on
   - Six actions authored at 30 fps: `ready_hover`, `encouraging_lift`,
     `concerned_settle`, `focused_lean`, `curious_tilt`, and
     `attentive_settle`.
-- `../../../../public/models/birdee-web-animated-v1.glb`
+- `../../../public/models/birdee-web-animated-v1.glb`
   - Website asset with all six named clips and an embedded 1K JPEG texture.
   - 476,936 bytes (477 KB), 14 bones, and no more than two skin influences per
     vertex.
   - Clean-import validation found zero unweighted or non-normalized vertices,
     a seamless `ready_hover` loop, and zero tested edges above `2x` stretch.
-- `../../../../app/birdee-motion-lab/page.tsx`
+- `../../../app/birdee-motion-lab/page.tsx`
   - Separate review route at `/birdee-motion-lab` with manual state selection,
     replay, and an optional auto tour.
   - The Three.js stage lazy-loads the GLB, caps device pixel ratio, pauses when
