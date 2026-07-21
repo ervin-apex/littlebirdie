@@ -5,9 +5,9 @@ import { LittleBirdee, type BirdeeState } from "@/components/LittleBirdee";
 import { assetPath } from "@/lib/site";
 
 const SRC: Record<BirdeeState, string> = {
-  profit: assetPath("/brand/birdee-happy.png"),
-  neutral: assetPath("/brand/birdee-mark.png"),
-  loss: assetPath("/brand/birdee-worried.png"),
+  profit: assetPath("/brand/birdee-reference-profit-v1.png"),
+  neutral: assetPath("/brand/birdee-reference-neutral-v1.png"),
+  loss: assetPath("/brand/birdee-reference-loss-v1.png"),
 };
 
 const ALT: Record<BirdeeState, string> = {

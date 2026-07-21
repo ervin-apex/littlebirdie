@@ -3,20 +3,24 @@
  * contrast: pass (46–50)
  */
 :root {
-  --lb-ink: oklch(27% 0.045 260);
-  --lb-muted: oklch(49% 0.04 260);
-  --lb-line: oklch(89% 0.016 255);
-  --lb-paper: oklch(99% 0.008 90);
-  --lb-white: oklch(100% 0 0);
-  --lb-yellow: oklch(84% 0.145 88);
-  --lb-yellow-hover: oklch(88% 0.125 91);
-  --lb-yellow-edge: oklch(66% 0.145 78);
-  --lb-secondary-edge: oklch(84% 0.035 88);
-  --lb-focus: oklch(72% 0.14 77);
-  --lb-positive: oklch(52% 0.105 155);
-  --lb-positive-soft: oklch(95% 0.035 155);
-  --lb-negative: oklch(55% 0.15 28);
-  --lb-negative-soft: oklch(96% 0.028 28);
+  /* Sampled from the approved onboarding direction. */
+  --lb-ink: #10203c;
+  --lb-muted: #566783;
+  --lb-line: #dfe3ea;
+  --lb-paper: #f9f9f9;
+  --lb-white: #ffffff;
+  --lb-surface-muted: #f1f3f6;
+  --lb-yellow: #fcb400;
+  --lb-yellow-hover: #ffc52b;
+  --lb-yellow-edge: #c88400;
+  --lb-yellow-soft: #fff5d6;
+  --lb-yellow-ink: #6b4c00;
+  --lb-secondary-edge: #cfd5df;
+  --lb-focus: #315b98;
+  --lb-positive: #287a53;
+  --lb-positive-soft: #edf7f1;
+  --lb-negative: #c94b43;
+  --lb-negative-soft: #fbefed;
 
   --lb-control-height: 48px;
   --lb-control-height-compact: 42px;

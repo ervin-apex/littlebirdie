@@ -508,64 +508,109 @@ function DashboardView({
   onOpenDay: () => void;
   onFullNumbers: () => void;
 }) {
+  const yesterdayRow = periodKey === "yesterday" && selectedRow?.actual && selectedRow.variance
+    ? selectedRow
+    : null;
+  const answerSupport = periodKey === "yesterday" && chapter === "revenue" && selectedRow
+    ? `${fullDayName(selectedRow.label)}’s final result`
+    : chapterContent.support;
+
   return (
-    <div className="dashboard-view">
-      <section className="scoreboard-heading" aria-labelledby="scoreboard-title">
-        <div>
-          <p className="scoreboard-date">{dateLabel}</p>
-          <div className="scoreboard-title-line">
-            <h1 id="scoreboard-title">{viewTitle}</h1>
-            {isDemo && <span className="demo-badge">Demo history</span>}
+    <div className={`dashboard-view ${chapterContent.tone}`}>
+      <div className="dashboard-evidence">
+        <section className="scoreboard-heading" aria-labelledby="scoreboard-title">
+          <div>
+            <p className="scoreboard-date">{dateLabel}</p>
+            <div className="scoreboard-title-line">
+              <h1 id="scoreboard-title">{viewTitle}</h1>
+              {isDemo && <span className="demo-badge">Demo history</span>}
+            </div>
           </div>
+          <PeriodNavigation
+            periodKey={periodKey}
+            onPeriod={onPeriod}
+          />
+        </section>
+
+        {customOpen && (
+          <CustomRangePanel
+            value={customDraft}
+            onChange={onCustomDraft}
+            onApply={onApplyCustom}
+            onClose={onCloseCustom}
+          />
+        )}
+
+        <div className="chapter-tabs" role="tablist" aria-label="Choose the main result">
+          {CHAPTERS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={chapter === item.key}
+              className={chapter === item.key ? "chapter-tab is-active" : "chapter-tab"}
+              onClick={() => onChapter(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-        <PeriodNavigation
-          periodKey={periodKey}
-          onPeriod={onPeriod}
-        />
-      </section>
 
-      {customOpen && (
-        <CustomRangePanel
-          value={customDraft}
-          onChange={onCustomDraft}
-          onApply={onApplyCustom}
-          onClose={onCloseCustom}
-        />
-      )}
+        {isWeek && (
+          <section className="week-progress" aria-labelledby="week-progress-title">
+            <div className="flight-path-intro">
+              <div>
+                <h2 id="week-progress-title">Your week so far</h2>
+                <p>{ledger.filter((row) => row.actual).length} of {ledger.length} days done</p>
+              </div>
+              <FlightPathLegend />
+            </div>
+            <DayRail
+              rows={ledger}
+              selectedDay={selectedDay}
+              onSelect={onSelectDay}
+              onOpenSelected={onOpenDay}
+            />
+          </section>
+        )}
 
-      <div className="chapter-tabs" role="tablist" aria-label="Choose the main result">
-        {CHAPTERS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            role="tab"
-            aria-selected={chapter === item.key}
-            className={chapter === item.key ? "chapter-tab is-active" : "chapter-tab"}
-            onClick={() => onChapter(item.key)}
+        {yesterdayRow && <YesterdayComparison row={yesterdayRow} />}
+
+        {historyRows && historyRows.length > 0 && (
+          <section className="history-progress" aria-labelledby="history-progress-title">
+            <div className="section-intro">
+              <div>
+                <h2 id="history-progress-title">Recorded history</h2>
+                <p>Each column is one completed demo-data slice in this range.</p>
+              </div>
+            </div>
+            <HistoryRail rows={historyRows} />
+          </section>
+        )}
+
+        <div className="view-footer-action">
+          <ProductButton
+            variant="tertiary"
+            size="compact"
+            onClick={onFullNumbers}
+            trailingIcon={<ArrowRight weight="bold" />}
           >
-            {item.label}
-          </button>
-        ))}
+            See all numbers
+          </ProductButton>
+        </div>
       </div>
 
-      <section className={`profit-hero ${chapterContent.tone}`} aria-live="polite">
-        <div className="profit-answer">
-          <BirdeeMascot
-            state={chapterContent.value >= 0 ? "profit" : "loss"}
-            size={74}
-            className="profit-birdee"
-          />
-          <div>
-            <p>{chapterContent.label}</p>
-            <strong className="tnum">{signedProfit(chapterContent.value)}</strong>
-            <span>{chapterContent.support}</span>
-          </div>
+      <aside className="dashboard-answer" aria-live="polite">
+        <div className="dashboard-profit-copy">
+          <p>{chapterContent.label}</p>
+          <strong className="tnum">{signedProfit(chapterContent.value)}</strong>
+          <span>{answerSupport}</span>
         </div>
-        <div className="profit-actions" aria-label="Explore this result">
+        <div className="dashboard-profit-actions" aria-label="Explore this result">
           {!isFuture && (
             <ProductButton
-              variant="primary"
-              className="result-action"
+              variant="secondary"
+              className="result-action dashboard-primary-action"
               onClick={onWhatHappened}
               leadingIcon={<ChartLineUp size={20} weight="bold" />}
             >
@@ -573,57 +618,59 @@ function DashboardView({
             </ProductButton>
           )}
           <ProductButton
-            variant={isFuture ? "primary" : "secondary"}
-            className="result-action"
+            variant="secondary"
+            className="result-action dashboard-secondary-action"
             onClick={onWhatIf}
             leadingIcon={<Flask size={20} weight="bold" />}
           >
             What if
           </ProductButton>
         </div>
-      </section>
-
-      {isWeek && (
-        <section className="week-progress" aria-labelledby="week-progress-title">
-          <div className="flight-path-intro">
-            <div>
-              <h2 id="week-progress-title">Weekly flight path</h2>
-              <p>{ledger.filter((row) => row.actual).length} of {ledger.length} days complete</p>
-            </div>
-            <FlightPathLegend />
-          </div>
-          <DayRail
-            rows={ledger}
-            selectedDay={selectedDay}
-            onSelect={onSelectDay}
-            onOpenSelected={onOpenDay}
-          />
-        </section>
-      )}
-
-      {historyRows && historyRows.length > 0 && (
-        <section className="history-progress" aria-labelledby="history-progress-title">
-          <div className="section-intro">
-            <div>
-              <h2 id="history-progress-title">Recorded history</h2>
-              <p>Each column is one completed demo-data slice in this range.</p>
-            </div>
-          </div>
-          <HistoryRail rows={historyRows} />
-        </section>
-      )}
-
-      <div className="view-footer-action">
-        <ProductButton
-          variant="tertiary"
-          size="compact"
-          onClick={onFullNumbers}
-          trailingIcon={<ArrowRight weight="bold" />}
-        >
-          See full numbers
-        </ProductButton>
-      </div>
+        <BirdeeMascot
+          state={chapterContent.value >= 0 ? "profit" : "loss"}
+          size={210}
+          className="dashboard-birdee"
+        />
+      </aside>
     </div>
+  );
+}
+
+function YesterdayComparison({ row }: { row: LedgerRow }) {
+  if (!row.actual || !row.variance) return null;
+
+  const variance = row.variance.net;
+  const driverText = row.variance.driver === "revenue"
+    ? `Revenue was ${money(Math.abs(row.variance.rev))} ${row.variance.rev < 0 ? "below" : "above"} budget.`
+    : row.variance.driver === "labour"
+      ? `Wages were ${money(Math.abs(row.variance.lab))} ${row.variance.lab > 0 ? "over" : "under"} budget.`
+      : "Revenue and wages were the biggest drivers.";
+
+  return (
+    <section className="day-comparison" aria-labelledby="day-comparison-title">
+      <div className="day-comparison-card">
+        <h2 id="day-comparison-title">Yesterday vs budget</h2>
+        <div className="day-comparison-track" aria-label={`Budget profit ${signedProfit(row.predicted.net)}, actual profit ${signedProfit(row.actual.net)}`}>
+          <div className="day-comparison-point is-budget">
+            <span>Budget profit</span>
+            <strong className="tnum">{signedProfit(row.predicted.net)}</strong>
+          </div>
+          <div className="day-comparison-arrow" aria-hidden="true">
+            <span />
+            <ArrowRight weight="bold" />
+          </div>
+          <div className="day-comparison-point is-actual">
+            <span>Actual profit</span>
+            <strong className="tnum">{signedProfit(row.actual.net)}</strong>
+          </div>
+        </div>
+        <div className={variance >= 0 ? "day-comparison-verdict is-positive" : "day-comparison-verdict is-concerned"}>
+          <strong className="tnum">{signedProfit(variance)}</strong>
+          <span>{variance >= 0 ? "ahead of budget" : "behind budget"}</span>
+        </div>
+        <p className="day-comparison-driver"><strong>Main driver:</strong> {driverText}</p>
+      </div>
+    </section>
   );
 }
 
@@ -1164,7 +1211,7 @@ function FlightPathLegend() {
       <span><i className="is-ahead"><ArrowUp weight="bold" /></i>Ahead of budget</span>
       <span><i className="is-behind"><ArrowDown weight="bold" /></i>Behind budget</span>
       <span><i className="is-on-budget"><Minus weight="bold" /></i>On budget</span>
-      <span><i className="is-pending" />Not completed</span>
+      <span><i className="is-pending" />Not done yet</span>
     </div>
   );
 }
@@ -1273,7 +1320,7 @@ function DayScore({
         ? "on budget"
         : isToday
           ? "Today"
-          : "Not completed";
+          : "Not done yet";
 
   return (
     <div
@@ -1319,9 +1366,9 @@ function DayScore({
               type="button"
               className="day-breakdown-action"
               onClick={onOpen}
-              aria-label={`See ${fullDayName(row.label)} breakdown`}
+              aria-label={`See ${fullDayName(row.label)} numbers`}
             >
-              See full breakdown
+              See {fullDayName(row.label)}&rsquo;s numbers
               <ArrowRight weight="bold" aria-hidden="true" />
             </button>
           )}
@@ -1380,7 +1427,7 @@ function StatusDot({ row }: { row: LedgerRow }) {
 function getChapterContent({ chapter, periodProfit, budgetDifference, projected, budget, isFuture, isHistory }: { chapter: Chapter; periodProfit: number; budgetDifference: number; projected: number; budget: number; isFuture: boolean; isHistory: boolean }) {
   if (chapter === "budget") return { label: "Compared with budget", value: isFuture ? 0 : budgetDifference, support: isFuture ? "No actual result yet" : budgetDifference >= 0 ? "Ahead of budget" : "Behind budget", tone: budgetDifference >= 0 ? "tone-positive" : "tone-concerned" };
   if (chapter === "week") return { label: isFuture ? "Your forecast" : isHistory ? "Period result" : "Projected profit", value: isFuture ? budget : projected, support: `Budget ${signedProfit(budget)}`, tone: projected >= 0 ? "tone-focused" : "tone-concerned" };
-  return { label: isFuture ? "Your forecast" : "Your profit", value: periodProfit, support: isFuture ? "From your entered numbers" : isHistory ? "Actual result in the selected demo range" : "Actual result from completed days", tone: periodProfit >= 0 ? "tone-positive" : "tone-concerned" };
+  return { label: isFuture ? "Your forecast" : "Your profit", value: periodProfit, support: isFuture ? "From the numbers you entered" : isHistory ? "Profit from this selected range" : "Profit from the days you’ve finished", tone: periodProfit >= 0 ? "tone-positive" : "tone-concerned" };
 }
 
 function totalCells(rows: LedgerRow[], source: "actual" | "predicted"): DayCell {

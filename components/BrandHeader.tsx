@@ -6,7 +6,7 @@ import { PencilSimpleLine } from "@phosphor-icons/react";
 import { assetPath, withoutBasePath } from "@/lib/site";
 
 const NAV = [
-  { href: "/setup", matchPath: "/setup", label: "Update numbers", icon: PencilSimpleLine },
+  { href: "/setup", matchPath: "/setup", label: "Update my numbers", icon: PencilSimpleLine },
 ];
 
 /**
@@ -18,7 +18,7 @@ export function BrandHeader({ variant = "default" }: { variant?: "default" | "ho
   const isHomeReference = variant === "home";
 
   return (
-    <header className="flex items-center justify-between gap-3 border-b border-black/10 px-1 py-4 sm:px-0">
+    <header className="brand-header flex items-center justify-between gap-3 border-b border-black/10 px-1 py-4 sm:px-0">
       <Link href={isHomeReference ? "/home" : "/app?period=this-week"} className={`flex shrink-0 items-center pl-1 ${isHomeReference ? "gap-3" : "gap-2"}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -48,11 +48,7 @@ export function BrandHeader({ variant = "default" }: { variant?: "default" | "ho
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 sm:text-[14px] ${
-                active
-                  ? "bg-amber-100 text-amber-950"
-                  : "text-ink/70 hover:bg-black/[0.04] hover:text-ink"
-              }`}
+              className={`brand-header__update inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-[13px] font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500 sm:text-[14px] ${active ? "is-active" : ""}`}
             >
               <Icon size={18} weight={active ? "fill" : "regular"} aria-hidden />
               <span className="hidden sm:inline">{item.label}</span>
