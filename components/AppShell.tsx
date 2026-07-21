@@ -11,19 +11,27 @@ export function AppShell({
   maxWidth = "max-w-3xl",
   center = false,
   hideHeader = false,
+  headerVariant = "default",
 }: {
   children: React.ReactNode;
   maxWidth?: string;
   center?: boolean;
   hideHeader?: boolean;
+  headerVariant?: "default" | "home";
 }) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col text-ink">
       <PageBackground />
 
       {!hideHeader && (
-        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-5 sm:px-6">
-          <BrandHeader />
+        <div
+          className={
+            headerVariant === "home"
+              ? "relative z-10 mx-auto w-full max-w-none px-4 pt-4 sm:px-8"
+              : "relative z-10 mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6"
+          }
+        >
+          <BrandHeader variant={headerVariant} />
         </div>
       )}
 

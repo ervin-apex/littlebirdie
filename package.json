@@ -15,13 +15,15 @@
     "next": "^15.5.20",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.1",
     "postcss": "^8",
     "tailwindcss": "^4.0.0",
     "typescript": "^5"

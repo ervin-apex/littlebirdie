@@ -1,0 +1,33 @@
+/* Hallmark · component: button · genre: playful · theme: existing Little Birdee
+ * states: default · hover · focus · active · disabled · loading · error · success
+ * contrast: pass (46–50)
+ */
+:root {
+  /* Sampled from the approved onboarding direction. */
+  --lb-ink: #10203c;
+  --lb-muted: #566783;
+  --lb-line: #dfe3ea;
+  --lb-paper: #f9f9f9;
+  --lb-white: #ffffff;
+  --lb-surface-muted: #f1f3f6;
+  --lb-yellow: #fcb400;
+  --lb-yellow-hover: #ffc52b;
+  --lb-yellow-edge: #c88400;
+  --lb-yellow-soft: #fff5d6;
+  --lb-yellow-ink: #6b4c00;
+  --lb-secondary-edge: #cfd5df;
+  --lb-focus: #315b98;
+  --lb-positive: #287a53;
+  --lb-positive-soft: #edf7f1;
+  --lb-negative: #c94b43;
+  --lb-negative-soft: #fbefed;
+
+  --lb-control-height: 48px;
+  --lb-control-height-compact: 42px;
+  --lb-control-radius: 12px;
+  --lb-control-gap: 8px;
+  --lb-control-pad-x: 16px;
+  --lb-duration-fast: 100ms;
+  --lb-duration-state: 180ms;
+  --lb-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
