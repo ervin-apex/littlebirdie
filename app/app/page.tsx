@@ -1,8 +1,9 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { createPortal } from "react-dom";
 import {
   ArrowCounterClockwise,
   ArrowDown,
@@ -12,6 +13,7 @@ import {
   Buildings,
   CaretLeft,
   CaretRight,
+  ChartBar,
   ChartLineUp,
   Check,
   Flask,
@@ -20,10 +22,12 @@ import {
   ShieldCheck,
   ShoppingBag,
   UsersThree,
+  Wallet,
   X,
 } from "@phosphor-icons/react";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { ProductButton } from "@/components/ProductButton";
+import { withoutBasePath } from "@/lib/site";
 import {
   DEFAULTS,
   DEMO_HISTORY_RANGE,
@@ -48,6 +52,7 @@ import {
   type WeekActuals,
 } from "@/lib/profit";
 import "./scoreboard.css";
+import "./what-happened.css";
 
 type Chapter = "revenue" | "budget" | "week";
 type Screen =
@@ -117,6 +122,19 @@ function trailFromParam(value: string | null): Screen[] {
     .filter((item): item is Screen => SCREENS.includes(item as Screen) && item !== "dashboard");
 }
 
+function appPathForScreen(screen: Screen, query: URLSearchParams) {
+  query.delete("view");
+
+  if (screen === "what-happened") {
+    const search = query.toString();
+    return `/app/what-happened${search ? `?${search}` : ""}`;
+  }
+
+  if (screen !== "dashboard") query.set("view", screen);
+  const search = query.toString();
+  return `/app${search ? `?${search}` : ""}`;
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
@@ -127,10 +145,13 @@ export default function DashboardPage() {
 
 function DashboardInner() {
   const params = useSearchParams();
+  const pathname = withoutBasePath(usePathname());
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const initialScreen: Screen = pathname === "/app/what-happened" ? "what-happened" : "dashboard";
   const initialPeriod = periodFromParam(params.get("period"));
   const screenParam = params.get("view");
+  const requestedScreen = screenParam ?? initialScreen;
   const chapterParam = chapterFromParam(params.get("chapter"));
   const dayParam = dayFromParam(params.get("day"));
   const navigationTrail = trailFromParam(params.get("trail"));
@@ -142,7 +163,7 @@ function DashboardInner() {
 
   const [periodKey, setPeriodKey] = useState<PeriodKey>(initialPeriod);
   const [chapter, setChapter] = useState<Chapter>(chapterParam);
-  const [screen, setScreen] = useState<Screen>(() => screenFromParam(screenParam));
+  const [screen, setScreen] = useState<Screen>(() => screenFromParam(requestedScreen));
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [actuals, setActuals] = useState<WeekActuals>(() => seedActuals(DEFAULTS));
   const [ready, setReady] = useState(false);
@@ -168,8 +189,14 @@ function DashboardInner() {
   }, [initialPeriod]);
 
   useEffect(() => {
-    setScreen(screenFromParam(screenParam));
-  }, [screenParam]);
+    setScreen(screenFromParam(requestedScreen));
+  }, [requestedScreen]);
+
+  useEffect(() => {
+    if (screenParam !== "what-happened" || initialScreen === "what-happened") return;
+    const query = new URLSearchParams(params.toString());
+    router.replace(appPathForScreen("what-happened", query), { scroll: false });
+  }, [initialScreen, params, router, screenParam]);
 
   useEffect(() => {
     setChapter(chapterParam);
@@ -245,7 +272,7 @@ function DashboardInner() {
       query.set("trail", options.trail.join(","));
     }
     if (options.scope === "day") query.set("scope", "day");
-    router.replace(`/app?${query.toString()}`, { scroll: false });
+    router.replace(appPathForScreen(next, query), { scroll: false });
   };
 
   const selectPeriod = (key: PeriodKey) => {
@@ -508,96 +535,70 @@ function DashboardView({
   onOpenDay: () => void;
   onFullNumbers: () => void;
 }) {
+  const [dayPreviewOpen, setDayPreviewOpen] = useState(false);
   const yesterdayRow = periodKey === "yesterday" && selectedRow?.actual && selectedRow.variance
     ? selectedRow
     : null;
   const answerSupport = periodKey === "yesterday" && chapter === "revenue" && selectedRow
     ? `${fullDayName(selectedRow.label)}’s final result`
-    : chapterContent.support;
+    : periodKey === "this-week" && chapter === "revenue"
+      ? "From the days you’ve finished."
+      : chapterContent.support;
+
+  const selectDay = (index: number) => {
+    onSelectDay(index);
+    setDayPreviewOpen(true);
+  };
+
+  const openSelectedDay = () => {
+    setDayPreviewOpen(false);
+    onOpenDay();
+  };
 
   return (
-    <div className={`dashboard-view ${chapterContent.tone}`}>
-      <div className="dashboard-evidence">
-        <section className="scoreboard-heading" aria-labelledby="scoreboard-title">
-          <div>
-            <p className="scoreboard-date">{dateLabel}</p>
-            <div className="scoreboard-title-line">
-              <h1 id="scoreboard-title">{viewTitle}</h1>
-              {isDemo && <span className="demo-badge">Demo history</span>}
-            </div>
+    <div className={`dashboard-view ${chapterContent.tone}`} data-day-preview-open={dayPreviewOpen ? "true" : "false"}>
+      <section className="scoreboard-heading" aria-labelledby="scoreboard-title">
+        <div>
+          <p className="scoreboard-date">{dateLabel}</p>
+          <div className="scoreboard-title-line">
+            <h1 id="scoreboard-title">{viewTitle}</h1>
+            {isDemo && <span className="demo-badge">Demo history</span>}
           </div>
-          <PeriodNavigation
-            periodKey={periodKey}
-            onPeriod={onPeriod}
-          />
-        </section>
-
-        {customOpen && (
-          <CustomRangePanel
-            value={customDraft}
-            onChange={onCustomDraft}
-            onApply={onApplyCustom}
-            onClose={onCloseCustom}
-          />
-        )}
-
-        <div className="chapter-tabs" role="tablist" aria-label="Choose the main result">
-          {CHAPTERS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              role="tab"
-              aria-selected={chapter === item.key}
-              className={chapter === item.key ? "chapter-tab is-active" : "chapter-tab"}
-              onClick={() => onChapter(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
         </div>
+        <PeriodNavigation
+          periodKey={periodKey}
+          onPeriod={(key) => {
+            setDayPreviewOpen(false);
+            onPeriod(key);
+          }}
+        />
+      </section>
 
-        {isWeek && (
-          <section className="week-progress" aria-labelledby="week-progress-title">
-            <div className="flight-path-intro">
-              <div>
-                <h2 id="week-progress-title">Your week so far</h2>
-                <p>{ledger.filter((row) => row.actual).length} of {ledger.length} days done</p>
-              </div>
-              <FlightPathLegend />
-            </div>
-            <DayRail
-              rows={ledger}
-              selectedDay={selectedDay}
-              onSelect={onSelectDay}
-              onOpenSelected={onOpenDay}
-            />
-          </section>
-        )}
+      {customOpen && (
+        <CustomRangePanel
+          value={customDraft}
+          onChange={onCustomDraft}
+          onApply={onApplyCustom}
+          onClose={onCloseCustom}
+        />
+      )}
 
-        {yesterdayRow && <YesterdayComparison row={yesterdayRow} />}
-
-        {historyRows && historyRows.length > 0 && (
-          <section className="history-progress" aria-labelledby="history-progress-title">
-            <div className="section-intro">
-              <div>
-                <h2 id="history-progress-title">Recorded history</h2>
-                <p>Each column is one completed demo-data slice in this range.</p>
-              </div>
-            </div>
-            <HistoryRail rows={historyRows} />
-          </section>
-        )}
-
-        <div className="view-footer-action">
-          <ProductButton
-            variant="tertiary"
-            size="compact"
-            onClick={onFullNumbers}
-            trailingIcon={<ArrowRight weight="bold" />}
+      <div className="chapter-tabs" role="tablist" aria-label="Choose the main result">
+        {CHAPTERS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            role="tab"
+            aria-selected={chapter === item.key}
+            className={chapter === item.key ? "chapter-tab is-active" : "chapter-tab"}
+            onClick={() => {
+              setDayPreviewOpen(false);
+              onChapter(item.key);
+            }}
           >
-            See all numbers
-          </ProductButton>
-        </div>
+            {item.label}
+          </button>
+        ))}
       </div>
 
       <aside className="dashboard-answer" aria-live="polite">
@@ -626,12 +627,149 @@ function DashboardView({
             What if
           </ProductButton>
         </div>
-        <BirdeeMascot
-          state={chapterContent.value >= 0 ? "profit" : "loss"}
-          size={210}
-          className="dashboard-birdee"
-        />
+        <div className="dashboard-birdee-stage">
+          <span className="dashboard-chirp" aria-hidden="true"><i /><i /></span>
+          <BirdeeMascot
+            state={chapterContent.value >= 0 ? "profit" : "loss"}
+            size={210}
+            className="dashboard-birdee"
+          />
+        </div>
       </aside>
+
+      {isWeek && (
+        <section className="week-progress" aria-labelledby="week-progress-title">
+          <div className="flight-path-intro">
+            <div>
+              <h2 id="week-progress-title">How the week&rsquo;s tracking</h2>
+              <p>{ledger.filter((row) => row.actual).length} of {ledger.length} days done</p>
+            </div>
+          </div>
+          <DayRail
+            rows={ledger}
+            selectedDay={selectedDay}
+            onSelect={selectDay}
+            onOpenSelected={openSelectedDay}
+          />
+          <FlightPathLegend />
+          <div className="view-footer-action">
+            <ProductButton
+              variant="tertiary"
+              size="compact"
+              onClick={onFullNumbers}
+              trailingIcon={<ArrowRight weight="bold" />}
+            >
+              See all numbers
+            </ProductButton>
+          </div>
+        </section>
+      )}
+
+      {yesterdayRow && <YesterdayComparison row={yesterdayRow} />}
+
+      {historyRows && historyRows.length > 0 && (
+        <section className="history-progress" aria-labelledby="history-progress-title">
+          <div className="section-intro">
+            <div>
+              <h2 id="history-progress-title">Recorded history</h2>
+              <p>Each column is one completed demo-data slice in this range.</p>
+            </div>
+          </div>
+          <HistoryRail rows={historyRows} />
+        </section>
+      )}
+
+      {!isWeek && (
+        <div className="view-footer-action">
+          <ProductButton
+            variant="tertiary"
+            size="compact"
+            onClick={onFullNumbers}
+            trailingIcon={<ArrowRight weight="bold" />}
+          >
+            See all numbers
+          </ProductButton>
+        </div>
+      )}
+
+      <div className="dashboard-mobile-dock" aria-label="Dashboard action">
+        <ProductButton
+          href="/setup"
+          variant="primary"
+          fullWidth
+          leadingIcon={<Plus size={20} weight="bold" />}
+          trailingIcon={<ArrowRight size={18} weight="bold" />}
+        >
+          Update numbers
+        </ProductButton>
+      </div>
+
+      {dayPreviewOpen && selectedRow?.actual && typeof document !== "undefined" && createPortal(
+        <DayPreviewOverlay
+          row={selectedRow}
+          onClose={() => setDayPreviewOpen(false)}
+          onOpen={openSelectedDay}
+        />,
+        document.body,
+      )}
+    </div>
+  );
+}
+
+function DayPreviewOverlay({ row, onClose, onOpen }: {
+  row: LedgerRow;
+  onClose: () => void;
+  onOpen: () => void;
+}) {
+  if (!row.actual) return null;
+  const difference = row.variance?.net ?? row.actual.net - row.predicted.net;
+  const performance = Math.round(difference) === 0 ? "on budget" : difference > 0 ? "ahead" : "behind";
+  const statusLabel = performance === "on budget"
+    ? "On budget"
+    : performance === "ahead"
+      ? "Ahead of budget"
+      : "Behind budget";
+  const verdictLabel = performance === "on budget"
+    ? "on budget"
+    : performance === "ahead"
+      ? "ahead of budget"
+      : "behind budget";
+  const dayName = fullDayName(row.label);
+  const driverInsight = row.variance?.driver === "revenue"
+    ? "Revenue did most of the pulling."
+    : row.variance?.driver === "labour"
+      ? "Wages made the biggest difference."
+      : "Your daily costs made the biggest difference.";
+
+  return (
+    <div className="day-preview-layer">
+      <button type="button" className="day-preview-scrim" aria-label="Close day summary" onClick={onClose} />
+      <section className="day-preview-panel" role="dialog" aria-modal="true" aria-labelledby="day-preview-title">
+        <span className="day-preview-handle" aria-hidden="true" />
+        <button type="button" className="day-breakdown-close" aria-label="Close day summary" onClick={onClose}>
+          <X weight="bold" aria-hidden="true" />
+        </button>
+        <h2 id="day-preview-title">{dayName}</h2>
+        <p className={`day-preview-status is-${performance.replace(" ", "-")}`}>{statusLabel}</p>
+        <strong className={`tnum day-preview-verdict is-${performance.replace(" ", "-")}`}>
+          {money(Math.abs(difference))} {verdictLabel}
+        </strong>
+        <p className="day-preview-support">
+          You finished at {signedProfit(row.actual.net)} against a budget of {signedProfit(row.predicted.net)}.
+        </p>
+        <dl className="day-preview-values">
+          <div><dt>Actual</dt><dd className="tnum">{signedProfit(row.actual.net)}</dd></div>
+          <div><dt>Budget</dt><dd className="tnum">{signedProfit(row.predicted.net)}</dd></div>
+        </dl>
+        <div className="day-preview-insight">
+          <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={74} />
+          <p>{driverInsight}</p>
+        </div>
+        <ProductButton variant="secondary" fullWidth onClick={onOpen} trailingIcon={<ArrowRight weight="bold" />}>
+          See {dayName}&rsquo;s numbers
+        </ProductButton>
+        <button type="button" className="day-preview-close-action" onClick={onClose}>Close</button>
+      </section>
     </div>
   );
 }
@@ -754,30 +892,48 @@ function ResultExplanationView({
   const budget = totalCells(rows, "predicted");
   const difference = actual.net - budget.net;
   const drivers = profitDrivers(actual, budget, cogsPct);
-  const headline = Math.abs(difference) < 0.5
-    ? "Profit matched budget."
-    : `Profit finished ${money(difference)} ${difference >= 0 ? "ahead of" : "behind"} budget.`;
+  const leadDriver = drivers[0];
+  const leadDriverInsight = leadDriver?.key === "revenue"
+    ? "Revenue did most of the pulling."
+    : leadDriver?.key === "wages"
+      ? "Wages moved profit the most."
+      : leadDriver?.key === "cogs"
+        ? "Your cost of goods rate moved profit the most."
+        : "Your other costs made the biggest difference.";
+  const matchedBudget = Math.abs(difference) < 0.5;
 
   return (
     <div className="detail-view result-explanation-view">
       <ViewBack label={backLabel} onClick={onBack} />
       <div className="detail-title-row">
         <div>
-          <h1>{title}</h1>
-          <p>{resultLabel}, explained.</p>
+          <h1>
+            <span className="detail-title-full">{title}</span>
+            <span className="detail-title-compact">What happened?</span>
+          </h1>
+          <p>Your result, without the spreadsheet.</p>
         </div>
       </div>
 
       <section className="result-explanation-panel" aria-labelledby="result-explanation-headline">
         <div className="result-explanation-answer">
-          <p className="result-explanation-kicker">{resultLabel}</p>
-          <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={88} />
+          <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} variant={difference < 0 ? "concerned" : undefined} size={88} />
           <div className="result-explanation-verdict">
-            <h2 id="result-explanation-headline">{headline}</h2>
+            <h2 id="result-explanation-headline">
+              {matchedBudget ? (
+                "Profit matched budget."
+              ) : (
+                <>
+                  Profit finished{" "}
+                  <strong className={difference >= 0 ? "good" : "bad"}>{money(Math.abs(difference))}</strong>{" "}
+                  {difference >= 0 ? "ahead of" : "behind"} budget.
+                </>
+              )}
+            </h2>
             <p className="result-explanation-comparison">
               <span>Actual <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>{signedProfit(actual.net)}</strong></span>
               <i aria-hidden>{"\u00b7"}</i>
-              <span>Budget <strong className="tnum">{signedProfit(budget.net)}</strong></span>
+              <span>Budget <strong className={`tnum ${budget.net >= 0 ? "good" : "bad"}`}>{signedProfit(budget.net)}</strong></span>
             </p>
           </div>
         </div>
@@ -795,6 +951,10 @@ function ResultExplanationView({
             <BridgeStep kind="finish" label="Actual profit" value={actual.net} />
           </div>
 
+          <div className="result-driver-insight">
+            <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} variant={difference < 0 ? "concerned" : undefined} size={78} />
+            <p>{leadDriverInsight}</p>
+          </div>
           <p className="bridge-note">Revenue impact includes GST and budgeted COGS.</p>
         </div>
       </section>
@@ -806,7 +966,8 @@ function ResultExplanationView({
           onClick={onFullNumbers}
           trailingIcon={<ArrowRight weight="bold" />}
         >
-          {numbersActionLabel}
+          <span className="result-action-full">{numbersActionLabel}</span>
+          <span className="result-action-compact">See all numbers</span>
         </ProductButton>
       </div>
     </div>
@@ -883,16 +1044,15 @@ function BridgeStep({ kind, label, value, detail }: {
   return (
     <div className={`bridge-step is-${kind} ${kind !== "start" ? value >= 0 ? "is-positive" : "is-negative" : ""}`} role="listitem">
       <span className="bridge-node" aria-hidden>
-        {kind === "driver" ? <MovementIcon weight="bold" /> : <span>=</span>}
+        {kind === "start" ? <Wallet weight="bold" /> : kind === "finish" ? <ChartBar weight="bold" /> : <MovementIcon weight="bold" />}
       </span>
       <span className="bridge-step-copy">
         <strong>{label}</strong>
-        {detail && <small>{detail}</small>}
       </span>
       <span className="bridge-step-value">
-        <strong className={`tnum ${kind === "driver" || kind === "finish" ? value >= 0 ? "good" : "bad" : ""}`}>{signedProfit(value)}</strong>
-        {kind === "driver" && <small>Profit impact</small>}
+        <strong className={`tnum ${value >= 0 ? "good" : "bad"}`}>{signedProfit(value)}</strong>
       </span>
+      {detail && <small className="bridge-step-detail">{detail}</small>}
     </div>
   );
 }
@@ -941,9 +1101,14 @@ function WhatIfView({
 
       <section className="scenario-workspace">
         <div className="scenario-summary">
-          <div><span>Baseline ({periodTitle})</span><strong className="tnum">{signedProfit(baseline)}</strong></div>
+          <BirdeeMascot
+            state={change >= 0 ? "profit" : "loss"}
+            size={112}
+            className="scenario-summary-birdee"
+          />
+          <div className="scenario-baseline"><span>Baseline ({periodTitle})</span><strong className="tnum">{signedProfit(baseline)}</strong></div>
           <ArrowRight className="scenario-arrow" weight="light" aria-hidden />
-          <div><span>Concept scenario</span><strong className="tnum">{signedProfit(scenarioResult)}</strong></div>
+          <div className="scenario-result"><span>Scenario profit</span><strong className="tnum">{signedProfit(scenarioResult)}</strong></div>
           <div className="scenario-change"><span>Change</span><strong className="tnum">{signedProfit(change)}</strong></div>
         </div>
 
@@ -994,7 +1159,6 @@ function WhatIfView({
               {activeDriver === "fixed" && active.mode === "dollar" && <span>per week</span>}
               {estimatedHours > 0 && <em>≈{estimatedHours.toFixed(1)} fewer hours/day</em>}
             </div>
-            <BirdeeMascot state="neutral" size={82} className="scenario-birdee" />
           </div>
 
           <aside className="scenario-impact">

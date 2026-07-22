@@ -26,14 +26,20 @@ export function BirdeeMascot({
   size = 76,
   className,
   float = false,
+  variant,
 }: {
   state?: BirdeeState;
   size?: number;
   className?: string;
   float?: boolean;
+  variant?: "concerned";
 }) {
   const [failed, setFailed] = useState(false);
   const cls = `${className ?? ""} ${float ? "birdee-float" : ""}`.trim();
+  const src = variant === "concerned"
+    ? assetPath("/brand/birdee-reference-concerned-v1.png")
+    : SRC[state];
+  const alt = variant === "concerned" ? "Little Birdee, thinking" : ALT[state];
 
   if (failed) {
     return <LittleBirdee state={state} size={size} className={cls} />;
@@ -42,10 +48,10 @@ export function BirdeeMascot({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={SRC[state]}
+      src={src}
       width={size}
       height={size}
-      alt={ALT[state]}
+      alt={alt}
       onError={() => setFailed(true)}
       className={cls}
       style={{ objectFit: "contain" }}

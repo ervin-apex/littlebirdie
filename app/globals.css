@@ -22,15 +22,27 @@ body {
 }
 
 body {
-  font-family: var(--font-dmsans), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-poppins);
+  --font-ui: var(--font-nunito);
+  --font-outfit: var(--font-display);
+  --font-dmsans: var(--font-ui);
+  font-family: var(--font-ui), "Trebuchet MS", system-ui, sans-serif;
   background: var(--lb-paper);
   color: var(--lb-ink);
+  font-kerning: normal;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 .font-display {
-  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  text-wrap: balance;
 }
 
 .tnum {
@@ -50,7 +62,7 @@ body {
   padding: 0 var(--lb-control-pad-x);
   color: var(--lb-ink);
   cursor: pointer;
-  font-family: var(--font-dmsans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui), "Trebuchet MS", system-ui, sans-serif;
   font-size: 13px;
   font-weight: 700;
   line-height: 1.2;

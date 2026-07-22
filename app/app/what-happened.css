@@ -1,0 +1,545 @@
+/* Reference-led What happened view.
+   Mobile and tablet read as a vertical story; desktop turns the same data into a horizontal bridge. */
+
+.detail-title-compact,
+.result-explanation-kicker,
+.result-action-compact {
+  display: none;
+}
+
+.result-explanation-view > .view-back {
+  width: auto;
+  justify-self: start;
+}
+
+.result-explanation-view .detail-title-row p {
+  color: var(--sb-muted);
+}
+
+.result-explanation-panel {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.result-explanation-answer {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 34%, var(--sb-line));
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--sb-yellow) 8%, var(--lb-paper));
+}
+
+.result-explanation-answer h2 strong {
+  font: inherit;
+}
+
+.result-explanation-comparison strong.good,
+.result-explanation-answer h2 strong.good {
+  color: var(--sb-positive) !important;
+}
+
+.result-explanation-comparison strong.bad,
+.result-explanation-answer h2 strong.bad {
+  color: var(--sb-negative) !important;
+}
+
+.bridge-section-head h3 {
+  color: var(--sb-ink);
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  font-weight: 700;
+}
+
+.result-explanation-view .bridge-node {
+  border: 0;
+  background: var(--sb-ink);
+  color: var(--lb-white);
+}
+
+.result-explanation-view .bridge-step.is-driver.is-positive .bridge-node {
+  background: var(--sb-positive);
+  color: var(--lb-white);
+}
+
+.result-explanation-view .bridge-step.is-driver.is-negative .bridge-node {
+  background: var(--sb-negative);
+  color: var(--lb-white);
+}
+
+.result-explanation-view .bridge-step.is-finish .bridge-node {
+  background: var(--sb-yellow);
+  color: var(--sb-ink);
+}
+
+.bridge-step-detail {
+  color: var(--sb-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.result-driver-insight {
+  border-top: 1px solid var(--sb-line);
+  padding-top: 12px;
+}
+
+.result-driver-insight p {
+  font-size: 14px;
+}
+
+@media (min-width: 1101px) {
+  .result-explanation-view {
+    max-width: 1360px;
+  }
+
+  .result-explanation-view .detail-title-row {
+    min-height: 78px;
+    padding-bottom: 14px;
+  }
+
+  .result-explanation-view .detail-title-row h1 {
+    font-size: 30px;
+  }
+
+  .result-explanation-view .result-explanation-panel {
+    display: flex;
+    overflow: visible;
+    flex-direction: column;
+  }
+
+  .result-explanation-view .result-explanation-answer {
+    display: grid;
+    min-height: 154px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+    border-right: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 34%, var(--sb-line));
+    padding: 18px 48px;
+  }
+
+  .result-explanation-answer > img {
+    width: 124px !important;
+    height: 124px !important;
+    grid-column: 1;
+  }
+
+  .result-explanation-verdict {
+    grid-column: 2;
+    gap: 14px;
+  }
+
+  .result-explanation-answer h2 {
+    max-width: none;
+    font-size: 32px;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+
+  .result-explanation-comparison {
+    font-size: 16px;
+  }
+
+  .result-explanation-comparison strong {
+    font-size: 19px;
+  }
+
+  .result-explanation-view .result-explanation-evidence {
+    padding: 22px 0 0;
+  }
+
+  .bridge-section-head h3 {
+    font-size: 20px;
+  }
+
+  .result-explanation-view .profit-bridge {
+    display: grid;
+    min-height: 188px;
+    flex: none;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    align-items: start;
+    margin-top: 16px;
+  }
+
+  .result-explanation-view .profit-bridge::before {
+    top: 23px;
+    right: 7%;
+    bottom: auto;
+    left: 7%;
+    width: auto;
+    height: 2px;
+  }
+
+  .result-explanation-view .bridge-step,
+  .result-explanation-view .bridge-step.is-driver,
+  .result-explanation-view .bridge-step.is-finish {
+    display: grid;
+    min-height: 178px;
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px 28px 36px minmax(34px, auto);
+    align-items: start;
+    justify-items: start;
+    gap: 2px;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 14px;
+  }
+
+  .result-explanation-view .bridge-step.is-finish {
+    min-height: 178px;
+    margin-left: 8px;
+    border: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 34%, var(--sb-line));
+    border-radius: 14px;
+    background: var(--sb-butter);
+    padding: 14px 18px;
+    transform: translateY(-14px);
+  }
+
+  .result-explanation-view .bridge-step:not(.is-finish)::after,
+  .result-explanation-view .bridge-step.is-driver .bridge-node::before {
+    display: none;
+  }
+
+  .result-explanation-view .bridge-step .bridge-node,
+  .result-explanation-view .bridge-step.is-driver .bridge-node {
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .result-explanation-view .bridge-step-copy {
+    grid-row: 2;
+  }
+
+  .result-explanation-view .bridge-step-value {
+    grid-row: 3;
+    align-items: flex-start;
+    padding: 0;
+    text-align: left;
+  }
+
+  .result-explanation-view .bridge-step-detail {
+    grid-row: 4;
+  }
+
+  .result-explanation-view .bridge-step-copy > strong {
+    font-size: 15px;
+  }
+
+  .result-explanation-view .bridge-step-value > strong {
+    font-size: 26px;
+  }
+
+  .result-explanation-view .result-driver-insight {
+    width: min(100%, 370px);
+    min-height: 76px;
+    align-self: flex-end;
+    margin-top: 2px;
+  }
+
+  .result-explanation-view .bridge-note {
+    margin-top: 2px;
+  }
+
+  .result-explanation-view .detail-footer {
+    min-height: 54px;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 1100px) {
+  .result-explanation-view .result-explanation-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .result-explanation-view .result-explanation-answer {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: center;
+    gap: 22px;
+    border-right: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 34%, var(--sb-line));
+    border-bottom: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 34%, var(--sb-line));
+    padding: 22px 28px;
+  }
+
+  .result-explanation-answer > img {
+    width: 108px !important;
+    height: 108px !important;
+    grid-column: 1;
+  }
+
+  .result-explanation-verdict {
+    grid-column: 2;
+    gap: 12px;
+  }
+
+  .result-explanation-answer h2 {
+    max-width: 22ch;
+    font-size: 28px;
+    font-weight: 650;
+  }
+
+  .result-explanation-view .result-explanation-evidence {
+    width: min(100%, 820px);
+    align-self: center;
+    padding: 28px 34px 20px;
+  }
+
+  .bridge-section-head h3 {
+    font-size: 22px;
+  }
+
+  .result-explanation-view .profit-bridge {
+    display: flex;
+    min-height: 0;
+    flex: none;
+    margin-top: 12px;
+  }
+
+  .result-explanation-view .profit-bridge::before {
+    top: 24px;
+    bottom: 24px;
+    left: 23px;
+    width: 2px;
+    height: auto;
+  }
+
+  .result-explanation-view .bridge-step,
+  .result-explanation-view .bridge-step.is-driver,
+  .result-explanation-view .bridge-step.is-finish {
+    display: grid;
+    min-height: 84px;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 3px 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .result-explanation-view .bridge-step.is-finish {
+    min-height: 76px;
+    margin-top: 8px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--sb-butter);
+    padding: 10px 16px;
+  }
+
+  .result-explanation-view .bridge-step:not(.is-finish)::after {
+    right: 0;
+    bottom: 0;
+    left: 64px;
+  }
+
+  .result-explanation-view .bridge-step.is-driver .bridge-node,
+  .result-explanation-view .bridge-step .bridge-node {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+
+  .result-explanation-view .bridge-step.is-driver .bridge-node::before {
+    display: none;
+  }
+
+  .result-explanation-view .bridge-step-copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .result-explanation-view .bridge-step-value {
+    grid-column: 3;
+    grid-row: 1;
+    padding-left: 18px;
+  }
+
+  .result-explanation-view .bridge-step-detail {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+
+  .result-explanation-view .result-driver-insight {
+    width: min(100%, 390px);
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .result-explanation-view {
+    grid-template-rows: 56px minmax(0, 1fr) auto;
+  }
+
+  .result-explanation-view > .view-back,
+  .result-explanation-view > .detail-title-row {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .result-explanation-view > .view-back {
+    z-index: 2;
+    align-self: center;
+  }
+
+  .result-explanation-view > .detail-title-row {
+    min-height: 56px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 88px;
+    text-align: center;
+  }
+
+  .result-explanation-view .detail-title-row h1 {
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .result-explanation-view > .view-back {
+    max-width: 110px;
+    gap: 5px;
+    font-size: 12.5px;
+  }
+
+  .result-explanation-view .detail-title-full,
+  .result-explanation-view .detail-title-row p {
+    display: none;
+  }
+
+  .result-explanation-view .detail-title-compact {
+    display: inline;
+  }
+
+  .result-explanation-view > .result-explanation-panel {
+    grid-row: 2;
+    margin-inline: -16px;
+  }
+
+  .result-explanation-view > .detail-footer {
+    grid-row: 3;
+  }
+
+  .result-explanation-view .result-explanation-answer {
+    min-height: 188px;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 16px;
+    border-right: 0;
+    border-radius: 0;
+    padding: 24px 20px;
+  }
+
+  .result-explanation-answer > img {
+    width: 96px !important;
+    height: 112px !important;
+  }
+
+  .result-explanation-verdict {
+    gap: 12px;
+  }
+
+  .result-explanation-answer h2 {
+    max-width: none;
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.16;
+    letter-spacing: -0.03em;
+  }
+
+  .result-explanation-comparison {
+    gap: 4px 6px;
+    font-size: 12px;
+  }
+
+  .result-explanation-comparison strong {
+    font-size: 14px;
+  }
+
+  .result-explanation-view .result-explanation-panel {
+    scrollbar-width: none;
+  }
+
+  .result-explanation-view .result-explanation-panel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .result-explanation-view .result-explanation-evidence {
+    width: 100%;
+    padding: 24px 20px 18px;
+  }
+
+  .bridge-section-head h3 {
+    font-size: 24px;
+  }
+
+  .result-explanation-view .profit-bridge {
+    margin-top: 14px;
+  }
+
+  .result-explanation-view .bridge-step,
+  .result-explanation-view .bridge-step.is-driver,
+  .result-explanation-view .bridge-step.is-finish {
+    min-height: 88px;
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+  }
+
+  .result-explanation-view .bridge-step.is-finish {
+    min-height: 76px;
+    margin-top: 8px;
+    padding: 10px 12px;
+  }
+
+  .result-explanation-view .bridge-step:not(.is-finish)::after {
+    left: 60px;
+  }
+
+  .result-explanation-view .bridge-node {
+    width: 46px;
+    height: 46px;
+  }
+
+  .result-explanation-view .bridge-step-copy > strong {
+    font-size: 16px;
+  }
+
+  .result-explanation-view .bridge-step-value {
+    padding-left: 10px;
+  }
+
+  .result-explanation-view .bridge-step-value > strong {
+    font-size: 20px;
+  }
+
+  .result-explanation-view .bridge-step-detail {
+    font-size: 12px;
+  }
+
+  .result-explanation-view .result-driver-insight {
+    width: 100%;
+    min-height: 92px;
+    align-self: stretch;
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  .result-explanation-view .result-driver-insight img {
+    width: 82px !important;
+    height: 82px !important;
+  }
+
+  .result-explanation-view .result-driver-insight p {
+    font-size: 15px;
+  }
+
+  .result-explanation-view .bridge-note {
+    display: none;
+  }
+
+  .result-explanation-view .result-action-full {
+    display: none;
+  }
+
+  .result-explanation-view .result-action-compact {
+    display: inline;
+  }
+}

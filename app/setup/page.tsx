@@ -28,7 +28,6 @@ type StepKey = "revenue" | "wages" | "cogs" | "fixed";
 type StepDefinition = {
   key: StepKey;
   label: string;
-  eyebrow: string;
   title: string;
   description: string;
   helpLabel: string;
@@ -43,7 +42,6 @@ const STEPS: StepDefinition[] = [
   {
     key: "revenue",
     label: "Revenue",
-    eyebrow: "Revenue · Next week",
     title: "What revenue are ya expecting?",
     description: "Pop in each day. We’ll keep the weekly total sorted.",
     helpLabel: "What counts as revenue?",
@@ -56,7 +54,6 @@ const STEPS: StepDefinition[] = [
   {
     key: "wages",
     label: "Wages",
-    eyebrow: "Wages · Next week",
     title: "What will wages cost ya?",
     description: "Use the weekly total from your roster.",
     helpLabel: "What counts as wages?",
@@ -69,7 +66,6 @@ const STEPS: StepDefinition[] = [
   {
     key: "cogs",
     label: "COGS",
-    eyebrow: "Cost of goods · Next week",
     title: "What’s your cost of goods rate?",
     description: "Use the share of revenue spent making what you sell.",
     helpLabel: "What counts as COGS?",
@@ -82,7 +78,6 @@ const STEPS: StepDefinition[] = [
   {
     key: "fixed",
     label: "Fixed + variable",
-    eyebrow: "Other costs · Next week",
     title: "What are your other weekly costs?",
     description: "Rent, power, insurance and the rest — one weekly total.",
     helpLabel: "What counts as other costs?",
@@ -158,7 +153,14 @@ export default function SetupPage() {
         preserveAspectRatio="none"
         aria-hidden="true"
       >
-        <path d="M300 0H1000V1000H280C90 900 90 760 155 610C235 430 55 275 170 135C214 82 258 30 300 0Z" />
+        <path
+          className="setup-wave-edge"
+          d="M167 0H1000V1000H177C177 870 222 830 222 700C222 560 107 540 107 400C107 240 167 180 167 0Z"
+        />
+        <path
+          className="setup-wave-fill"
+          d="M185 0H1000V1000H195C195 870 240 830 240 700C240 560 125 540 125 400C125 240 185 180 185 0Z"
+        />
       </svg>
 
       <header className="setup-header">
@@ -174,11 +176,6 @@ export default function SetupPage() {
 
       <main className="setup-layout">
         <div className="setup-progress" aria-label={`Step ${stepIndex + 1} of ${STEPS.length}: ${step.label}`}>
-          <div className="setup-progress-copy">
-            <strong>{stepIndex + 1} of {STEPS.length}</strong>
-            <span>·</span>
-            <span>{step.label}</span>
-          </div>
           <div className="setup-progress-segments" aria-hidden="true">
             {STEPS.map((item, index) => (
               <span key={item.key} className={index <= stepIndex ? "is-complete" : ""} />
@@ -196,10 +193,11 @@ export default function SetupPage() {
             transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="setup-question">
-              <p className="setup-eyebrow">{step.eyebrow}</p>
               <h1>{step.title}</h1>
               <p className="setup-description">{step.description}</p>
-              <div className={`setup-help-disclosure${helpOpen ? " is-open" : ""}`}>
+            </div>
+
+            <div className={`setup-help-disclosure${helpOpen ? " is-open" : ""}`}>
                 <button
                   id="setup-help-trigger"
                   type="button"
@@ -238,7 +236,6 @@ export default function SetupPage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
             </div>
 
             <div className="setup-input-area">

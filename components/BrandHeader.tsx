@@ -6,7 +6,7 @@ import { PencilSimpleLine } from "@phosphor-icons/react";
 import { assetPath, withoutBasePath } from "@/lib/site";
 
 const NAV = [
-  { href: "/setup", matchPath: "/setup", label: "Update my numbers", icon: PencilSimpleLine },
+  { href: "/setup", matchPath: "/setup", label: "Update numbers", icon: PencilSimpleLine },
 ];
 
 /**
@@ -30,8 +30,8 @@ export function BrandHeader({ variant = "default" }: { variant?: "default" | "ho
         <span
           className={
             isHomeReference
-              ? "text-[24px] font-bold tracking-[-0.02em] text-ink"
-              : "font-display text-[16px] font-semibold sm:text-[17px]"
+              ? "font-display text-[24px] font-bold tracking-[-0.02em] text-ink"
+              : "font-display text-[16px] font-bold sm:text-[17px]"
           }
         >
           <span className="text-ink">Little </span>

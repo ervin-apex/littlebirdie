@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, DM_Sans } from "next/font/google";
+import { Nunito, Poppins } from "next/font/google";
 import "./globals.css";
 
-const outfit = Outfit({
+const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-outfit",
+  weight: ["700", "800"],
+  variable: "--font-poppins",
   display: "swap",
 });
 
-const dmSans = DM_Sans({
+const nunito = Nunito({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-dmsans",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-nunito",
   display: "swap",
 });
 
@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#f9f9f9",
 };
 
@@ -35,7 +36,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} ${dmSans.variable}`}>{children}</body>
+      <body className={`${poppins.variable} ${nunito.variable}`}>{children}</body>
     </html>
   );
 }
