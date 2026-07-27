@@ -1,9 +1,0 @@
-Tripo multiview upload order
-
-1. Front: birdee-front-v2.png
-2. Left: birdee-left-v2.png
-3. Right: birdee-right-v3.png
-4. Back: birdee-back-v2.png
-
-The right view is a horizontal mirror of the validated left profile to keep the
-silhouette, scale, and feather structure consistent across both side inputs.
