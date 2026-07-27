@@ -11,13 +11,15 @@ export function HeroBirdeeMedia() {
     const loop = loopRef.current;
     if (!loop) return;
 
+    loop.pause();
     loop.currentTime = 0;
-    void loop.play().then(
-      () => setLoopActive(true),
-      () => {
-        // The entrance holds its final matching frame if playback is blocked.
-      },
-    );
+    setLoopActive(true);
+
+    requestAnimationFrame(() => {
+      void loop.play().catch(() => {
+        // The exact matching hover frame remains visible if playback is blocked.
+      });
+    });
   };
 
   useEffect(() => {
@@ -65,11 +67,11 @@ export function HeroBirdeeMedia() {
         muted
         playsInline
         preload="auto"
-        poster="/media/landing-video-lab/hero-birdee-seedance-v3-poster.webp"
+        poster="/media/landing-video-lab/hero-birdee-seedance-v4-poster.webp"
         onEnded={startHoverLoop}
       >
         <source
-          src="/media/landing-video-lab/hero-birdee-seedance-v3-entrance.mp4"
+          src="/media/landing-video-lab/hero-birdee-seedance-v4-entrance.mp4"
           type="video/mp4"
         />
       </video>
@@ -83,16 +85,17 @@ export function HeroBirdeeMedia() {
         playsInline
         preload="auto"
         loop
+        poster="/media/landing-video-lab/hero-birdee-seedance-v4-poster.webp"
       >
         <source
-          src="/media/landing-video-lab/hero-birdee-seedance-v3-hover-loop.mp4"
+          src="/media/landing-video-lab/hero-birdee-seedance-v4-hover-loop.mp4"
           type="video/mp4"
         />
       </video>
 
       <img
         className="vlab-hero-poster"
-        src="/media/landing-video-lab/hero-birdee-seedance-v3-poster.webp"
+        src="/media/landing-video-lab/hero-birdee-seedance-v4-poster.webp"
         alt=""
       />
     </div>

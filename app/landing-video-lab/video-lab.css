@@ -273,10 +273,6 @@
   object-position: 50% 50%;
 }
 
-.vlab-hero-video {
-  transition: opacity 160ms linear;
-}
-
 .vlab-hero-video-entrance {
   z-index: 2;
   opacity: 1;
