@@ -1,7 +1,7 @@
 # Little Birdee Landing Video Lab
 
-Status: Seedance v3 entrance and continuous hover loop are integrated and verified
-Last updated: 2026-07-24
+Status: Seedance v4 faster entrance and exact-frame hover handoff are integrated and verified
+Last updated: 2026-07-27
 Owner route: `/landing-video-lab`
 
 This document is the single source of truth for the new motion-led Little Birdee landing-page experiment. Update it whenever a reference, prompt, generation, implementation decision, or test result changes.
@@ -23,16 +23,16 @@ The page has two jobs:
 - Background: generated yellow-on-yellow field derived from the dedicated reference image; no chroma key or alpha layer.
 - Performance: Birdee enters from the right with forceful readable wingbeats, brakes, briefly turns toward the reader, then returns to a stable left-facing hover without leaving the frame.
 - Source archive: `public/media/landing-video-lab/hero-birdee-seedance-v3-source.mp4`.
-- Entrance: `public/media/landing-video-lab/hero-birdee-seedance-v3-entrance.mp4`, frames `0–179`, 7.5 seconds, 1,348,249 bytes.
-- Hover loop: `public/media/landing-video-lab/hero-birdee-seedance-v3-hover-loop.mp4`, frames `180–235`, 2.333 seconds, 373,332 bytes.
-- Poster: `public/media/landing-video-lab/hero-birdee-seedance-v3-poster.webp`, 27,090 bytes.
+- Entrance: `public/media/landing-video-lab/hero-birdee-seedance-v4-entrance.mp4`, 6.792 seconds, 1,686,367 bytes. Source frames `0–143` are accelerated from 6 seconds to 5.25 seconds; source frames `144–180` retain their original settle timing.
+- Hover loop: `public/media/landing-video-lab/hero-birdee-seedance-v4-hover-loop.mp4`, 2.375 seconds, 558,846 bytes. It uses source frames `180–235` and appends source frame `180` as the closing boundary frame.
+- Poster: `public/media/landing-video-lab/hero-birdee-seedance-v4-poster.webp`, 27,090 bytes.
 - Cleanup: the bottom-right `AI generated` mark is removed with `delogo=x=676:y=858:w=260:h=76`; Birdee's full 960 × 960 flight path remains uncropped.
-- Playback: the entrance and loop are separate preloaded video layers. At the end of the entrance the matching loop begins and the layers crossfade over 160 ms; the entrance holds its final frame until the loop is visibly playing.
+- Playback: the entrance and loop are separate preloaded video layers. The entrance ends on source frame `180`, which is also the first and final frame of the hover asset. The page selects the paused first hover frame, switches layers instantly with no opacity transition, then begins hover playback on the next animation frame.
 - Audio: omitted from the production files. The videos autoplay muted; any chirp will be added later as an intentional user-triggered sound.
 - Responsive rule: the square master fills the diagonal yellow desktop media field and the full-width yellow mobile media stage. Birdee remains clear of real HTML copy and controls.
 - The white/paper half of the hero remains live HTML/CSS. It is not part of the generated video and therefore cannot create keying or blend-mode edge problems.
 - No chroma key, alpha video, `mix-blend-darken`, or generated website text is used in this pass.
-- The current route uses this production pass. The older v1/v2 and Wan assets remain archived for comparison only.
+- The current route uses this production pass. The older v1/v2/v3 and Wan assets remain archived for comparison only.
 
 ## Locked decisions
 
@@ -319,6 +319,7 @@ Initial performance targets:
 
 | Date | Tool/model | Inputs | Result |
 | --- | --- | --- | --- |
+| 2026-07-27 | Offline FFmpeg timing and boundary refinement | v3 Seedance source plus the accepted v3 timing | Shortened the entrance by 0.708 seconds while retaining the original final settle, forced the shared source frame `180` at the entrance/hover boundary, appended the same frame to close the hover loop, increased boundary encoding quality, and removed the 160 ms CSS crossfade. |
 | 2026-07-24 | Seedance 2.0 reference-to-video, 960p square, 10 seconds | Single yellow-background reference: `hero-birdee-seedance-motion-reference-v2.png`; time-coded entrance, viewer acknowledgement, and no-exit hover prompt | Strong entrance wingbeats and reader acknowledgement succeeded. Birdee remained on-screen. Source was split into a 7.5-second entrance and a matching 2.333-second hover loop, the generator mark was removed without cropping, and both layers were integrated with a 160 ms handoff. |
 | 2026-07-23 | Seedance reference-to-video, 960p square, 5 seconds | Single character reference: `hero-entrance-start-v1.png`; explicit full upstroke/downstroke prompt on flat `#FCB400` | Wing motion succeeded. Archived source, removed the bottom AI mark with a centred square crop, trimmed the stationary ending at 3.84 seconds, and produced the clean v2 candidate plus poster. |
 | 2026-07-23 | Wan website, Wan2.7 Reference mode, 1080p, 1:1, 10 seconds | Single character reference: `hero-entrance-start-v1.png`; flat `#FCB400` entrance-and-hover prompt | Completed and downloaded as `hero-birdee-wan-v1-source.mp4`; rejected because the character translated across the frame but the raised wings remained effectively frozen. |
@@ -335,18 +336,18 @@ Initial performance targets:
 | 2026-07-23 | Offline keying with FFmpeg | Raw Seedance source, sampled blue midpoint `#128BD3` | Accepted key: `colorkey=0x128BD3:0.26:0.04`, alpha extraction plus one-pixel erosion, then blue despill `mix=0.65:expand=0.15`. The erosion removed the remaining blue fringe from Birdee's yellow edge. |
 | 2026-07-23 | Next.js integration | Transparent WebM, paper MP4 fallback, alpha WebP poster | New six-section route built at `/landing-video-lab`. Existing `/landing-hero-lab` remains untouched. Hero uses generated motion; later sections use only approved sculpted brand renders until their individual motion plates are worth producing. |
 
-## Current accepted hero output — 2026-07-24
+## Current accepted hero output — 2026-07-27
 
 Final live assets:
 
 | File | Purpose | Size |
 | --- | --- | ---: |
-| `public/media/landing-video-lab/hero-birdee-seedance-v3-entrance.mp4` | Plays the entrance, braking action, and one-time viewer acknowledgement | 1,348,249 bytes |
-| `public/media/landing-video-lab/hero-birdee-seedance-v3-hover-loop.mp4` | Continuous calm hover after the entrance completes | 373,332 bytes |
-| `public/media/landing-video-lab/hero-birdee-seedance-v3-poster.webp` | Loading and reduced-motion still | 27,090 bytes |
+| `public/media/landing-video-lab/hero-birdee-seedance-v4-entrance.mp4` | Faster entrance, braking action, and one-time viewer acknowledgement | 1,686,367 bytes |
+| `public/media/landing-video-lab/hero-birdee-seedance-v4-hover-loop.mp4` | Exact-boundary continuous hover after the entrance completes | 558,846 bytes |
+| `public/media/landing-video-lab/hero-birdee-seedance-v4-poster.webp` | Loading, boundary, and reduced-motion still | 27,090 bytes |
 | `public/media/landing-video-lab/hero-birdee-seedance-v3-source.mp4` | Unmodified downloaded source archive | 4,330,678 bytes |
 
-The route uses two stacked native video elements. Both are preloaded. The entrance plays once, the loop starts only after it is ready, and the matching frames crossfade for 160 ms. On `prefers-reduced-motion: reduce`, both videos are hidden and paused and the v3 poster is shown.
+The route uses two stacked native video elements. Both are preloaded. The entrance plays once and ends on the hover's exact source boundary frame. The page switches instantly to the paused matching hover frame, then starts the loop on the following animation frame. There is no opacity transition. On `prefers-reduced-motion: reduce`, both videos are hidden and paused and the v4 poster is shown.
 
 The full hero remains a live responsive webpage: logo, navigation, typography, CTA, badge, diagonal split, white/paper copy field, and yellow media field are HTML/CSS. Only Birdee and the yellow-on-yellow media texture are generated.
 
@@ -403,6 +404,17 @@ Sections:
 6. Waitlist with real validation, success state, and a restrained CSS chirp response.
 
 ## Verification record
+
+Verified on 2026-07-27:
+
+- `npm.cmd run build`: successful; `/landing-video-lab` statically prerendered at 6.53 kB route code / 109 kB first load.
+- `npx.cmd tsc --noEmit`: successful.
+- Entrance duration is 6.792 seconds, 0.708 seconds shorter than v3.
+- The first 6 seconds of source motion are compressed to 5.25 seconds; the final 1.542-second settle retains its original speed and pose.
+- The entrance ends on source frame `180`; the hover starts and closes on that same frame.
+- Browser handoff sampled every 16 ms: opacity switches directly from entrance `1` / loop `0` to entrance `0` / loop `1`, with no intermediate opacity values. Hover playback begins at `0.001` seconds.
+- Camera acknowledgement remains readable at approximately 4.8 seconds.
+- Mobile verified at 390 × 844 with no horizontal overflow; the handoff completes with both video layers fully buffered.
 
 Verified on 2026-07-24:
 
