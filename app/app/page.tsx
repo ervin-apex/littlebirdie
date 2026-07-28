@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
@@ -10,24 +10,27 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Buildings,
+  CaretDown,
   CaretLeft,
   CaretRight,
+  CaretUp,
   ChartBar,
   ChartLineUp,
   Check,
+  Cube,
   Flask,
+  Leaf,
   Minus,
+  PencilSimpleLine,
   Plus,
   ShieldCheck,
-  ShoppingBag,
   UsersThree,
   Wallet,
   X,
 } from "@phosphor-icons/react";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { ProductButton } from "@/components/ProductButton";
-import { withoutBasePath } from "@/lib/site";
+import { assetPath, withoutBasePath } from "@/lib/site";
 import {
   DEFAULTS,
   DEMO_HISTORY_RANGE,
@@ -53,6 +56,7 @@ import {
 } from "@/lib/profit";
 import "./scoreboard.css";
 import "./what-happened.css";
+import "./what-if.css";
 
 type Chapter = "revenue" | "budget" | "week";
 type Screen =
@@ -82,9 +86,9 @@ const DRIVER_LABELS: Record<Driver, string> = {
 
 const DRIVER_ICONS = {
   revenue: ChartLineUp,
-  cogs: ShoppingBag,
+  cogs: Cube,
   wages: UsersThree,
-  fixed: Buildings,
+  fixed: Leaf,
 };
 
 const DEFAULT_ADJUSTMENTS: Adjustments = {
@@ -1070,8 +1074,9 @@ function WhatIfView({
   scenarioDays: number;
   onBack: () => void;
 }) {
-  const [activeDriver, setActiveDriver] = useState<Driver>("wages");
+  const [activeDriver, setActiveDriver] = useState<Driver>("revenue");
   const [adjustments, setAdjustments] = useState<Adjustments>(DEFAULT_ADJUSTMENTS);
+  const reduceMotion = useReducedMotion();
   const active = adjustments[activeDriver];
 
   const scenarioWeek = applyScenario(week, adjustments, scenarioDays);
@@ -1081,6 +1086,23 @@ function WhatIfView({
   const estimatedHours = activeDriver === "wages" && active.mode === "dollar"
     ? Math.abs(active.value / 31)
     : 0;
+  const scenarioDeltaCopy = Math.abs(change) < 0.5
+    ? "Same as now"
+    : `${signedProfit(change)} ${change >= 0 ? "better" : "worse"} than now`;
+  const activeValue = activeDriver === "cogs"
+    ? `${scenarioWeek.cogs}%`
+    : formatAdjustment(activeDriver, active);
+  const activeUnit = activeDriver === "cogs"
+    ? adjustments.cogs.value === 0
+      ? "Current rate"
+      : `${formatAdjustment("cogs", adjustments.cogs)} from now`
+    : active.value === 0
+      ? ""
+    : active.mode === "dollar"
+      ? activeDriver === "fixed"
+        ? "per week"
+        : "per day"
+      : "change";
 
   const setActive = (patch: Partial<Adjustment>) => {
     setAdjustments((current) => ({
@@ -1089,108 +1111,168 @@ function WhatIfView({
     }));
   };
 
+  const resetScenario = () => {
+    setAdjustments({
+      revenue: { value: 0, mode: "dollar" },
+      cogs: { value: 0, mode: "percent" },
+      wages: { value: 0, mode: "dollar" },
+      fixed: { value: 0, mode: "dollar" },
+    });
+    setActiveDriver("revenue");
+  };
+
+  const driverSummary = (driver: Driver) => {
+    if (driver === "cogs") return `${scenarioWeek.cogs}%`;
+    return formatAdjustment(driver, adjustments[driver]);
+  };
+
+  const driverTone = (driver: Driver, value: number) => {
+    if (value === 0) return "";
+    const helpsProfit = driver === "revenue" ? value > 0 : value < 0;
+    return helpsProfit ? "good" : "bad";
+  };
+
+  const driverHint: Record<Driver, string> = {
+    revenue: "See what a little more revenue could do.",
+    wages: "Try a roster change and see where profit lands.",
+    cogs: "Test a different cost-of-goods rate.",
+    fixed: "See how a weekly overhead change affects profit.",
+  };
+
   return (
     <div className="what-if-view">
       <ViewBack label={periodTitle} onClick={onBack} />
-      <div className="detail-title-row what-if-title">
-        <div>
-          <div className="title-with-tag"><h1>What if?</h1><span>Concept scenario</span></div>
-          <p>Test a change. Reports unchanged.</p>
-        </div>
-      </div>
 
-      <section className="scenario-workspace">
-        <div className="scenario-summary">
-          <BirdeeMascot
-            state={change >= 0 ? "profit" : "loss"}
-            size={112}
-            className="scenario-summary-birdee"
-          />
-          <div className="scenario-baseline"><span>Baseline ({periodTitle})</span><strong className="tnum">{signedProfit(baseline)}</strong></div>
-          <ArrowRight className="scenario-arrow" weight="light" aria-hidden />
-          <div className="scenario-result"><span>Scenario profit</span><strong className="tnum">{signedProfit(scenarioResult)}</strong></div>
-          <div className="scenario-change"><span>Change</span><strong className="tnum">{signedProfit(change)}</strong></div>
-        </div>
+      <p className="what-if-notice">
+        <ShieldCheck weight="regular" aria-hidden />
+        <span>Temporary — nothing here changes your reports.</span>
+      </p>
 
-        <div className="scenario-columns">
-          <div className="driver-list">
-            <h2>Drivers</h2>
+      <main className="what-if-workspace">
+        <section className="what-if-result-card" aria-labelledby="scenario-profit-title">
+          <div className="what-if-result-main">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={assetPath("/brand/birdee-what-if-calculator-v1.png")}
+              alt="Little Birdee checking a calculator"
+              className="what-if-birdee"
+            />
+            <div className="what-if-result-copy">
+              <span id="scenario-profit-title">Scenario profit</span>
+              <strong className="tnum">{signedProfit(scenarioResult)}</strong>
+              <em className={change >= 0 ? "good" : "bad"}>{scenarioDeltaCopy}</em>
+            </div>
+          </div>
+          <div className="what-if-baseline">
+            <span>Right now <small>{periodTitle}</small></span>
+            <strong className="tnum">{signedProfit(baseline)}</strong>
+          </div>
+        </section>
+
+        <section className="what-if-adjuster" aria-labelledby="try-a-change-title">
+          <h2 id="try-a-change-title">Try a change</h2>
+          <div className="what-if-accordion">
             {(Object.keys(DRIVER_LABELS) as Driver[]).map((driver) => {
               const Icon = DRIVER_ICONS[driver];
+              const isActive = activeDriver === driver;
+              const panelId = `what-if-${driver}-controls`;
+              const value = adjustments[driver];
+              const tone = driverTone(driver, value.value);
+
               return (
-                <button
-                  type="button"
-                  key={driver}
-                  className={activeDriver === driver ? "driver-row is-active" : "driver-row"}
-                  onClick={() => setActiveDriver(driver)}
-                >
-                  <span className="driver-icon"><Icon weight="regular" /></span>
-                  <span>{DRIVER_LABELS[driver]}</span>
-                  <strong className="tnum">{formatAdjustment(driver, adjustments[driver])}</strong>
-                </button>
+                <section className={`what-if-driver ${isActive ? "is-active" : ""}`} key={driver}>
+                  <button
+                    type="button"
+                    className="what-if-driver-row"
+                    onClick={() => setActiveDriver(driver)}
+                    aria-expanded={isActive}
+                    aria-controls={panelId}
+                  >
+                    <span className={`what-if-driver-icon is-${driver}`}><Icon weight="regular" /></span>
+                    <span className="what-if-driver-label">{DRIVER_LABELS[driver]}</span>
+                    <strong className={`tnum ${tone === "good" ? "is-positive" : tone === "bad" ? "is-negative" : ""}`}>{driverSummary(driver)}</strong>
+                    {isActive ? <CaretUp weight="bold" aria-hidden /> : <CaretDown weight="bold" aria-hidden />}
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.div
+                        id={panelId}
+                        className="what-if-driver-control"
+                        initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <div className="what-if-control-inner">
+                          {activeDriver !== "cogs" && (
+                            <div className="what-if-mode-row">
+                              <span>Adjust by</span>
+                              <div className="mode-control" role="group" aria-label="Choose adjustment unit">
+                                <button type="button" className={active.mode === "dollar" ? "is-active" : ""} onClick={() => setActive({ mode: "dollar", value: 0 })}>$</button>
+                                <button type="button" className={active.mode === "percent" ? "is-active" : ""} onClick={() => setActive({ mode: "percent", value: 0 })}>%</button>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="what-if-stepper">
+                            <button
+                              type="button"
+                              aria-label={`Decrease ${DRIVER_LABELS[activeDriver]}`}
+                              onClick={() => setActive({ value: Math.max(config.min, active.value - config.step) })}
+                            >
+                              <Minus weight="regular" />
+                            </button>
+                            <div>
+                              <strong className={`tnum ${driverTone(activeDriver, active.value)}`}>{activeValue}</strong>
+                              {activeUnit && <span>{activeUnit}</span>}
+                            </div>
+                            <button
+                              type="button"
+                              aria-label={`Increase ${DRIVER_LABELS[activeDriver]}`}
+                              onClick={() => setActive({ value: Math.min(config.max, active.value + config.step) })}
+                            >
+                              <Plus weight="regular" />
+                            </button>
+                          </div>
+
+                          <input
+                            className="what-if-range"
+                            type="range"
+                            min={config.min}
+                            max={config.max}
+                            step={config.step}
+                            value={active.value}
+                            onChange={(event) => setActive({ value: Number(event.target.value) })}
+                            aria-label={`Adjust ${DRIVER_LABELS[activeDriver]}`}
+                          />
+                          <p>{driverHint[activeDriver]}</p>
+                          {estimatedHours > 0 && <small>About {estimatedHours.toFixed(1)} fewer rostered hours a day.</small>}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </section>
               );
             })}
           </div>
 
-          <div className="driver-control">
-            <h2>Adjust {DRIVER_LABELS[activeDriver].toLowerCase()}</h2>
-            {activeDriver !== "cogs" && (
-              <div className="mode-control" role="group" aria-label="Choose adjustment unit">
-                <button type="button" className={active.mode === "dollar" ? "is-active" : ""} onClick={() => setActive({ mode: "dollar", value: 0 })}>$</button>
-                <button type="button" className={active.mode === "percent" ? "is-active" : ""} onClick={() => setActive({ mode: "percent", value: 0 })}>%</button>
-              </div>
-            )}
-            <div className="slider-row">
-              <button type="button" aria-label="Decrease" onClick={() => setActive({ value: Math.max(config.min, active.value - config.step) })}><Minus weight="bold" /></button>
-              <input
-                type="range"
-                min={config.min}
-                max={config.max}
-                step={config.step}
-                value={active.value}
-                onChange={(event) => setActive({ value: Number(event.target.value) })}
-                aria-label={`Adjust ${DRIVER_LABELS[activeDriver]}`}
-              />
-              <button type="button" aria-label="Increase" onClick={() => setActive({ value: Math.min(config.max, active.value + config.step) })}><Plus weight="bold" /></button>
-            </div>
-            <div className="active-adjustment">
-              <strong className="tnum">{formatAdjustment(activeDriver, active)}</strong>
-              {active.mode === "dollar" && activeDriver !== "fixed" && <span>per day</span>}
-              {activeDriver === "fixed" && active.mode === "dollar" && <span>per week</span>}
-              {estimatedHours > 0 && <em>≈{estimatedHours.toFixed(1)} fewer hours/day</em>}
-            </div>
+          <div className="what-if-actions">
+            <ProductButton
+              variant="tertiary"
+              size="compact"
+              className="what-if-reset"
+              onClick={resetScenario}
+              leadingIcon={<ArrowCounterClockwise weight="bold" />}
+            >
+              Reset
+            </ProductButton>
+            <ProductButton variant="secondary" size="compact" className="what-if-done" onClick={onBack}>
+              Close scenario
+            </ProductButton>
           </div>
-
-          <aside className="scenario-impact">
-            <h2>Scenario impact</h2>
-            <div><span>Concept scenario</span><strong className="tnum">{signedProfit(scenarioResult)}</strong></div>
-            <div><span>Change vs. baseline</span><strong className={`tnum ${change >= 0 ? "good" : "bad"}`}>{signedProfit(change)}</strong></div>
-          </aside>
-        </div>
-      </section>
-
-      <div className="scenario-footer">
-        <span><ShieldCheck size={22} weight="regular" /> Reports unchanged</span>
-        <div>
-          <ProductButton
-            variant="tertiary"
-            size="compact"
-            className="reset-action"
-            onClick={() => setAdjustments({
-              revenue: { value: 0, mode: "dollar" },
-              cogs: { value: 0, mode: "percent" },
-              wages: { value: 0, mode: "dollar" },
-              fixed: { value: 0, mode: "dollar" },
-            })}
-            leadingIcon={<ArrowCounterClockwise weight="bold" />}
-          >
-            Reset
-          </ProductButton>
-          <ProductButton variant="secondary" size="compact" className="secondary-action" onClick={onBack}>
-            Close scenario
-          </ProductButton>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
@@ -1215,31 +1297,80 @@ function FullNumbersView({
   onSelectDay: (index: number) => void;
 }) {
   const [activeView, setActiveView] = useState<"overview" | "detail">("overview");
+  const [showAllNumbers, setShowAllNumbers] = useState(mode === "day");
   const completed = rows.filter((row) => row.actual);
   const actual = totalCells(completed, "actual");
   const budgetToDate = totalCells(completed, "predicted");
+  const scopeBudget = totalCells(rows, "predicted");
   const difference = actual.net - budgetToDate.net;
   const be = scopeBreakeven(rows, week.cogs);
-  const margin = 1 / GST_DIVISOR - week.cogs / 100;
-  const profitAboveLine = Math.max(0, be.clearedBy * margin);
-  const extraCostsAboveLine = Math.max(0, be.clearedBy - profitAboveLine);
-  const totalWidth = Math.max(1, be.revenue);
-  const beWidth = Math.min(100, (be.breakeven / totalWidth) * 100);
-  const extraWidth = Math.min(100 - beWidth, (extraCostsAboveLine / totalWidth) * 100);
-  const profitWidth = Math.max(0, 100 - beWidth - extraWidth);
+  const breakEvenDelta = scopeBudget.rev - be.breakeven;
+  const isShortOfBreakEven = breakEvenDelta < 0;
+  const breakEvenGap = Math.abs(breakEvenDelta);
+  const breakEvenScale = Math.max(1, scopeBudget.rev, be.breakeven);
+  const revenuePlanPosition = Math.min(100, (scopeBudget.rev / breakEvenScale) * 100);
+  const breakEvenPosition = Math.min(100, (be.breakeven / breakEvenScale) * 100);
+  const gapPosition = (revenuePlanPosition + breakEvenPosition) / 2;
+  const wagesPct = scopeBudget.rev > 0
+    ? (scopeBudget.lab / (scopeBudget.rev / GST_DIVISOR)) * 100
+    : 0;
+  const scopeKicker = mode === "day"
+    ? "Day outlook"
+    : mode === "history"
+      ? "Selected-range outlook"
+      : "Full-week outlook";
+  const breakEvenStatus = `${money(breakEvenGap)} ${isShortOfBreakEven ? "short of" : "above"} break-even`;
+  const breakEvenSupport = isShortOfBreakEven
+    ? "Your revenue plan is close, but it does not cover the current cost mix yet."
+    : "Your revenue plan clears the current cost mix."
+  const breakEvenCallout = isShortOfBreakEven
+    ? `At this cost mix, you need another ${money(breakEvenGap)} in revenue to reach $0 profit.`
+    : `At this cost mix, the plan clears break-even by ${money(breakEvenGap)}.`;
+  const enteredRows = rows.filter((row) => row.actual).length;
+  const currentRow = rows.find((row) => row.status === "today");
+  const isDailyDetail = rowLabel === "Day";
+  const detailTitle = isDailyDetail ? "Daily profit" : "Weekly profit";
+  const detailSummary = isDailyDetail
+    ? `${enteredRows} of ${rows.length} days entered${currentRow ? ` · Today is ${fullDayName(currentRow.label)}` : ""}`
+    : `${enteredRows} ${enteredRows === 1 ? "week" : "weeks"} in this range`;
 
   return (
-    <div className="full-numbers-view">
+    <>
+      <div className="full-numbers-view">
       <div className="full-numbers-heading">
         <ViewBack label={backLabel} onClick={onBack} />
         <h1>{title}</h1>
       </div>
 
-      <section className={`full-summary-strip is-${mode}`}>
-        <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={54} />
-        <SummaryValue label="Result" value={actual.net} tone={actual.net >= 0 ? "good" : "bad"} />
-        <SummaryValue label="Budget" value={budgetToDate.net} />
-        <SummaryValue label="Difference" value={difference} tone={difference >= 0 ? "good" : "bad"} />
+      <section className={`full-profit-hero is-${mode}`} aria-labelledby="full-profit-value">
+        <BirdeeMascot
+          state={difference >= 0 ? "profit" : "loss"}
+          variant={difference < 0 ? "concerned" : undefined}
+          size={122}
+          className="full-profit-birdee"
+        />
+        <div className="full-profit-result">
+          <strong
+            id="full-profit-value"
+            className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}
+          >
+            {signedProfit(actual.net)}
+          </strong>
+          <span>{mode === "week" ? "Actual profit to date" : "Actual profit"}</span>
+        </div>
+        <div className="full-profit-comparison">
+          <p>
+            {Math.abs(difference) < 0.5 ? (
+              "Right on budget."
+            ) : (
+              <>
+                You&apos;re <strong className={difference >= 0 ? "good" : "bad"}>{money(Math.abs(difference))}</strong>{" "}
+                {difference >= 0 ? "ahead of" : "behind"} budget.
+              </>
+            )}
+          </p>
+          <span><strong className="tnum">{signedProfit(budgetToDate.net)}</strong> {mode === "week" ? "budget to date" : "budget"}</span>
+        </div>
       </section>
 
       {mode !== "day" && (
@@ -1273,52 +1404,145 @@ function FullNumbersView({
             budget={budgetToDate}
             gstActual={gstFromGross(actual.rev)}
             gstBudget={gstFromGross(budgetToDate.rev)}
-            cogsPct={week.cogs}
+            expanded={showAllNumbers}
+            onToggle={() => setShowAllNumbers((current) => !current)}
           />
 
-          <section className="break-even-panel">
-          <div className="percentage-pair">
-            <div><span>Wages</span><strong>{((week.lab / (week.rev / GST_DIVISOR)) * 100).toFixed(1)}%</strong><small>of net revenue</small></div>
-            <div><span>COGS</span><strong>{week.cogs.toFixed(1)}%</strong><small>of net revenue</small></div>
-          </div>
-          <div className="break-even-head"><div><span>Break-even revenue</span><strong className="tnum">{money(be.breakeven)}</strong></div><div><span>Budget revenue</span><strong className="tnum">{money(week.rev)}</strong></div></div>
-          <div className="break-even-bar" aria-label="Break-even revenue composition">
-            <span className="be-costs" style={{ width: `${beWidth}%` }} />
-            <span className="be-extra" style={{ width: `${extraWidth}%` }} />
-            <span className="be-profit" style={{ width: `${profitWidth}%` }} />
-          </div>
-          <div className="break-even-legend">
-            <div><i className="be-costs" /><span>Costs covered to break even</span><strong>{money(be.breakeven)}</strong></div>
-            <div><i className="be-extra" /><span>Extra COGS + GST</span><strong>{money(extraCostsAboveLine)}</strong></div>
-            <div><i className="be-profit" /><span>Profit</span><strong>{money(profitAboveLine)}</strong></div>
-          </div>
-          <div className="budget-revenue-row"><span>Budget revenue</span><strong className="tnum">{money(week.rev)}</strong></div>
+          <section className={`break-even-panel ${isShortOfBreakEven ? "is-short" : "is-clear"}`} aria-labelledby="break-even-title">
+            <header className="break-even-title">
+              <span>{scopeKicker}</span>
+              <h2 id="break-even-title">Break-even picture</h2>
+            </header>
+
+            <p className="break-even-status">
+              <strong className="tnum">{money(breakEvenGap)}</strong>{" "}
+              {isShortOfBreakEven ? "short of" : "above"} break-even
+            </p>
+            <p className="break-even-support">{breakEvenSupport}</p>
+
+            <div
+              className="break-even-comparison"
+              role="img"
+              aria-label={`Revenue plan ${money(scopeBudget.rev)}. Break-even ${money(be.breakeven)}. ${breakEvenStatus}.`}
+            >
+              <div className="break-even-comparison-labels">
+                <span>Revenue plan<strong className="tnum">{money(scopeBudget.rev)}</strong></span>
+                <span>Break-even<strong className="tnum">{money(be.breakeven)}</strong></span>
+              </div>
+              <div
+                className="break-even-track"
+                style={{
+                  "--revenue-plan-position": `${revenuePlanPosition}%`,
+                  "--break-even-position": `${breakEvenPosition}%`,
+                  "--gap-position": `${gapPosition}%`,
+                } as CSSProperties}
+              >
+                <span className="break-even-progress" />
+                <span className="break-even-plan-marker" />
+                <span className="break-even-threshold-marker" />
+                {breakEvenGap >= 0.5 && (
+                  <span className="break-even-gap-label">{money(breakEvenGap)} gap</span>
+                )}
+              </div>
+            </div>
+
+            <div className="break-even-cost-context">
+              <div><span>Wages</span><strong className="tnum">{wagesPct.toFixed(1)}%</strong><small>of net revenue</small></div>
+              <div><span>COGS rate</span><strong className="tnum">{week.cogs.toFixed(1)}%</strong><small>of gross revenue</small></div>
+            </div>
+
+            <div className="break-even-callout">
+              <BirdeeMascot state="neutral" size={42} />
+              <p>{breakEvenCallout}</p>
+            </div>
           </section>
         </div>
       ) : (
         <section className="daily-numbers-panel full-numbers-detail-panel" role="tabpanel" aria-label={`By ${rowLabel.toLowerCase()}`}>
-          <div className="daily-table-head"><span>{rowLabel}</span><span>Status</span><span>Actual</span><span>Budget</span><span>Difference</span></div>
+          <header className="daily-panel-heading">
+            <div>
+              <h2>{detailTitle}</h2>
+              <p>{detailSummary}</p>
+            </div>
+            {isDailyDetail && <span>Open a completed day for its full breakdown.</span>}
+          </header>
+          <div className="daily-table-head"><span>{rowLabel}</span><span>Actual</span><span>Budget</span><span>Vs budget</span></div>
           {rows.map((row) => {
             const delta = row.variance?.net ?? 0;
-            return (
+            const canOpen = Boolean(row.actual && mode === "week");
+            const isAhead = delta >= 0;
+            const statusLabel = row.actual
+              ? isAhead ? "Ahead" : "Behind"
+              : row.status === "today" ? "Today" : "Upcoming";
+            const rowClassName = [
+              "daily-table-row",
+              row.actual ? "is-complete" : "",
+              canOpen ? "is-actionable" : "",
+              `is-${row.status}`,
+            ].filter(Boolean).join(" ");
+            const rowContent = (
+              <>
+                <span className="daily-day-cell">
+                  <strong>{isDailyDetail ? fullDayName(row.label) : row.label}</strong>
+                  <span className={`daily-status ${row.actual ? isAhead ? "is-ahead" : "is-behind" : row.status === "today" ? "is-current" : "is-upcoming"}`}>
+                    {row.actual && (isAhead ? <Check weight="bold" aria-hidden /> : <ArrowDown weight="bold" aria-hidden />)}
+                    {!row.actual && <i aria-hidden />}
+                    {statusLabel}
+                  </span>
+                </span>
+                <strong className={`tnum daily-actual ${row.actual ? row.actual.net >= 0 ? "good" : "bad" : "daily-empty"}`}>
+                  {row.actual ? signedProfit(row.actual.net) : row.status === "today" ? "Not entered" : "Not yet"}
+                </strong>
+                <span className="tnum daily-budget">{signedProfit(row.predicted.net)}</span>
+                <span className={`daily-variance ${row.actual ? isAhead ? "good" : "bad" : "daily-empty"}`}>
+                  {row.actual ? (
+                    <>
+                      <strong className="tnum">{money(Math.abs(delta))}</strong>
+                      <small>{isAhead ? "ahead" : "behind"}</small>
+                    </>
+                  ) : (
+                    <strong aria-label="No comparison yet">—</strong>
+                  )}
+                  {canOpen && <ArrowRight className="daily-row-arrow" weight="bold" aria-hidden />}
+                </span>
+              </>
+            );
+
+            return canOpen ? (
               <button
                 type="button"
                 key={row.index}
-                className={`daily-table-row ${row.actual && mode === "week" ? "is-complete" : ""} ${row.status === "today" ? "is-today" : ""}`}
-                onClick={() => row.actual && mode === "week" && onSelectDay(row.index)}
-                disabled={!row.actual || mode !== "week"}
+                className={rowClassName}
+                onClick={() => onSelectDay(row.index)}
+                aria-label={`View ${fullDayName(row.label)} details`}
               >
-                <span>{row.label}</span>
-                <span><StatusDot row={row} /></span>
-                <strong className={`tnum ${row.actual ? row.actual.net >= 0 ? "good" : "bad" : ""}`}>{row.actual ? signedProfit(row.actual.net) : "—"}</strong>
-                <span className="tnum">{signedProfit(row.predicted.net)}</span>
-                <span className={`tnum ${row.actual ? delta >= 0 ? "good" : "bad" : ""}`}>{row.actual ? signedProfit(delta) : "—"}</span>
+                {rowContent}
               </button>
+            ) : (
+              <div className={rowClassName} key={row.index}>
+                {rowContent}
+              </div>
             );
           })}
         </section>
       )}
-    </div>
+
+      </div>
+
+      {typeof document !== "undefined" && createPortal(
+        <div className="full-numbers-mobile-dock" aria-label="Full numbers action">
+          <ProductButton
+            href="/setup"
+            variant="primary"
+            fullWidth
+            leadingIcon={<PencilSimpleLine weight="bold" />}
+          >
+            Update numbers
+          </ProductButton>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 
@@ -1542,26 +1766,144 @@ function DayScore({
   );
 }
 
-function ReconciliationTable({ actual, budget, gstActual, gstBudget, cogsPct }: { actual: DayCell; budget: DayCell; gstActual: number; gstBudget: number; cogsPct: number }) {
+function ReconciliationTable({
+  actual,
+  budget,
+  gstActual,
+  gstBudget,
+  expanded,
+  onToggle,
+}: {
+  actual: DayCell;
+  budget: DayCell;
+  gstActual: number;
+  gstBudget: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const rows = [
-    { label: "Revenue", actual: actual.rev, budget: budget.rev, meaning: varianceMeaning(actual.rev - budget.rev, "above", "below") },
-    { label: "COGS", actual: -actual.cogs, budget: -budget.cogs, meaning: `${cogsPct.toFixed(0)}% of revenue` },
-    { label: "Wages", actual: -actual.lab, budget: -budget.lab, meaning: varianceMeaning(actual.lab - budget.lab, "over", "under") },
-    { label: "GST", actual: -gstActual, budget: -gstBudget, meaning: "Removed from gross revenue" },
-    { label: "Fixed & variable", actual: -actual.fix, budget: -budget.fix, meaning: varianceMeaning(actual.fix - budget.fix, "over", "under") },
-    { label: "Profit", actual: actual.net, budget: budget.net, meaning: varianceMeaning(actual.net - budget.net, "ahead", "behind") },
+    {
+      key: "revenue",
+      label: "Revenue",
+      actual: actual.rev,
+      budget: budget.rev,
+      variance: actual.rev - budget.rev,
+      positive: "above budget",
+      negative: "below budget",
+      driver: true,
+    },
+    {
+      key: "cogs",
+      label: "COGS",
+      actual: -actual.cogs,
+      budget: -budget.cogs,
+      variance: budget.cogs - actual.cogs,
+      positive: "better than budget",
+      negative: "over budget",
+      driver: false,
+    },
+    {
+      key: "wages",
+      label: "Wages",
+      actual: -actual.lab,
+      budget: -budget.lab,
+      variance: budget.lab - actual.lab,
+      positive: "better than budget",
+      negative: "over budget",
+      driver: true,
+    },
+    {
+      key: "gst",
+      label: "GST",
+      actual: -gstActual,
+      budget: -gstBudget,
+      variance: gstBudget - gstActual,
+      positive: "better than budget",
+      negative: "over budget",
+      driver: false,
+    },
+    {
+      key: "fixed",
+      label: "Fixed & variable",
+      actual: -actual.fix,
+      budget: -budget.fix,
+      variance: budget.fix - actual.fix,
+      positive: "better than budget",
+      negative: "over budget",
+      driver: false,
+    },
+    {
+      key: "profit",
+      label: "Profit",
+      actual: actual.net,
+      budget: budget.net,
+      variance: actual.net - budget.net,
+      positive: "ahead of budget",
+      negative: "behind budget",
+      driver: false,
+    },
   ];
+  const visibleRows = expanded ? rows : rows.filter((row) => row.driver);
+
   return (
-    <div className="reconciliation-table" role="table" aria-label="Actual compared with budget">
-      <div className="reconciliation-head" role="row"><span /><span>Actual</span><span>Budget</span><span>Meaning</span></div>
-      {rows.map((item) => <div className="reconciliation-row" role="row" key={item.label}><strong>{item.label}</strong><span className="tnum">{signedProfit(item.actual)}</span><span className="tnum">{signedProfit(item.budget)}</span><span>{item.meaning}</span></div>)}
-    </div>
+    <section className={`numbers-reconciliation ${expanded ? "is-expanded" : "is-collapsed"}`} aria-labelledby="reconciliation-title">
+      <div id="full-reconciliation-table" className="reconciliation-table" role="table" aria-label="Actual compared with budget">
+        <div className="reconciliation-head" role="row">
+          <div role="columnheader">
+            <h2 id="reconciliation-title">Where the gap came from</h2>
+          </div>
+          {expanded && (
+            <>
+              <span role="columnheader">Actual</span>
+              <span role="columnheader">Budget</span>
+              <span role="columnheader">Vs budget</span>
+            </>
+          )}
+        </div>
+        {visibleRows.map((item) => {
+          const neutral = Math.abs(item.variance) < 0.5;
+          const tone = neutral ? "neutral" : item.variance > 0 ? "good" : "bad";
+          const descriptor = neutral ? "on budget" : item.variance > 0 ? item.positive : item.negative;
+          return (
+            <div
+              className={`reconciliation-row is-${item.key} ${item.driver ? "is-driver" : ""}`}
+              role="row"
+              key={item.key}
+            >
+              <strong>
+                {item.driver && <i aria-hidden="true" />}
+                {item.label}
+              </strong>
+              <span className="tnum">{reconciliationValue(item.actual)}</span>
+              <span className="tnum">{reconciliationValue(item.budget)}</span>
+              <span className="reconciliation-variance">
+                <strong className={`tnum ${tone}`}>{varianceValue(item.variance)}</strong>
+                <small>{descriptor}</small>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        className="numbers-disclosure"
+        aria-expanded={expanded}
+        aria-controls="full-reconciliation-table"
+        onClick={onToggle}
+      >
+        {expanded ? "Hide numbers" : "See all numbers"}
+        {expanded ? <CaretUp weight="bold" /> : <CaretDown weight="bold" />}
+      </button>
+    </section>
   );
 }
 
-function varianceMeaning(delta: number, positive: string, negative: string) {
-  if (Math.abs(delta) < 0.5) return "On budget";
-  return `${money(delta)} ${delta > 0 ? positive : negative} budget`;
+function reconciliationValue(value: number) {
+  return value >= 0 ? money(value) : signedProfit(value);
+}
+
+function varianceValue(value: number) {
+  return Math.abs(value) < 0.5 ? "$0" : signedProfit(value);
 }
 
 function ViewBack({ label, onClick }: { label: string; onClick: () => void }) {
@@ -1576,16 +1918,6 @@ function ViewBack({ label, onClick }: { label: string; onClick: () => void }) {
       {label}
     </ProductButton>
   );
-}
-
-function SummaryValue({ label, value, tone }: { label: string; value: number; tone?: string }) {
-  return <div className="summary-value"><strong className={`tnum ${tone ?? ""}`}>{signedProfit(value)}</strong><span>{label}</span></div>;
-}
-
-function StatusDot({ row }: { row: LedgerRow }) {
-  if (!row.actual) return <span className="table-status upcoming" />;
-  const good = (row.variance?.net ?? 0) >= 0;
-  return <span className={`table-status ${good ? "is-good" : "is-behind"}`}>{good ? <Check weight="bold" /> : ""}</span>;
 }
 
 function getChapterContent({ chapter, periodProfit, budgetDifference, projected, budget, isFuture, isHistory }: { chapter: Chapter; periodProfit: number; budgetDifference: number; projected: number; budget: number; isFuture: boolean; isHistory: boolean }) {
