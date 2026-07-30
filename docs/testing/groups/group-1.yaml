@@ -1,0 +1,39 @@
+group: 1
+name: Identity, business, venue, and financial-record persistence
+status: active_product_acceptance
+queue_position: current
+depends_on: [0]
+base_url: http://localhost:3000
+uat_spec: docs/testing/test-cases/GROUP_1_USER_ACCEPTANCE_TEST_PROCEDURES_2026-07-29.md
+result_workbook: docs/testing/results/GROUP_1_BROWSER_TEST_RESULTS_2026-07-29.xlsx
+historical_results:
+  - docs/testing/results/GROUP_1_EASY_BROWSER_TEST_RESULTS_2026-07-29.xlsx
+requirements_sources:
+  - docs/audits/GROUP_1_PERSISTENCE_IMPLEMENTATION_BRIEF_2026-07-28.md
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-1---identity-business-venue-and-financial-record-persistence
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+  - docs/07-20-2026_DESIGN_DECISION_REGISTER.md
+scope:
+  - Email authentication and recovery
+  - Business onboarding
+  - Venue creation, setup progress, selection, and isolation
+  - Weekly-plan drafts, versions, persistence, and account UI
+  - Responsive and keyboard usability of affected screens
+out_of_scope:
+  - Real historical reporting
+  - Daily actuals
+  - P&L ingestion
+  - POS and rostering integrations
+default_viewports:
+  desktop: 1440x900
+  medium: 1024x768
+  mobile: 390x844
+  short_mobile: 390x700
+deferred_manual:
+  workbook_sheet: Deferred Manual
+  ids: [C-05, C-10, C-13, A-06-expired, A-07, A-08, E-04, E-09, E-13-physical, E-14-physical, E-16, G-01:G-05, production-auth-callback]
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: true
+  production_signoff_requires_deferred_checks: true
+notes: Compare the UAT IDs with every result sheet before selecting the next batch.

@@ -1,0 +1,27 @@
+group: 7
+name: Deputy rostering integration
+status: parked_integration
+queue_position: separate_non_blocking_track
+depends_on: [0, 1, 3]
+base_url: http://localhost:3000
+uat_spec: null
+result_workbook: docs/testing/results/GROUP_7_TEST_RESULTS.xlsx
+requirements_sources:
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-7---deputy-rostering-integration
+  - docs/audits/GROUP_0_FINANCIAL_CONTRACT_DECISION_BRIEF_2026-07-27.md
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+scope:
+  - Deputy proof and OAuth
+  - Venue mapping and token lifecycle
+  - Labour cost-state selection
+  - Sync, corrections, and connection UI
+out_of_scope:
+  - POS integrations not separately approved
+deferred_manual:
+  - Real Deputy tenant proof
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: false
+  production_signoff_requires_deferred_checks: true
+notes: Do not treat this integration as a Group 1 or manual-MVP blocker.
+

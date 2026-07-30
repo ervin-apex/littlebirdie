@@ -1,0 +1,27 @@
+group: 2
+name: P&L upload, AI extraction, review, and business baseline
+status: parked
+queue_position: last
+depends_on: [0, 1, 3, 4]
+base_url: http://localhost:3000
+uat_spec: null
+result_workbook: docs/testing/results/GROUP_2_TEST_RESULTS.xlsx
+requirements_sources:
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-2---pl-upload-ai-extraction-review-and-business-baseline
+  - docs/audits/GROUP_0_FINANCIAL_CONTRACT_DECISION_BRIEF_2026-07-27.md
+  - docs/P and Ls/
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+scope:
+  - Private uploads and retention
+  - OCR and extraction
+  - Classification review and correction
+  - Confirmed baseline persistence
+out_of_scope:
+  - Xero or MYOB-specific schemas
+deferred_manual: []
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: false
+  production_signoff_requires_deferred_checks: true
+notes: Create and approve a UAT specification before execution.
+

@@ -1,0 +1,23 @@
+group: 0
+name: Replace with group name
+status: draft
+queue_position: pending
+depends_on: []
+base_url: http://localhost:3000
+uat_spec: null
+result_workbook: docs/testing/results/GROUP_0_TEST_RESULTS.xlsx
+requirements_sources: []
+design_sources: []
+scope: []
+out_of_scope: []
+default_viewports:
+  desktop: 1440x900
+  medium: 1024x768
+  mobile: 390x844
+  short_mobile: 390x700
+deferred_manual: []
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: false
+  production_signoff_requires_deferred_checks: true
+notes: Replace before use.
+

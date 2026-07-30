@@ -1,0 +1,4 @@
+interface:
+  display_name: "Little Birdee Test Orchestrator"
+  short_description: "Orchestrate responsive group UAT and fixes"
+  default_prompt: "Use $little-birdee-test-orchestrator to test Group 1, delegate browser checks, record evidence, fix confirmed defects without redesigning the product, and retest."

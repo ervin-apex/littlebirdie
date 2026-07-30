@@ -2,8 +2,7 @@
    Mobile and tablet read as a vertical story; desktop turns the same data into a horizontal bridge. */
 
 .detail-title-compact,
-.result-explanation-kicker,
-.result-action-compact {
+.result-explanation-kicker {
   display: none;
 }
 
@@ -535,11 +534,4 @@
     display: none;
   }
 
-  .result-explanation-view .result-action-full {
-    display: none;
-  }
-
-  .result-explanation-view .result-action-compact {
-    display: inline;
-  }
 }

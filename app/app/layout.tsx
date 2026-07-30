@@ -1,7 +1,34 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
+import { createClient } from "@/lib/supabase/server";
+import { loadVenueNavigation } from "@/lib/venues/navigation";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic";
+
+export default async function ProductLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || !data?.claims) redirect("/auth/login");
+
+  const userId = String(data.claims.sub ?? "");
+  const [{ data: profile }, cookieStore] = await Promise.all([
+    userId
+      ? supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    cookies(),
+  ]);
+  const accountLabel = profile?.display_name?.trim().split(/\s+/)[0] || "Account";
+  const venueNavigation = await loadVenueNavigation(
+    supabase,
+    cookieStore.get("little-birdee-venue")?.value,
+  );
+
   return (
     <div className="relative flex h-[100dvh] w-screen max-w-full min-h-0 flex-col overflow-hidden text-ink">
       <PageBackground faint />
@@ -24,8 +51,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       </svg>
 
-      <div className="app-brand-bar relative z-30 w-full px-4 pt-3 sm:px-6 lg:px-8">
-        <BrandHeader />
+      <div className="app-brand-bar product-brand-bar relative z-30 w-full pt-3">
+        <BrandHeader
+          accountLabel={accountLabel}
+          venues={venueNavigation.venues}
+          selectedVenueId={venueNavigation.selectedVenueId}
+        />
       </div>
 
       <main className="app-main relative z-10 min-h-0 w-full flex-1 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">

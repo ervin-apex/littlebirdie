@@ -1,0 +1,28 @@
+group: 0
+name: Canonical financial contract and calculation tests
+status: accepted_with_external_check
+queue_position: complete
+depends_on: []
+base_url: http://localhost:3000
+uat_spec: docs/testing/test-cases/GROUP_0_UI_ACCEPTANCE_TEST_PROCEDURES_2026-07-28.md
+result_workbook: null
+requirements_sources:
+  - docs/audits/GROUP_0_FINANCIAL_CONTRACT_DECISION_BRIEF_2026-07-27.md
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-0---canonical-financial-contract-and-calculation-tests
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+  - docs/07-20-2026_DESIGN_DECISION_REGISTER.md
+scope:
+  - EBITDA and GST contract
+  - Setup, Dashboard, What Happened, What If, and Full Numbers
+  - Responsive financial UI and golden datasets
+out_of_scope:
+  - Authentication and persistence
+  - P&L extraction
+  - Provider integrations
+deferred_manual:
+  - Australian accountant validation
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: true
+  production_signoff_requires_deferred_checks: true
+notes: Reopen only for calculation or shared-screen regressions.

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Little Birdee — Build Status &amp; Roadmap</title>
+<style>
+  :root{
+    --yellow:#fcb400; --edge:#c88400; --soft:#fff5d6; --yink:#6b4c00;
+    --ink:#10203c; --muted:#566783; --line:#dfe3ea; --surface:#f1f3f6; --paper:#f9f9f9;
+    --pos:#287a53; --pos-soft:#edf7f1; --neg:#c94b43; --neg-soft:#fbefed; --focus:#315b98;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 20px; background:var(--paper);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+  }
+  .wrap{max-width:900px;margin:0 auto}
+  header{
+    background:var(--yellow); border:3px solid var(--ink); border-bottom-width:7px;
+    border-radius:18px; padding:26px 30px; margin-bottom:28px;
+  }
+  header .kick{
+    display:inline-block;background:var(--ink);color:var(--yellow);font-size:12px;
+    font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:30px;
+  }
+  h1{font-size:33px;line-height:1.05;margin:14px 0 8px;letter-spacing:-.5px}
+  header p{margin:0;font-weight:600;color:var(--yink)}
+  h2{font-size:22px;margin:34px 0 6px;letter-spacing:-.3px}
+  h2 .bar{display:block;width:46px;height:6px;background:var(--edge);border-radius:5px;margin-top:7px}
+  .lead{color:var(--muted);font-size:17px;margin:10px 0 0}
+  .card{background:#fff;border:2px solid var(--ink);border-bottom-width:5px;border-right-width:5px;
+    border-radius:14px;padding:18px 20px;margin:16px 0}
+  .card.soft{background:var(--soft)}
+  .card.ink{background:var(--ink);color:#fff}
+  .card h3{margin:0 0 8px;font-size:17px}
+  .card p:last-child{margin-bottom:0}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .row>*{flex:1;min-width:240px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:15px;background:#fff}
+  th{background:var(--ink);color:#fff;text-align:left;padding:10px 12px;font-size:14px}
+  td{border:1px solid var(--line);padding:10px 12px;vertical-align:top}
+  tr:nth-child(even) td{background:var(--surface)}
+  td.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12.5px;font-weight:700;white-space:nowrap}
+  .done{background:var(--pos-soft);color:var(--pos);border:1.5px solid var(--pos)}
+  .part{background:var(--soft);color:var(--yink);border:1.5px solid var(--edge)}
+  .todo{background:var(--surface);color:var(--muted);border:1.5px solid var(--line)}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .steps{list-style:none;padding:0;margin:14px 0;counter-reset:s}
+  .steps li{
+    counter-increment:s;background:#fff;border:2px solid var(--ink);border-bottom-width:4px;
+    border-radius:12px;padding:12px 16px 12px 52px;position:relative;margin:9px 0;
+  }
+  .steps li::before{
+    content:counter(s);position:absolute;left:14px;top:11px;width:24px;height:24px;
+    background:var(--yellow);border:2px solid var(--ink);border-radius:50%;
+    font-size:13px;font-weight:800;text-align:center;line-height:21px;
+  }
+  .steps b{display:block}
+  .steps span{color:var(--muted);font-size:14.5px}
+  .total{background:var(--ink);color:#fff;border-radius:14px;padding:18px 22px;margin:16px 0;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  .total b{font-size:15px;letter-spacing:.02em}
+  .total .fig{font-size:27px;font-weight:800;color:var(--yellow);white-space:nowrap}
+  .note{font-size:14px;color:var(--muted);margin-top:6px}
+  .flag{background:var(--neg-soft);border:2px solid var(--neg);border-bottom-width:5px;
+    border-radius:14px;padding:16px 20px;margin:16px 0}
+  .flag h3{margin:0 0 6px;font-size:16px;color:var(--neg)}
+  footer{margin:36px 0 10px;padding-top:16px;border-top:2px solid var(--line);
+    color:var(--muted);font-size:14px}
+  @media print{
+    body{background:#fff;padding:0}
+    .card,.steps li,table{break-inside:avoid}
+    h2{break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="kick">Build Status &amp; Roadmap</span>
+  <h1>Little Birdee — where we're at</h1>
+  <p>Prepared for Scott Taylor &nbsp;·&nbsp; 28 July 2026</p>
+</header>
+
+<div class="card ink">
+  <h3 style="color:var(--yellow)">The short version</h3>
+  <p>The screens you approved on 20 July — Dashboard, What Happened, What If, Full Numbers — are built and working. The brand pack is locked. What's left is turning the demo into a real product: accounts and secure storage, the P&amp;L upload engine, and wiring the screens to live data instead of sample numbers.</p>
+  <p style="margin-top:10px">Right now the app calculates correctly but runs on demo data held in one browser. The next stretch of work is the plumbing that makes it real for a paying operator.</p>
+</div>
+
+<h2>Where things stand<span class="bar"></span></h2>
+<table>
+  <thead><tr><th style="width:38%">Area</th><th style="width:22%">Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><b>Brand identity pack</b></td><td><span class="tag done">Done</span></td><td>Signed off 22 July, revisions applied.</td></tr>
+    <tr><td><b>Approved UI screens</b></td><td><span class="tag done">Done</span></td><td>Dashboard, What Happened, What If, Full Numbers all match the direction you approved.</td></tr>
+    <tr><td><b>Profit calculation engine</b></td><td><span class="tag done">Done</span></td><td>Your EBITDA and GST rules are now coded and covered by 40 automated tests that all pass.</td></tr>
+    <tr><td><b>Screens using the new engine</b></td><td><span class="tag part">In progress</span></td><td>Screens still run the old demo maths — they need switching over to the tested engine.</td></tr>
+    <tr><td><b>Accounts, login, multi&#8209;venue</b></td><td><span class="tag todo">Not started</span></td><td>Needed before anyone but us can use it.</td></tr>
+    <tr><td><b>P&amp;L upload + AI extraction</b></td><td><span class="tag todo">Not started</span></td><td>Your 27 July idea. Five sample P&amp;Ls ready to test against.</td></tr>
+    <tr><td><b>Real daily numbers in / out</b></td><td><span class="tag todo">Not started</span></td><td>Manual daily revenue first, then Deputy for labour.</td></tr>
+    <tr><td><b>Billing at $12/week</b></td><td><span class="tag todo">Not started</span></td><td>Plus privacy, terms, self-serve cancel.</td></tr>
+    <tr><td><b>Daily Chirps</b></td><td><span class="tag todo">Not started</span></td><td>Email first, as we agreed.</td></tr>
+    <tr><td><b>Website look &amp; feel</b></td><td><span class="tag part">Starting now</span></td><td>Next piece off the back of the brand pack.</td></tr>
+  </tbody>
+</table>
+
+<h2>The roadmap<span class="bar"></span></h2>
+<p class="lead">Built in this order because each stage depends on the one before it. Skipping ahead means redoing work later.</p>
+
+<ol class="steps">
+  <li><b>Finish the financial foundation</b><span>Move every screen onto the tested profit engine, and prove the P&amp;L rules against your five samples. An accountant should sanity-check the classifications while we build.</span></li>
+  <li><b>Accounts, businesses &amp; venues</b><span>Sign-up, login, and secure storage — so your numbers live in a real database, not one browser, and multi-venue owners keep them separate. Has to come before any P&amp;L is uploaded.</span></li>
+  <li><b>P&amp;L upload &amp; AI extraction</b><span>Upload a P&amp;L from any accounting system; the AI pulls out your COGS percentage and amortised fixed/variable costs, then shows them to you to confirm before anything goes live.</span></li>
+  <li><b>Weekly plan &amp; real daily numbers</b><span>Predicted revenue and labour in, actual daily revenue back. First proper week a real operator can run without demo data.</span></li>
+  <li><b>Reporting on live data</b><span>The approved screens wired to real records, with proper handling for missing days, plus month and custom-range trends.</span></li>
+  <li><b>Privacy, compliance &amp; billing</b><span>Privacy policy, terms, $12/week subscription, no lock-in, cancel anytime. Required before taking a single payment.</span></li>
+  <li><b>Daily Chirps</b><span>Scheduled email at a time each operator picks, linking straight to Yesterday. Last, because a Chirp is only worth sending once the numbers behind it are real.</span></li>
+</ol>
+
+<h2>Estimate of remaining work<span class="bar"></span></h2>
+
+<table>
+  <thead><tr><th>Stage</th><th class="n">Dev hours</th></tr></thead>
+  <tbody>
+    <tr><td>1 · Finish the financial foundation</td><td class="n">8–11</td></tr>
+    <tr><td>2 · Accounts, businesses &amp; venues</td><td class="n">12–18</td></tr>
+    <tr><td>3 · P&amp;L upload &amp; AI extraction</td><td class="n">24–32</td></tr>
+    <tr><td>4 · Weekly plan &amp; real daily numbers</td><td class="n">11–15</td></tr>
+    <tr><td>5 · Reporting on live data</td><td class="n">14–19</td></tr>
+    <tr><td>6 · Privacy, compliance &amp; billing</td><td class="n">10–13</td></tr>
+    <tr><td>7 · Daily Chirps</td><td class="n">5–8</td></tr>
+    <tr><td><b>Website look &amp; feel</b> (running alongside)</td><td class="n">9–14</td></tr>
+  </tbody>
+</table>
+
+<div class="total">
+  <b>Total remaining to a paid, launch-ready product</b>
+  <span class="fig">93–130 hrs</span>
+</div>
+<p class="note">Development hours, not calendar time — building plus testing. These already assume AI-assisted development throughout, which is how I've been working on Little Birdee so far. I'll revise them as each stage lands.</p>
+
+<div class="card soft">
+  <h3>Where AI speeds things up — and where it doesn't</h3>
+  <p>The estimates above bake in a solid discount for AI-assisted development, but it isn't even across the board. Accounts, billing, settings, the test suites and the website build all move considerably faster because they're well-trodden ground.</p>
+  <p style="margin-top:10px">The P&amp;L extraction engine is the exception. The hard part there isn't writing the code, it's iterating until it reliably reads the right numbers out of five different accountants' layouts — and then checking it got them right. That's judgement and testing, which doesn't compress much. Same goes for verifying the profit maths: on a product whose whole promise is "this is your profit," being certain the number is correct is the job, not the overhead.</p>
+</div>
+
+<div class="card soft">
+  <h3>A faster path, if you want something live sooner</h3>
+  <p>Stages 1, 2, 4 and 5 alone (roughly <b>45–63 hours</b>) get you a genuinely usable product with manual number entry — real accounts, real data, real reporting. The P&amp;L upload engine could follow straight after. Worth deciding whether you'd rather have real operators using a simpler version early, or wait for the full experience.</p>
+</div>
+
+<h2>Waiting on you<span class="bar"></span></h2>
+<div class="card">
+  <ul style="margin:0">
+    <li><b>An accountant to check the P&amp;L rules.</b> Mainly whether labour includes superannuation and other on-costs. This affects every profit number, so it's worth getting right once.</li>
+    <li><b>Daily labour — how do we get it?</b> You noted operators know daily revenue but rarely daily labour. Options: enter it manually, upload a roster summary, or spread the weekly figure across days. My lean is spreading the weekly figure to start, with Deputy replacing it as soon as we can.</li>
+    <li><b>Domain purchase</b> — for when the website goes up.</li>
+    <li><b>Launch order.</b> The full build, or the faster manual-entry path above.</li>
+  </ul>
+</div>
+
+<div class="flag">
+  <h3>One thing to keep in mind</h3>
+  <p>The P&amp;L upload engine (stage 3) is the most valuable and least predictable piece of the build. Reading a COGS percentage reliably out of five different accountants' layouts is genuinely hard, and it must always show its working for you to confirm rather than silently commit a number. I've built in a confirmation step for exactly this reason — but it's the stage most likely to move on time.</p>
+</div>
+
+<h2>Parked for later<span class="bar"></span></h2>
+<div class="card">
+  <p>Direct Xero and MYOB integrations (the P&amp;L upload covers all of them in one go), POS connections until after Deputy, phone push notifications until email Chirps are proven, and anything resembling a general accounting or tax engine.</p>
+</div>
+
+<footer>
+  Little Birdee — Build Status &amp; Roadmap · 28 July 2026 · Prepared by Ervin<br>
+  Based on our meetings from 24 June through 28 July and a full review of the current build.
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
+import type { VenueNavigationItem } from "@/lib/venues/navigation";
 
 /**
  * Shared app shell: the generated cream background + a floating brand header,
@@ -12,12 +13,20 @@ export function AppShell({
   center = false,
   hideHeader = false,
   headerVariant = "default",
+  accountLabel,
+  venues,
+  selectedVenueId,
+  headerWide = false,
 }: {
   children: React.ReactNode;
   maxWidth?: string;
   center?: boolean;
   hideHeader?: boolean;
   headerVariant?: "default" | "home";
+  accountLabel?: string;
+  venues?: VenueNavigationItem[];
+  selectedVenueId?: string | null;
+  headerWide?: boolean;
 }) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col text-ink">
@@ -28,10 +37,17 @@ export function AppShell({
           className={
             headerVariant === "home"
               ? "relative z-10 mx-auto w-full max-w-none px-4 pt-4 sm:px-8"
+              : headerWide
+                ? "product-brand-bar relative z-30 w-full pt-3"
               : "relative z-10 mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6"
           }
         >
-          <BrandHeader variant={headerVariant} />
+          <BrandHeader
+            variant={headerVariant}
+            accountLabel={accountLabel}
+            venues={venues}
+            selectedVenueId={selectedVenueId}
+          />
         </div>
       )}
 

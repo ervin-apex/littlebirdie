@@ -379,36 +379,87 @@
   height: 27px;
 }
 
-.what-if-stepper > div {
+.what-if-value-entry {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  gap: 5px;
 }
 
-.what-if-stepper strong {
+.what-if-value-entry > span:first-child {
+  color: var(--sb-muted);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.what-if-number-field {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in oklch, var(--sb-line) 72%, var(--sb-muted));
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--lb-white) 96%, transparent);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.what-if-number-field:focus-within {
+  border-color: color-mix(in oklch, var(--sb-yellow) 70%, var(--sb-ink));
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--sb-yellow) 25%, transparent);
+}
+
+.what-if-number-field.has-error {
+  border-color: var(--sb-negative);
+}
+
+.what-if-number-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
   color: var(--sb-ink);
+  text-align: center;
   font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
-  font-size: clamp(38px, 3.5vw, 52px);
+  font-size: clamp(28px, 3vw, 42px);
   font-weight: 750;
   letter-spacing: -0.045em;
   line-height: 1;
-  white-space: nowrap;
 }
 
-.what-if-stepper strong.good {
+.what-if-number-field.good input {
   color: var(--sb-positive);
 }
 
-.what-if-stepper strong.bad {
+.what-if-number-field.bad input {
   color: var(--sb-negative);
 }
 
-.what-if-stepper span {
-  margin-top: 4px;
+.what-if-number-field i {
   color: var(--sb-muted);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.what-if-value-entry > small {
+  min-height: 16px;
+  color: var(--sb-muted);
+  text-align: center;
   font-size: 11px;
-  font-weight: 650;
+  line-height: 1.35;
+}
+
+.what-if-value-entry > small.is-error {
+  color: var(--sb-negative);
 }
 
 .what-if-range {
@@ -552,8 +603,8 @@
     height: 50px;
   }
 
-  .what-if-stepper strong {
-    font-size: 39px;
+  .what-if-number-field input {
+    font-size: 32px;
   }
 
   .what-if-actions {
@@ -718,8 +769,8 @@
     border-radius: 15px;
   }
 
-  .what-if-stepper strong {
-    font-size: clamp(36px, 10vw, 44px);
+  .what-if-number-field input {
+    font-size: clamp(28px, 8vw, 36px);
   }
 
   .what-if-range {
@@ -759,12 +810,12 @@
 /* Web integration pass:
    use the same full-width shell and calm answer-card rhythm as the dashboard. */
 @media (min-width: 761px) {
-  body:has(.what-if-view) .app-brand-bar > .brand-header,
   body:has(.what-if-view) .app-main > .scoreboard-stage {
     max-width: none;
   }
 
   body:has(.what-if-view) .app-brand-bar > .brand-header {
+    max-width: none;
     border-bottom-color: var(--lb-line);
   }
 
@@ -991,8 +1042,13 @@
     height: 21px;
   }
 
-  .what-if-stepper strong {
-    font-size: 32px;
+  .what-if-number-field {
+    min-height: 50px;
+    padding-inline: 10px;
+  }
+
+  .what-if-number-field input {
+    font-size: 27px;
   }
 
   .what-if-range {

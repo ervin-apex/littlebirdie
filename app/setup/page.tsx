@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
@@ -10,23 +10,50 @@ import {
   CaretDown,
   ChatCircleDots,
   Check,
+  Storefront,
 } from "@phosphor-icons/react";
 import { ProductButton } from "@/components/ProductButton";
 import {
-  DEFAULTS,
-  loadWeek,
+  BLANK_WEEK,
+  clearLegacyWeekStorage,
   money,
-  saveWeek,
   setDay,
   type Week,
 } from "@/lib/profit";
+import {
+  createVenueDraft,
+  loadVenueState,
+  saveVenueSetupDraft,
+  saveVenueWeek,
+  updateVenueDraftName,
+} from "@/lib/persistence/venue-state";
 import { assetPath } from "@/lib/site";
+import {
+  completedStepsAfterAdvance,
+  resumeSetupStepIndex,
+  setupExitPath,
+  type SetupStepKey,
+} from "@/lib/venues/setup-navigation";
 import "./setup.css";
 
-type StepKey = "revenue" | "wages" | "cogs" | "fixed";
+const STEP_EASE = [0.23, 1, 0.32, 1] as const;
+const STEP_VARIANTS = {
+  enter: (direction: number) => ({
+    opacity: 0,
+    transform: `translateX(${direction * 14}px)`,
+  }),
+  center: {
+    opacity: 1,
+    transform: "translateX(0px)",
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    transform: `translateX(${direction * -10}px)`,
+  }),
+};
 
 type StepDefinition = {
-  key: StepKey;
+  key: SetupStepKey;
   label: string;
   title: string;
   description: string;
@@ -38,14 +65,27 @@ type StepDefinition = {
   birdeeAsset: string;
 };
 
-const STEPS: StepDefinition[] = [
+const VENUE_STEP: StepDefinition = {
+  key: "venue",
+  label: "Venue",
+  title: "What should Birdee call this venue?",
+  description: "Use the name you recognise in your roster or POS.",
+  helpLabel: "Why does each venue need its own setup?",
+  help: "Each venue keeps its own revenue and costs, so Birdee can show the right profit without mixing locations together.",
+  scoreLabel: "Your new venue",
+  scoreCaption: "Its numbers stay separate.",
+  nextLabel: "Next: revenue",
+  birdeeAsset: "/brand/birdee-reference-business-v1.png",
+};
+
+const NUMBER_STEPS: StepDefinition[] = [
   {
     key: "revenue",
     label: "Revenue",
     title: "What revenue are ya expecting?",
     description: "Pop in each day. We’ll keep the weekly total sorted.",
     helpLabel: "What counts as revenue?",
-    help: "Money you expect to take before GST and costs. A solid estimate is enough.",
+    help: "Enter the sales figure you normally use, then tell us below whether it already excludes GST.",
     scoreLabel: "Week total",
     scoreCaption: "Before costs",
     nextLabel: "Next: wages",
@@ -57,7 +97,7 @@ const STEPS: StepDefinition[] = [
     title: "What will wages cost ya?",
     description: "Use the weekly total from your roster.",
     helpLabel: "What counts as wages?",
-    help: "Your full roster cost for the week, including your own wage if that applies.",
+    help: "Your full roster cost, including super and other employment on-costs, plus your own wage if that applies.",
     scoreLabel: "Weekly wages",
     scoreCaption: "From your roster",
     nextLabel: "Next: COGS",
@@ -67,11 +107,11 @@ const STEPS: StepDefinition[] = [
     key: "cogs",
     label: "COGS",
     title: "What’s your cost of goods rate?",
-    description: "Use the share of revenue spent making what you sell.",
+    description: "Use the share of GST-exclusive revenue spent making what you sell.",
     helpLabel: "What counts as COGS?",
-    help: "The direct cost of what you sell, entered as a percentage of revenue.",
+    help: "The direct cost of what you sell, entered as a percentage of revenue excluding GST.",
     scoreLabel: "COGS rate",
-    scoreCaption: "Of revenue",
+    scoreCaption: "Of revenue excluding GST",
     nextLabel: "Next: other costs",
     birdeeAsset: "/brand/birdee-setup-cogs-v1.png",
   },
@@ -81,7 +121,7 @@ const STEPS: StepDefinition[] = [
     title: "What are your other weekly costs?",
     description: "Rent, power, insurance and the rest — one weekly total.",
     helpLabel: "What counts as other costs?",
-    help: "Everything else — rent, power, insurance and subscriptions — as one weekly total.",
+    help: "Ordinary running costs such as rent, power, insurance and software. Leave out tax, interest, depreciation, loan principal and owner drawings.",
     scoreLabel: "Other costs",
     scoreCaption: "Weekly total",
     nextLabel: "See my profit",
@@ -89,18 +129,84 @@ const STEPS: StepDefinition[] = [
   },
 ];
 
+const VENUE_STEPS: StepDefinition[] = [VENUE_STEP, ...NUMBER_STEPS];
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function SetupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const reduceMotion = useReducedMotion();
-  const [week, setWeek] = useState<Week>(DEFAULTS);
+  const setupSource = searchParams.get("from");
+  const isNewVenueFlow = setupSource === "new-venue";
+  const includesVenueStep =
+    isNewVenueFlow || setupSource === "venue-switch";
+  const steps = includesVenueStep
+    ? VENUE_STEPS
+    : NUMBER_STEPS;
+  const [week, setWeek] = useState<Week | null>(() =>
+    isNewVenueFlow ? BLANK_WEEK : null,
+  );
   const [stepIndex, setStepIndex] = useState(0);
+  const [stepDirection, setStepDirection] = useState(1);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [loadingVenue, setLoadingVenue] = useState(!isNewVenueFlow);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [venueName, setVenueName] = useState(isNewVenueFlow ? "" : "your venue");
+  const [venueNameError, setVenueNameError] = useState<string | null>(null);
+  const [hasVenueRecord, setHasVenueRecord] = useState(!isNewVenueFlow);
+  const [requiresFirstPlan, setRequiresFirstPlan] = useState(isNewVenueFlow);
+  const [savedCompletedSteps, setSavedCompletedSteps] = useState(0);
 
   useEffect(() => {
-    setWeek(loadWeek());
-  }, []);
+    // The authenticated product is server-authoritative. Local storage is only
+    // ever a leftover from the demo, and it is not scoped to a venue, so it is
+    // cleared rather than read.
+    clearLegacyWeekStorage();
+    if (isNewVenueFlow) {
+      setWeek(BLANK_WEEK);
+      setVenueName("");
+      setRequiresFirstPlan(true);
+      setLoadingVenue(false);
+      return;
+    }
+
+    let active = true;
+    loadVenueState()
+      .then((state) => {
+        if (!active) return;
+        // A local week can seed the form, but only an explicit final save makes
+        // it authoritative for the selected authenticated venue.
+        const setupDraft = state.setupDraft;
+        const legacyCompletedSteps =
+          includesVenueStep && !state.hasPlan ? 1 : 0;
+        setWeek(setupDraft?.week ?? state.week ?? BLANK_WEEK);
+        setVenueName(state.venueName);
+        setRequiresFirstPlan(!state.hasPlan);
+        setHasVenueRecord(true);
+        setSavedCompletedSteps(
+          setupDraft?.completedSteps ?? legacyCompletedSteps,
+        );
+        setStepIndex(resumeSetupStepIndex(
+          steps.map((item) => item.key),
+          setupDraft?.nextStep ??
+            (legacyCompletedSteps > 0 ? "revenue" : undefined),
+        ));
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        // Leave the form empty rather than showing numbers that were never
+        // this venue's; the error tells the user the load failed.
+        setWeek(BLANK_WEEK);
+        setSaveError(error instanceof Error ? error.message : "Birdee could not load this venue.");
+      })
+      .finally(() => {
+        if (active) setLoadingVenue(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isNewVenueFlow, steps]);
 
   useEffect(() => {
     if (!helpOpen) return;
@@ -111,8 +217,64 @@ export default function SetupPage() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [helpOpen]);
 
-  const step = STEPS[stepIndex];
-  const scoreValue = step.key === "revenue"
+  const leaveSetup = () => {
+    if (isNewVenueFlow && !hasVenueRecord) {
+      router.push("/account");
+      return;
+    }
+    router.push(setupExitPath({ loadingVenue, requiresFirstPlan }));
+  };
+
+  if (!week) {
+    return (
+      <div className="setup-page" aria-busy={loadingVenue}>
+        <svg
+          className="setup-wave"
+          viewBox="0 0 1000 1000"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            className="setup-wave-edge"
+            d="M167 0H1000V1000H177C177 870 222 830 222 700C222 560 107 540 107 400C107 240 167 180 167 0Z"
+          />
+          <path
+            className="setup-wave-fill"
+            d="M185 0H1000V1000H195C195 870 240 830 240 700C240 560 125 540 125 400C125 240 185 180 185 0Z"
+          />
+        </svg>
+
+        <header className="setup-header">
+          <Link href="/app?period=this-week" className="setup-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={assetPath("/brand/birdee-mark.png")} width={34} height={34} alt="" />
+            <span>Little <strong>Birdee</strong></span>
+          </Link>
+          <ProductButton
+            type="button"
+            variant="tertiary"
+            size="compact"
+            className="exit-setup"
+            onClick={leaveSetup}
+          >
+            Exit setup
+          </ProductButton>
+        </header>
+
+        <main className="setup-layout">
+          <section className="setup-screen setup-loading-state" role="status" aria-live="polite">
+            <span>Opening your venue...</span>
+            <strong>Bringing your latest saved numbers into place.</strong>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  const step = steps[stepIndex];
+  const scoreValue = step.key === "venue"
+    ? null
+    : step.key === "revenue"
     ? money(week.rev)
     : step.key === "wages"
       ? money(week.lab)
@@ -127,22 +289,110 @@ export default function SetupPage() {
   const goBack = () => {
     setHelpOpen(false);
     if (stepIndex === 0) {
-      const cameFromOnboarding =
-        new URLSearchParams(window.location.search).get("from") === "onboarding";
-      router.push(cameFromOnboarding ? "/onboarding" : "/home");
+      if (setupSource === "onboarding") {
+        router.push("/onboarding");
+      } else if (includesVenueStep) {
+        router.push(hasVenueRecord ? "/account?setup=pending" : "/account");
+      } else {
+        router.push("/app?period=this-week");
+      }
       return;
     }
+    setStepDirection(-1);
     setStepIndex((index) => index - 1);
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     setHelpOpen(false);
-    if (stepIndex === STEPS.length - 1) {
-      saveWeek(week);
-      router.push("/app?period=this-week");
+    setSaveError(null);
+
+    if (step.key === "venue") {
+      const cleanName = venueName.trim();
+      if (!cleanName) {
+        setVenueNameError("Give this venue a name before continuing.");
+        return;
+      }
+
+      setSaving(true);
+      setVenueNameError(null);
+      try {
+        const venue = hasVenueRecord
+          ? await updateVenueDraftName(cleanName)
+          : await createVenueDraft(cleanName);
+        setVenueName(venue.venueName);
+        setHasVenueRecord(true);
+        setRequiresFirstPlan(true);
+        const completedSteps = completedStepsAfterAdvance({
+          currentCompletedSteps: savedCompletedSteps,
+          stepIndex,
+          totalSteps: steps.length,
+        });
+        const { setupDraft } = await saveVenueSetupDraft({
+          week,
+          completedSteps,
+          totalSteps: steps.length,
+          nextStep: steps[stepIndex + 1].key,
+        });
+        setSavedCompletedSteps(setupDraft.completedSteps);
+        setSaving(false);
+        setStepDirection(1);
+        setStepIndex((index) => index + 1);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Birdee could not save this venue.";
+        setVenueNameError(message);
+        setSaving(false);
+      }
       return;
     }
-    setStepIndex((index) => index + 1);
+
+    if (stepIndex === steps.length - 1) {
+      setSaving(true);
+      try {
+        const completedSteps = Math.min(
+          steps.length - 1,
+          Math.max(savedCompletedSteps, stepIndex),
+        );
+        await saveVenueSetupDraft({
+          week,
+          completedSteps,
+          totalSteps: steps.length,
+          nextStep: step.key,
+        });
+        await saveVenueWeek(week);
+        router.push("/app?period=this-week");
+      } catch (error) {
+        setSaveError(
+          error instanceof Error ? error.message : "Birdee could not save these numbers.",
+        );
+        setSaving(false);
+      }
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const completedSteps = completedStepsAfterAdvance({
+        currentCompletedSteps: savedCompletedSteps,
+        stepIndex,
+        totalSteps: steps.length,
+      });
+      const { setupDraft } = await saveVenueSetupDraft({
+        week,
+        completedSteps,
+        totalSteps: steps.length,
+        nextStep: steps[stepIndex + 1].key,
+      });
+      setSavedCompletedSteps(setupDraft.completedSteps);
+      setSaving(false);
+      setStepDirection(1);
+      setStepIndex((index) => index + 1);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Birdee could not save this setup step.",
+      );
+      setSaving(false);
+    }
   };
 
   return (
@@ -164,33 +414,48 @@ export default function SetupPage() {
       </svg>
 
       <header className="setup-header">
-        <Link href="/home" className="setup-brand">
+        <Link href="/app?period=this-week" className="setup-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={assetPath("/brand/birdee-mark.png")} width={34} height={34} alt="" />
           <span>Little <strong>Birdee</strong></span>
         </Link>
-        <ProductButton href="/home" variant="tertiary" size="compact" className="exit-setup">
+        <ProductButton
+          type="button"
+          variant="tertiary"
+          size="compact"
+          className="exit-setup"
+          onClick={leaveSetup}
+        >
           Exit setup
         </ProductButton>
       </header>
 
       <main className="setup-layout">
-        <div className="setup-progress" aria-label={`Step ${stepIndex + 1} of ${STEPS.length}: ${step.label}`}>
+        <div className="setup-progress" aria-label={`Step ${stepIndex + 1} of ${steps.length}: ${step.label}`}>
+          {(requiresFirstPlan || includesVenueStep) && (
+            <div className="setup-venue-context" role="status">
+              <span>{includesVenueStep ? "New venue setup" : "Setting up"}</span>
+              <strong>{venueName.trim() || "Name your venue"}</strong>
+              <p>{stepIndex + 1} of {steps.length} · {step.label}</p>
+            </div>
+          )}
           <div className="setup-progress-segments" aria-hidden="true">
-            {STEPS.map((item, index) => (
+            {steps.map((item, index) => (
               <span key={item.key} className={index <= stepIndex ? "is-complete" : ""} />
             ))}
           </div>
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
           <motion.section
             key={step.key}
+            custom={stepDirection}
             className="setup-screen"
-            initial={reduceMotion ? false : { opacity: 0, x: 24, filter: "blur(4px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={reduceMotion ? { opacity: 1 } : { opacity: 0, x: -16, filter: "blur(3px)" }}
-            transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+            variants={STEP_VARIANTS}
+            initial={reduceMotion ? false : "enter"}
+            animate="center"
+            exit={reduceMotion ? undefined : "exit"}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: STEP_EASE }}
           >
             <div className="setup-question">
               <h1>{step.title}</h1>
@@ -239,7 +504,16 @@ export default function SetupPage() {
             </div>
 
             <div className="setup-input-area">
-              {step.key === "revenue" ? (
+              {step.key === "venue" ? (
+                <VenueNameInput
+                  value={venueName}
+                  error={venueNameError}
+                  onChange={(value) => {
+                    setVenueName(value);
+                    if (venueNameError) setVenueNameError(null);
+                  }}
+                />
+              ) : step.key === "revenue" ? (
                 <RevenueInputs week={week} onChange={setWeek} />
               ) : (
                 <SingleInput step={step.key} week={week} onChange={setWeek} />
@@ -248,34 +522,63 @@ export default function SetupPage() {
           </motion.section>
         </AnimatePresence>
 
-        <aside className="setup-score-panel" aria-live="polite">
-          <div className="setup-score-copy">
-            <span>{step.scoreLabel}</span>
-            <strong className="tnum">{scoreValue}</strong>
-            <small>{step.scoreCaption}</small>
-          </div>
-          <div className="setup-score-birdee" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetPath(step.birdeeAsset)} alt="" />
-          </div>
+        <aside
+          className={`setup-score-panel${step.key === "venue" ? " setup-score-panel--venue" : ""}`}
+          aria-live="polite"
+        >
+          {step.key === "venue" ? (
+            <VenuePreview name={venueName} birdeeAsset={step.birdeeAsset} />
+          ) : (
+            <>
+              <div className="setup-score-copy">
+                <span>{step.scoreLabel}</span>
+                <strong className="tnum">{scoreValue}</strong>
+                <small>{step.scoreCaption}</small>
+              </div>
+              <div className="setup-score-birdee" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={assetPath(step.birdeeAsset)} alt="" />
+              </div>
+            </>
+          )}
         </aside>
 
-        <nav className="setup-actions" aria-label="Setup steps">
-          <ProductButton
-            variant="secondary"
-            className="setup-back"
-            onClick={goBack}
-            leadingIcon={<ArrowLeft weight="bold" />}
-          >
-            Back
-          </ProductButton>
+        {saveError && (
+          <p className="setup-save-error" role="alert">
+            {saveError}
+          </p>
+        )}
+        <nav
+          className={`setup-actions ${stepIndex === 0 && step.key !== "venue" ? "is-first-step" : ""}`}
+          aria-label="Setup steps"
+        >
+          {(stepIndex > 0 || step.key === "venue") && (
+            <ProductButton
+              variant="secondary"
+              className="setup-back"
+              onClick={goBack}
+              leadingIcon={<ArrowLeft weight="bold" />}
+            >
+              Back
+            </ProductButton>
+          )}
           <ProductButton
             variant="primary"
             className="setup-continue"
             onClick={goNext}
+            disabled={loadingVenue || (step.key === "venue" && !venueName.trim())}
+            state={saving ? "loading" : undefined}
             trailingIcon={<ArrowRight weight="bold" />}
           >
-            {step.nextLabel}
+            {saving
+              ? step.key === "venue"
+                ? "Saving venue…"
+                : stepIndex === steps.length - 1
+                  ? "Saving your plan…"
+                  : "Saving this step…"
+              : loadingVenue
+                ? "Opening venue…"
+                : step.nextLabel}
           </ProductButton>
         </nav>
       </main>
@@ -283,7 +586,76 @@ export default function SetupPage() {
   );
 }
 
+function VenueNameInput({
+  value,
+  error,
+  onChange,
+}: {
+  value: string;
+  error: string | null;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <section className="venue-name-panel">
+      <label htmlFor="setup-venue-name">Venue name</label>
+      <div className={`venue-name-input${error ? " has-error" : ""}`}>
+        <Storefront weight="duotone" aria-hidden="true" />
+        <input
+          id="setup-venue-name"
+          value={value}
+          maxLength={160}
+          autoComplete="organization"
+          placeholder="e.g. Newtown"
+          autoFocus
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "setup-venue-name-error" : "setup-venue-name-confirmation"}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      </div>
+      {error ? (
+        <p id="setup-venue-name-error" className="venue-name-error" role="alert">
+          {error}
+        </p>
+      ) : (
+        <p id="setup-venue-name-confirmation" className="input-confirmation">
+          <span><Check weight="bold" /></span>
+          {value.trim()
+            ? `Nice — ${value.trim()} is ready for its numbers.`
+            : "Start with the name you use every day."}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function VenuePreview({
+  name,
+  birdeeAsset,
+}: {
+  name: string;
+  birdeeAsset: string;
+}) {
+  const displayName = name.trim() || "Your venue";
+
+  return (
+    <div className="venue-preview">
+      <span className="venue-preview__label">Your new venue</span>
+      <div className="venue-preview__sign" aria-label={`Venue preview: ${displayName}`}>
+        <i aria-hidden="true" />
+        <strong>{displayName}</strong>
+      </div>
+      <small>Its numbers stay separate.</small>
+      <div className="venue-preview__birdee" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={assetPath(birdeeAsset)} alt="" />
+      </div>
+    </div>
+  );
+}
+
 function RevenueInputs({ week, onChange }: { week: Week; onChange: (week: Week) => void }) {
+  const isRegistered = week.gstRegistration !== "not-registered";
+
   return (
     <section className="daily-revenue" aria-label="Daily revenue">
       <div className="daily-input-grid">
@@ -303,6 +675,74 @@ function RevenueInputs({ week, onChange }: { week: Week; onChange: (week: Week) 
           </label>
         ))}
       </div>
+      <div className="revenue-tax-settings">
+        <fieldset>
+          <legend>Registered for GST?</legend>
+          <div className="setup-choice-row">
+            <button
+              type="button"
+              className={isRegistered ? "is-active" : ""}
+              aria-pressed={isRegistered}
+              onClick={() =>
+                onChange({
+                  ...week,
+                  gstRegistration: "registered-fully-taxable",
+                  revenueEntryBasis: "gst-inclusive",
+                })
+              }
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={!isRegistered ? "is-active" : ""}
+              aria-pressed={!isRegistered}
+              onClick={() =>
+                onChange({
+                  ...week,
+                  gstRegistration: "not-registered",
+                  revenueEntryBasis: "gst-exclusive",
+                })
+              }
+            >
+              No
+            </button>
+          </div>
+        </fieldset>
+
+        {isRegistered && (
+          <fieldset>
+            <legend>These revenue figures…</legend>
+            <div className="setup-choice-row">
+              <button
+                type="button"
+                className={week.revenueEntryBasis === "gst-inclusive" ? "is-active" : ""}
+                aria-pressed={week.revenueEntryBasis === "gst-inclusive"}
+                onClick={() =>
+                  onChange({ ...week, revenueEntryBasis: "gst-inclusive" })
+                }
+              >
+                Include GST
+              </button>
+              <button
+                type="button"
+                className={week.revenueEntryBasis === "gst-exclusive" ? "is-active" : ""}
+                aria-pressed={week.revenueEntryBasis === "gst-exclusive"}
+                onClick={() =>
+                  onChange({ ...week, revenueEntryBasis: "gst-exclusive" })
+                }
+              >
+                Exclude GST
+              </button>
+            </div>
+          </fieldset>
+        )}
+      </div>
+      {isRegistered && week.revenueEntryBasis === "gst-exclusive" && (
+        <p className="revenue-tax-note">
+          Use this option for GST-exclusive reports or mixed taxable and GST-free sales.
+        </p>
+      )}
       <p className="input-confirmation">
         <span><Check weight="bold" /></span>
         Nice — your days add up.
@@ -316,7 +756,7 @@ function SingleInput({
   week,
   onChange,
 }: {
-  step: Exclude<StepKey, "revenue">;
+  step: Exclude<SetupStepKey, "venue" | "revenue">;
   week: Week;
   onChange: (week: Week) => void;
 }) {

@@ -1,41 +1,17 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowRight, LockSimple, PencilSimple } from "@phosphor-icons/react";
+import { ArrowRight, SignIn, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { AppShell } from "@/components/AppShell";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { ProductButton } from "@/components/ProductButton";
-import { hasSavedWeek } from "@/lib/profit";
 import "./home.css";
 
 /**
- * Two-job home hub. The wide composition follows the approved Scoreboard
- * Birdee reference while retaining the real first-run lock state.
+ * Account gateway. The old localStorage check could mistake demo numbers for
+ * a real account, so authentication now owns the route into setup and results.
  */
 export default function HomeHub() {
-  const router = useRouter();
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (hasSavedWeek()) {
-      router.replace("/app?period=this-week");
-      return;
-    }
-    setReady(true);
-  }, [router]);
-
-  if (!ready) {
-    return (
-      <AppShell maxWidth="max-w-7xl" headerVariant="home">
-        <div className="home-route-check" aria-label="Opening Little Birdee" aria-busy="true" />
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell maxWidth="max-w-7xl" headerVariant="home">
-      <div className="home-hub fade-up" aria-busy={!ready}>
+      <div className="home-hub fade-up">
         <section className="home-workspace" aria-labelledby="home-question">
           <div className="home-birdee-stage" aria-hidden>
             <BirdeeMascot state="neutral" size={300} className="home-birdee" float />
@@ -46,26 +22,26 @@ export default function HomeHub() {
 
             <div className="home-actions">
               <ProductButton
+                href="/auth/login"
                 variant="secondary"
                 size="choice"
                 fullWidth
-                disabled
-                leadingIcon={<LockSimple weight="regular" />}
-                description="Enter your numbers first to unlock this."
+                leadingIcon={<SignIn weight="regular" />}
+                description="Return to my business and venues."
               >
-                How&apos;s my profit looking?
+                I already have an account
               </ProductButton>
 
               <ProductButton
-                href="/setup"
+                href="/auth/create-account"
                 variant="primary"
                 size="choice"
                 fullWidth
-                leadingIcon={<PencilSimple weight="regular" />}
+                leadingIcon={<UserPlus weight="regular" />}
                 trailingIcon={<ArrowRight weight="regular" />}
-                description="Add next week’s expectations."
+                description="Add my business and first venue."
               >
-                Enter my numbers
+                Create my account
               </ProductButton>
             </div>
           </div>

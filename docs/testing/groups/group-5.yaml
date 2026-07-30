@@ -1,0 +1,25 @@
+group: 5
+name: Privacy, compliance, billing, and account controls
+status: queued_parallel
+queue_position: alongside_groups_3_and_4
+depends_on: [1]
+base_url: http://localhost:3000
+uat_spec: null
+result_workbook: docs/testing/results/GROUP_5_TEST_RESULTS.xlsx
+requirements_sources:
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-5---privacy-compliance-billing-and-account-controls
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+scope:
+  - Account controls
+  - Privacy and compliance
+  - Billing and subscription enforcement
+  - Role-management policy where approved
+out_of_scope:
+  - P&L-file retention until Group 2
+deferred_manual: []
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: false
+  production_signoff_requires_deferred_checks: true
+notes: Create and approve a UAT specification before execution.
+

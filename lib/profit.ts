@@ -1,9 +1,28 @@
+import {
+  calculateBreakEvenRevenueExGst,
+  calculateEbitda,
+  combineStatuses,
+  normalizeRevenue,
+  type GstRegistration,
+  type Provenance,
+  type RevenueEntryBasis,
+  type ValueStatus,
+} from "./finance";
+
 export type Week = {
   rev: number; // predicted revenue for the week (≈ sum of days)
   lab: number; // total labour cost
   fix: number; // fixed & variable costs (weekly, amortised from the P&L)
   cogs: number; // cost of goods, as a % of revenue
   days: number[]; // Mon..Sun predicted revenue split
+  gstRegistration: GstRegistration;
+  revenueEntryBasis: RevenueEntryBasis;
+  recurringIncome: number; // recurring operating other income for the week
+  loadedHourlyLabourCost?: number;
+  cogsProvenance?: Provenance;
+  labourProvenance?: Provenance;
+  otherCostsProvenance?: Provenance;
+  recurringIncomeProvenance?: Provenance;
 };
 
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -18,12 +37,36 @@ export const DAY_FULL = [
   "Sunday",
 ];
 
-// The demo week runs Mon 23 to Sun 29 Jun; day i falls on the 23+i.
-export function dayDateLabel(i: number): string {
-  return `${DAY_FULL[i]}, ${23 + i} Jun`;
+const SHORT_MONTH = new Intl.DateTimeFormat("en-AU", {
+  month: "short",
+  timeZone: "UTC",
+});
+
+function isoDateOffset(isoDate: string, days: number): Date {
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date;
 }
 
-// GST is 10% in Australia — taken off the top revenue line to get a net figure.
+function compactDate(date: Date): string {
+  return `${date.getUTCDate()} ${SHORT_MONTH.format(date)}`;
+}
+
+export function weekDateLabel(weekStart: string): string {
+  const start = isoDateOffset(weekStart, 0);
+  const end = isoDateOffset(weekStart, 6);
+  const startDate = start.getUTCMonth() === end.getUTCMonth()
+    ? `${start.getUTCDate()}`
+    : compactDate(start);
+  return `Mon ${startDate} to Sun ${compactDate(end)}`;
+}
+
+export function dayDateLabel(i: number, weekStart: string): string {
+  return `${DAY_FULL[i]}, ${compactDate(isoDateOffset(weekStart, i))}`;
+}
+
+// Australian GST gross-up factor, used only when a registered business enters
+// fully taxable revenue on a GST-inclusive basis.
 export const GST_DIVISOR = 1.1;
 
 // A typical café week (example data). days sum to rev; weekends run hotter.
@@ -35,12 +78,139 @@ export const DEFAULTS: Week = {
   fix: 4400,
   cogs: 30,
   days: [2400, 2400, 2600, 2900, 3300, 3400, 3000],
+  gstRegistration: "registered-fully-taxable",
+  revenueEntryBasis: "gst-inclusive",
+  recurringIncome: 0,
 };
 
+// The starting point for a venue that has never saved a plan. Authenticated
+// setup must never seed one venue's form from another venue's numbers, so a
+// first-time venue starts empty rather than from DEFAULTS or local storage.
+export const BLANK_WEEK: Week = {
+  rev: 0,
+  lab: 0,
+  fix: 0,
+  cogs: 0,
+  days: [0, 0, 0, 0, 0, 0, 0],
+  gstRegistration: "registered-fully-taxable",
+  revenueEntryBasis: "gst-inclusive",
+  recurringIncome: 0,
+};
+
+const forecastProvenance: Provenance = {
+  source: "forecast",
+  status: "forecast",
+  label: "Entered revenue budget; no live sync",
+};
+const setupEstimateProvenance: Provenance = {
+  source: "manual",
+  status: "estimated",
+  label: "Entered during setup; no live sync",
+};
+const rosterBudgetProvenance: Provenance = {
+  source: "manual",
+  status: "estimated",
+  label: "Entered roster budget; no live sync",
+};
+const demoRevenueProvenance: Provenance = {
+  source: "manual",
+  status: "estimated",
+  label: "Demo revenue data; no live sync",
+};
+const demoLabourProvenance: Provenance = {
+  source: "manual",
+  status: "estimated",
+  label: "Demo labour data; no live sync",
+};
+
+function cogsProvenance(w: Week): Provenance {
+  return w.cogsProvenance ?? setupEstimateProvenance;
+}
+
+function labourProvenance(w: Week): Provenance {
+  return w.labourProvenance ?? rosterBudgetProvenance;
+}
+
+function otherCostsProvenance(w: Week): Provenance {
+  return w.otherCostsProvenance ?? setupEstimateProvenance;
+}
+
+function recurringIncomeProvenance(w: Week): Provenance {
+  return w.recurringIncomeProvenance ?? setupEstimateProvenance;
+}
+
+function dollarsToCents(value: number): number {
+  return Math.round(value * 100);
+}
+
+function centsToDollars(value: number): number {
+  return value / 100;
+}
+
+export function normalizedRevenue(
+  w: Week,
+  revenue = w.rev,
+  provenance: Provenance = forecastProvenance,
+) {
+  return normalizeRevenue({
+    enteredAmountCents: dollarsToCents(revenue),
+    entryBasis: w.revenueEntryBasis,
+    gstRegistration: w.gstRegistration,
+    provenance,
+  });
+}
+
+export function revenueExGst(w: Week, revenue = w.rev): number {
+  return centsToDollars(
+    normalizedRevenue(w, revenue).revenueExGst.amountCents,
+  );
+}
+
+export function gstFromRevenue(w: Week, revenue = w.rev): number {
+  if (w.revenueEntryBasis === "gst-exclusive") return 0;
+  return centsToDollars(
+    normalizedRevenue(w, revenue).gstAmountCents ?? 0,
+  );
+}
+
+export function enteredRevenueFromExGst(
+  w: Week,
+  netRevenue: number,
+): number {
+  if (
+    w.gstRegistration === "registered-fully-taxable" &&
+    w.revenueEntryBasis === "gst-inclusive"
+  ) {
+    return netRevenue * GST_DIVISOR;
+  }
+  return netRevenue;
+}
+
+export function cogsForRevenue(w: Week, revenue = w.rev): number {
+  return revenueExGst(w, revenue) * (w.cogs / 100);
+}
+
 export function profit(w: Week): number {
-  const netRevenue = w.rev / GST_DIVISOR;
-  const cogs = (w.cogs / 100) * w.rev;
-  return netRevenue - cogs - w.lab - w.fix;
+  const result = calculateEbitda({
+    revenueExGst: normalizedRevenue(w).revenueExGst,
+    cogsRate: {
+      basisPoints: Math.round(w.cogs * 100),
+      provenance: cogsProvenance(w),
+    },
+    labour: {
+      amountCents: dollarsToCents(w.lab),
+      provenance: labourProvenance(w),
+    },
+    otherOperatingCosts: {
+      amountCents: dollarsToCents(w.fix),
+      provenance: otherCostsProvenance(w),
+    },
+    recurringOperatingIncome: {
+      amountCents: dollarsToCents(w.recurringIncome),
+      provenance: recurringIncomeProvenance(w),
+    },
+  });
+  return centsToDollars(result.amountCents);
 }
 
 /** Per-day predicted revenue scaled to the current weekly total (robust to
@@ -93,7 +263,8 @@ export type Suggestion = {
 /** Birdee's three what-ifs for the current week, biggest gain first. */
 export function suggestions(w: Week): Suggestion[] {
   const base = profit(w);
-  const labPct = Math.round((w.lab / w.rev) * 100);
+  const netRevenue = revenueExGst(w);
+  const labPct = netRevenue > 0 ? Math.round((w.lab / netRevenue) * 100) : 0;
   const cogsLabel = w.cogs % 1 === 0 ? `${w.cogs}` : w.cogs.toFixed(1);
   const defs: Pick<Suggestion, "key" | "action" | "reason" | "apply">[] = [
     {
@@ -128,35 +299,18 @@ export function applyAll(w: Week): Week {
   return suggestions(w).reduce((acc, s) => ({ ...acc, ...s.apply }), { ...w });
 }
 
-const STORAGE_KEY = "little-birdee-week";
+/** Local storage key from the pre-authentication demo. It is a single global
+ *  key with no venue scope, so anything reading it in the authenticated product
+ *  seeds one venue's form with another venue's numbers. Nothing writes it any
+ *  more; this clears the leftover so a stale value cannot resurface. */
+const LEGACY_STORAGE_KEY = "little-birdee-week";
 
-export function loadWeek(): Week {
-  if (typeof window === "undefined") return DEFAULTS;
+export function clearLegacyWeekStorage(): void {
+  if (typeof window === "undefined") return;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : DEFAULTS;
-  } catch {
-    return DEFAULTS;
-  }
-}
-
-export function saveWeek(w: Week): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(w));
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     // ignore — storage is a convenience, not required
-  }
-}
-
-/** Has the user actually saved their own numbers yet? The week key is only ever
- *  written when setup completes, so its presence gates the "How's my profit
- *  looking?" path (without it, loadWeek falls back to the demo DEFAULTS). */
-export function hasSavedWeek(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) !== null;
-  } catch {
-    return false;
   }
 }
 
@@ -192,11 +346,88 @@ export function seedActuals(w: Week, todayIndex = 3): WeekActuals {
 
 export type DayCell = {
   rev: number;
+  netRevenue: number;
+  gst: number;
   cogs: number;
   lab: number;
   fix: number;
+  otherIncome: number;
   net: number;
+  resultStatus: ValueStatus;
+  componentProvenance: ComponentProvenance;
 };
+
+export type ComponentProvenance = {
+  revenue: Provenance;
+  recurringIncome: Provenance;
+  cogs: Provenance;
+  labour: Provenance;
+  gst: Provenance;
+  otherCosts: Provenance;
+  profit: Provenance;
+};
+
+function mergeProvenance(
+  left: Provenance,
+  right: Provenance,
+): Provenance {
+  if (left.label === "No values in this scope") return right;
+  if (
+    left.source === right.source &&
+    left.status === right.status &&
+    left.label === right.label &&
+    left.updatedAt === right.updatedAt
+  ) {
+    return left;
+  }
+  return {
+    source: "derived",
+    status: combineStatuses([left.status, right.status]),
+    label: "Mixed sources across the selected period",
+    updatedAt:
+      [left.updatedAt, right.updatedAt]
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .at(-1),
+  };
+}
+
+export function mergeComponentProvenance(
+  left: ComponentProvenance,
+  right: ComponentProvenance,
+): ComponentProvenance {
+  return {
+    revenue: mergeProvenance(left.revenue, right.revenue),
+    recurringIncome: mergeProvenance(
+      left.recurringIncome,
+      right.recurringIncome,
+    ),
+    cogs: mergeProvenance(left.cogs, right.cogs),
+    labour: mergeProvenance(left.labour, right.labour),
+    gst: mergeProvenance(left.gst, right.gst),
+    otherCosts: mergeProvenance(left.otherCosts, right.otherCosts),
+    profit: mergeProvenance(left.profit, right.profit),
+  };
+}
+
+export function emptyComponentProvenance(
+  status: ValueStatus,
+): ComponentProvenance {
+  const empty: Provenance = {
+    source: "derived",
+    status,
+    label: "No values in this scope",
+  };
+  return {
+    revenue: empty,
+    recurringIncome: empty,
+    cogs: empty,
+    labour: empty,
+    gst: empty,
+    otherCosts: empty,
+    profit: empty,
+  };
+}
 
 export type LedgerRow = {
   index: number;
@@ -211,9 +442,74 @@ export type LedgerRow = {
     | null;
 };
 
-function cell(rev: number, lab: number, fix: number, cogsPct: number): DayCell {
-  const cogs = (cogsPct / 100) * rev;
-  return { rev, cogs, lab, fix, net: rev / GST_DIVISOR - cogs - lab - fix };
+function cell(
+  w: Week,
+  rev: number,
+  lab: number,
+  fix: number,
+  otherIncome: number,
+  inputStatus: "forecast" | "confirmed",
+): DayCell {
+  const revenueProvenance: Provenance = inputStatus === "forecast"
+    ? forecastProvenance
+    : demoRevenueProvenance;
+  const revenue = normalizedRevenue(w, rev, revenueProvenance);
+  const result = calculateEbitda({
+    revenueExGst: revenue.revenueExGst,
+    cogsRate: {
+      basisPoints: Math.round(w.cogs * 100),
+      provenance: cogsProvenance(w),
+    },
+    labour: {
+      amountCents: dollarsToCents(lab),
+      provenance: inputStatus === "forecast"
+        ? labourProvenance(w)
+        : demoLabourProvenance,
+    },
+    otherOperatingCosts: {
+      amountCents: dollarsToCents(fix),
+      provenance: otherCostsProvenance(w),
+    },
+    recurringOperatingIncome: {
+      amountCents: dollarsToCents(otherIncome),
+      provenance: recurringIncomeProvenance(w),
+    },
+  });
+
+  return {
+    rev,
+    netRevenue: centsToDollars(
+      result.components.revenueExGst.amountCents,
+    ),
+    gst: gstFromRevenue(w, rev),
+    cogs: centsToDollars(result.components.cogs.amountCents),
+    lab,
+    fix,
+    otherIncome,
+    net: centsToDollars(result.amountCents),
+    resultStatus: result.status,
+    componentProvenance: {
+      revenue: result.components.revenueExGst.provenance,
+      recurringIncome:
+        result.components.recurringOperatingIncome.provenance,
+      cogs: result.components.cogs.provenance,
+      labour: result.components.labour.provenance,
+      gst: {
+        source: "derived",
+        status: revenueProvenance.status,
+        label:
+          w.revenueEntryBasis === "gst-inclusive"
+            ? "Calculated from the GST-inclusive revenue entry"
+            : "No GST removed from the GST-exclusive revenue entry",
+      },
+      otherCosts: result.components.otherOperatingCosts.provenance,
+      profit: {
+        source: "derived",
+        status: result.status,
+        label: "Calculated from the components shown here",
+      },
+    },
+  };
 }
 
 /** The single source of truth for the day-by-day view. Predicted vs actual per
@@ -221,13 +517,30 @@ function cell(rev: number, lab: number, fix: number, cogsPct: number): DayCell {
  *  of goods is a flat %, and labour actual comes from the roster (mock/manual). */
 export function dailyLedger(w: Week, a: WeekActuals): LedgerRow[] {
   const pred = dayBreakdown(w);
-  const sum = pred.reduce((s, x) => s + x, 0) || 1;
+  const sum = pred.reduce((s, x) => s + x, 0);
   return pred.map((dayRev, i) => {
-    const share = dayRev / sum;
+    const share = sum > 0 ? dayRev / sum : 1 / pred.length;
     const predFix = share * w.fix;
-    const predicted = cell(dayRev, share * w.lab, predFix, w.cogs);
+    const predOtherIncome = share * w.recurringIncome;
+    const predicted = cell(
+      w,
+      dayRev,
+      share * w.lab,
+      predFix,
+      predOtherIncome,
+      "forecast",
+    );
     const av = a.actuals[i];
-    const actual = av ? cell(av.rev, av.lab, predFix, w.cogs) : null;
+    const actual = av
+      ? cell(
+          w,
+          av.rev,
+          av.lab,
+          predFix,
+          predOtherIncome,
+          "confirmed",
+        )
+      : null;
     const status: LedgerRow["status"] =
       i < a.todayIndex ? "past" : i === a.todayIndex ? "today" : "future";
     let light: LedgerRow["light"] = null;
@@ -238,7 +551,10 @@ export function dailyLedger(w: Week, a: WeekActuals): LedgerRow[] {
       light = actual.net >= predicted.net ? "green" : "red";
       const revDelta = actual.rev - predicted.rev;
       const labDelta = actual.lab - predicted.lab;
-      const revImpact = revDelta / GST_DIVISOR - (w.cogs / 100) * revDelta;
+      const revImpact =
+        actual.netRevenue -
+        predicted.netRevenue -
+        (actual.cogs - predicted.cogs);
       const labImpact = -labDelta;
       const driver: "revenue" | "labour" | "both" =
         Math.abs(revImpact) >= Math.abs(labImpact) * 1.25
@@ -313,44 +629,105 @@ export type Breakeven = {
   cleared: boolean;
 };
 
-/** Share of each revenue dollar left after GST and cost of goods. */
-function marginRate(cogsPct: number): number {
-  return 1 / GST_DIVISOR - cogsPct / 100;
-}
+/** Break-even revenue in the same entered/display basis as the Week. */
+export function breakevenRevenue(
+  w: Week,
+  wages: number,
+  fix: number,
+  otherIncome = 0,
+): number {
+  const netBreakEvenCents = calculateBreakEvenRevenueExGst(
+    {
+      basisPoints: Math.round(w.cogs * 100),
+      provenance: cogsProvenance(w),
+    },
+    dollarsToCents(wages),
+    dollarsToCents(fix),
+    dollarsToCents(otherIncome),
+  );
+  let enteredRevenueCents = dollarsToCents(
+    enteredRevenueFromExGst(
+      w,
+      centsToDollars(netBreakEvenCents),
+    ),
+  );
 
-/** Break-even revenue = (wages + fixed) / margin rate. */
-export function breakevenRevenue(wages: number, fix: number, cogsPct: number): number {
-  const m = marginRate(cogsPct);
-  return m > 0 ? (wages + fix) / m : Infinity;
+  const ebitdaAt = (candidateCents: number) =>
+    calculateEbitda({
+      revenueExGst: normalizeRevenue({
+        enteredAmountCents: candidateCents,
+        entryBasis: w.revenueEntryBasis,
+        gstRegistration: w.gstRegistration,
+        provenance: forecastProvenance,
+      }).revenueExGst,
+      cogsRate: {
+        basisPoints: Math.round(w.cogs * 100),
+        provenance: cogsProvenance(w),
+      },
+      labour: {
+        amountCents: dollarsToCents(wages),
+        provenance: {
+          source: "allocated-budget",
+          status: "estimated",
+        },
+      },
+      otherOperatingCosts: {
+        amountCents: dollarsToCents(fix),
+        provenance: otherCostsProvenance(w),
+      },
+      recurringOperatingIncome: {
+        amountCents: dollarsToCents(otherIncome),
+        provenance: recurringIncomeProvenance(w),
+      },
+    }).amountCents;
+
+  while (ebitdaAt(enteredRevenueCents) < 0) {
+    enteredRevenueCents += 1;
+  }
+  while (
+    enteredRevenueCents > 0 &&
+    ebitdaAt(enteredRevenueCents - 1) >= 0
+  ) {
+    enteredRevenueCents -= 1;
+  }
+
+  return centsToDollars(enteredRevenueCents);
 }
 
 /** One day's break-even: actual wages once the day has them, else budget;
  *  fixed is the static allocation either way. */
-export function dayBreakeven(row: LedgerRow, cogsPct: number): Breakeven {
-  const cell = row.actual ?? row.predicted;
-  const breakeven = breakevenRevenue(cell.lab, cell.fix, cogsPct);
+export function dayBreakeven(row: LedgerRow, w: Week): Breakeven {
+  const selectedCell = row.actual ?? row.predicted;
+  const breakeven = breakevenRevenue(
+    w,
+    selectedCell.lab,
+    selectedCell.fix,
+    selectedCell.otherIncome,
+  );
   return {
     breakeven,
-    revenue: cell.rev,
-    clearedBy: cell.rev - breakeven,
-    cleared: cell.rev >= breakeven,
+    revenue: selectedCell.rev,
+    clearedBy: selectedCell.rev - breakeven,
+    cleared: selectedCell.rev >= breakeven,
   };
 }
 
 /** Break-even for a whole scope (a week, or a single day). Sums projected wages
  *  (actuals-to-date + budget for the rest) and total fixed vs projected revenue,
  *  so it always agrees with the projected profit. */
-export function scopeBreakeven(rows: LedgerRow[], cogsPct: number): Breakeven {
+export function scopeBreakeven(rows: LedgerRow[], w: Week): Breakeven {
   let wages = 0;
   let fix = 0;
+  let otherIncome = 0;
   let revenue = 0;
   for (const r of rows) {
-    const cell = r.actual ?? r.predicted;
-    wages += cell.lab;
+    const selectedCell = r.actual ?? r.predicted;
+    wages += selectedCell.lab;
     fix += r.predicted.fix;
-    revenue += cell.rev;
+    otherIncome += r.predicted.otherIncome;
+    revenue += selectedCell.rev;
   }
-  const breakeven = breakevenRevenue(wages, fix, cogsPct);
+  const breakeven = breakevenRevenue(w, wages, fix, otherIncome);
   return { breakeven, revenue, clearedBy: revenue - breakeven, cleared: revenue >= breakeven };
 }
 
@@ -402,6 +779,7 @@ export const PERIODS: { key: PeriodKey; label: string }[] = [
 // A believable completed prior week — the predicted plan; actuals are seeded for
 // all seven days so it reads as a finished week (came in a touch under).
 export const LAST_WEEK: Week = {
+  ...DEFAULTS,
   rev: 19000,
   lab: 6100,
   fix: 5620,
@@ -425,8 +803,29 @@ export type PeriodView = {
   dayIndex: number | null; // set when scope === "day"
   historyRows?: LedgerRow[];
   isDemo?: boolean;
-  scenarioDays?: number;
 };
+
+export function periodHeadlineProfit({
+  scope,
+  isFuture,
+  dayActualNet,
+  dayPredictedNet,
+  projectedNet,
+  predictedNet,
+  historyActualNet,
+}: {
+  scope: PeriodView["scope"];
+  isFuture: boolean;
+  dayActualNet?: number;
+  dayPredictedNet?: number;
+  projectedNet: number;
+  predictedNet: number;
+  historyActualNet: number;
+}): number {
+  if (scope === "day") return dayActualNet ?? dayPredictedNet ?? 0;
+  if (scope === "history") return historyActualNet;
+  return isFuture ? predictedNet : projectedNet;
+}
 
 type DemoHistoryRecord = {
   id: string;
@@ -437,18 +836,30 @@ type DemoHistoryRecord = {
   actual: DayCell;
 };
 
-function historyCell(rev: number, lab: number, fix: number, cogsPct = 30): DayCell {
-  const cogs = (cogsPct / 100) * rev;
-  return { rev, cogs, lab, fix, net: rev / GST_DIVISOR - cogs - lab - fix };
+function historyCell(
+  rev: number,
+  lab: number,
+  fix: number,
+  cogsPct = 30,
+  status: "forecast" | "confirmed" = "confirmed",
+): DayCell {
+  return cell(
+    { ...DEFAULTS, cogs: cogsPct },
+    rev,
+    lab,
+    fix,
+    0,
+    status,
+  );
 }
 
 /** Dated concept records used only to exercise the Month and Custom flows. */
 const DEMO_HISTORY_RECORDS: DemoHistoryRecord[] = [
-  { id: "2026-06-01", label: "1–7 Jun", startDate: "2026-06-01", endDate: "2026-06-07", predicted: historyCell(19000, 5000, 4400), actual: historyCell(17800, 5300, 4400) },
-  { id: "2026-06-08", label: "8–14 Jun", startDate: "2026-06-08", endDate: "2026-06-14", predicted: historyCell(20500, 5200, 4400), actual: historyCell(19600, 5450, 4400) },
-  { id: "2026-06-15", label: "15–21 Jun", startDate: "2026-06-15", endDate: "2026-06-21", predicted: historyCell(21000, 5300, 4400), actual: historyCell(21400, 5200, 4400) },
-  { id: "2026-06-22", label: "22–28 Jun", startDate: "2026-06-22", endDate: "2026-06-28", predicted: historyCell(20000, 5200, 4400), actual: historyCell(19200, 5400, 4400) },
-  { id: "2026-06-29", label: "29–30 Jun", startDate: "2026-06-29", endDate: "2026-06-30", predicted: historyCell(6000, 1500, 1260), actual: historyCell(5900, 1560, 1260) },
+  { id: "2026-06-01", label: "1–7 Jun", startDate: "2026-06-01", endDate: "2026-06-07", predicted: historyCell(19000, 5000, 4400, 30, "forecast"), actual: historyCell(17800, 5300, 4400) },
+  { id: "2026-06-08", label: "8–14 Jun", startDate: "2026-06-08", endDate: "2026-06-14", predicted: historyCell(20500, 5200, 4400, 30, "forecast"), actual: historyCell(19600, 5450, 4400) },
+  { id: "2026-06-15", label: "15–21 Jun", startDate: "2026-06-15", endDate: "2026-06-21", predicted: historyCell(21000, 5300, 4400, 30, "forecast"), actual: historyCell(21400, 5200, 4400) },
+  { id: "2026-06-22", label: "22–28 Jun", startDate: "2026-06-22", endDate: "2026-06-28", predicted: historyCell(20000, 5200, 4400, 30, "forecast"), actual: historyCell(19200, 5400, 4400) },
+  { id: "2026-06-29", label: "29–30 Jun", startDate: "2026-06-29", endDate: "2026-06-30", predicted: historyCell(6000, 1500, 1260, 30, "forecast"), actual: historyCell(5900, 1560, 1260) },
 ];
 
 const DAY_MS = 86_400_000;
@@ -476,10 +887,15 @@ function clampHistoryRange(range?: HistoryRange): HistoryRange {
 function scaleCell(source: DayCell, factor: number): DayCell {
   return {
     rev: source.rev * factor,
+    netRevenue: source.netRevenue * factor,
+    gst: source.gst * factor,
     cogs: source.cogs * factor,
     lab: source.lab * factor,
     fix: source.fix * factor,
+    otherIncome: source.otherIncome * factor,
     net: source.net * factor,
+    resultStatus: source.resultStatus,
+    componentProvenance: source.componentProvenance,
   };
 }
 
@@ -494,7 +910,10 @@ function historyRows(range: HistoryRange): LedgerRow[] {
     const actual = scaleCell(record.actual, factor);
     const revDelta = actual.rev - predicted.rev;
     const labDelta = actual.lab - predicted.lab;
-    const revImpact = revDelta / GST_DIVISOR - 0.3 * revDelta;
+    const revImpact =
+      actual.netRevenue -
+      predicted.netRevenue -
+      (actual.cogs - predicted.cogs);
     const labImpact = -labDelta;
     const driver: "revenue" | "labour" | "both" =
       Math.abs(revImpact) >= Math.abs(labImpact) * 1.25
@@ -538,21 +957,45 @@ function aggregateCells(rows: LedgerRow[], source: "predicted" | "actual"): DayC
     if (!value) return sum;
     return {
       rev: sum.rev + value.rev,
+      netRevenue: sum.netRevenue + value.netRevenue,
+      gst: sum.gst + value.gst,
       cogs: sum.cogs + value.cogs,
       lab: sum.lab + value.lab,
       fix: sum.fix + value.fix,
+      otherIncome: sum.otherIncome + value.otherIncome,
       net: sum.net + value.net,
+      resultStatus: sum.resultStatus,
+      componentProvenance: mergeComponentProvenance(
+        sum.componentProvenance,
+        value.componentProvenance,
+      ),
     };
-  }, { rev: 0, cogs: 0, lab: 0, fix: 0, net: 0 });
+  }, {
+    rev: 0,
+    netRevenue: 0,
+    gst: 0,
+    cogs: 0,
+    lab: 0,
+    fix: 0,
+    otherIncome: 0,
+    net: 0,
+    resultStatus: source === "predicted" ? "forecast" : "estimated",
+    componentProvenance: emptyComponentProvenance(
+      source === "predicted" ? "forecast" : "estimated",
+    ),
+  });
 }
 
 function buildHistoryPeriod(key: "month" | "custom", requestedRange?: HistoryRange): PeriodView {
   const range = key === "month" ? DEMO_HISTORY_RANGE : clampHistoryRange(requestedRange);
   const rows = historyRows(range);
   const predicted = aggregateCells(rows, "predicted");
-  const cogsPct = predicted.rev ? (predicted.cogs / predicted.rev) * 100 : 30;
+  const cogsPct = predicted.netRevenue
+    ? (predicted.cogs / predicted.netRevenue) * 100
+    : 30;
   const weights = DEFAULTS.days.map((day) => day / DEFAULTS.rev);
   const week: Week = {
+    ...DEFAULTS,
     rev: predicted.rev,
     lab: predicted.lab,
     fix: predicted.fix,
@@ -570,7 +1013,6 @@ function buildHistoryPeriod(key: "month" | "custom", requestedRange?: HistoryRan
     dayIndex: null,
     historyRows: rows,
     isDemo: true,
-    scenarioDays: inclusiveDays(range.from, range.to),
   };
 }
 
@@ -580,6 +1022,7 @@ export function buildPeriodView(
   key: PeriodKey,
   baseWeek: Week,
   baseActuals: WeekActuals,
+  baseWeekStart: string,
   historyRange?: HistoryRange,
 ): PeriodView {
   switch (key) {
@@ -590,7 +1033,9 @@ export function buildPeriodView(
       return {
         key,
         title: "Last week",
-        dateLabel: "Mon 16 to Sun 22 Jun",
+        dateLabel: weekDateLabel(
+          isoDateOffset(baseWeekStart, -7).toISOString().slice(0, 10),
+        ),
         week: LAST_WEEK,
         actuals: seedActuals(LAST_WEEK, 7),
         scope: "week",
@@ -600,7 +1045,9 @@ export function buildPeriodView(
       return {
         key,
         title: "Next week",
-        dateLabel: "Mon 30 Jun to Sun 6 Jul",
+        dateLabel: weekDateLabel(
+          isoDateOffset(baseWeekStart, 7).toISOString().slice(0, 10),
+        ),
         week: baseWeek,
         actuals: forecastActuals(),
         scope: "week",
@@ -611,7 +1058,7 @@ export function buildPeriodView(
       return {
         key,
         title: "Yesterday",
-        dateLabel: dayDateLabel(yi),
+        dateLabel: dayDateLabel(yi, baseWeekStart),
         week: baseWeek,
         actuals: baseActuals,
         scope: "day",
@@ -623,7 +1070,7 @@ export function buildPeriodView(
       return {
         key,
         title: "This week",
-        dateLabel: "Mon 23 to Sun 29 Jun",
+        dateLabel: weekDateLabel(baseWeekStart),
         week: baseWeek,
         actuals: baseActuals,
         scope: "week",
@@ -653,15 +1100,30 @@ function histWeek(
   cogsPct = 35,
   fix = 5620,
 ): HistoryWeek {
-  const predCogs = (cogsPct / 100) * predRev;
-  const actCogs = (cogsPct / 100) * actRev;
+  const historyWeek = { ...DEFAULTS, cogs: cogsPct };
+  const predicted = cell(
+    historyWeek,
+    predRev,
+    predLab,
+    fix,
+    0,
+    "forecast",
+  );
+  const actual = cell(
+    historyWeek,
+    actRev,
+    actLab,
+    fix,
+    0,
+    "confirmed",
+  );
   return {
     label,
-    predNet: predRev / GST_DIVISOR - predCogs - predLab - fix,
-    actNet: actRev / GST_DIVISOR - actCogs - actLab - fix,
+    predNet: predicted.net,
+    actNet: actual.net,
     rev: { predicted: predRev, actual: actRev },
     lab: { predicted: predLab, actual: actLab },
-    cogs: { predicted: predCogs, actual: actCogs },
+    cogs: { predicted: predicted.cogs, actual: actual.cogs },
     fix: { predicted: fix, actual: fix },
   };
 }

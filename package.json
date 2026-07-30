@@ -7,12 +7,16 @@
     "build": "next build",
     "build:pages": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@supabase/ssr": "0.12.3",
+    "@supabase/supabase-js": "2.110.9",
     "motion": "^12.40.0",
-    "next": "^15.5.20",
+    "next": "15.5.21",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "recharts": "^3.8.1",
@@ -24,8 +28,9 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.1",
-    "postcss": "^8",
+    "postcss": "8.5.18",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
@@ -34,15 +34,17 @@ import { assetPath, withoutBasePath } from "@/lib/site";
 import {
   DEFAULTS,
   DEMO_HISTORY_RANGE,
-  GST_DIVISOR,
   PERIODS,
   buildPeriodView,
+  cogsForRevenue,
   dailyLedger,
-  hasSavedWeek,
-  loadActuals,
-  loadWeek,
+  emptyComponentProvenance,
+  forecastActuals,
   money,
+  mergeComponentProvenance,
+  periodHeadlineProfit,
   profit,
+  revenueExGst,
   scopeBreakeven,
   seedActuals,
   signedProfit,
@@ -54,6 +56,7 @@ import {
   type Week,
   type WeekActuals,
 } from "@/lib/profit";
+import { loadVenueState } from "@/lib/persistence/venue-state";
 import "./scoreboard.css";
 import "./what-happened.css";
 import "./what-if.css";
@@ -94,8 +97,15 @@ const DRIVER_ICONS = {
 const DEFAULT_ADJUSTMENTS: Adjustments = {
   revenue: { value: 0, mode: "dollar" },
   cogs: { value: 0, mode: "percent" },
-  wages: { value: -62, mode: "dollar" },
+  wages: { value: 0, mode: "dollar" },
   fixed: { value: 0, mode: "dollar" },
+};
+
+const DEFAULT_ADJUSTMENT_DRAFTS: Record<Driver, string> = {
+  revenue: "0",
+  cogs: "0",
+  wages: "0",
+  fixed: "0",
 };
 
 const SCREENS: Screen[] = ["dashboard", "what-happened", "what-if", "full-numbers", "day-verdict", "day-explanation"];
@@ -169,23 +179,40 @@ function DashboardInner() {
   const [chapter, setChapter] = useState<Chapter>(chapterParam);
   const [screen, setScreen] = useState<Screen>(() => screenFromParam(requestedScreen));
   const [week, setWeek] = useState<Week>(DEFAULTS);
-  const [actuals, setActuals] = useState<WeekActuals>(() => seedActuals(DEFAULTS));
+  const [weekStart, setWeekStart] = useState("2026-06-22");
+  const [actuals, setActuals] = useState<WeekActuals>(() => forecastActuals());
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(dayParam);
   const [customRange, setCustomRange] = useState<HistoryRange>(initialRange);
   const [customDraft, setCustomDraft] = useState<HistoryRange>(initialRange);
   const [customOpen, setCustomOpen] = useState(false);
+  const screenRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!hasSavedWeek()) {
-      router.replace("/home");
-      return;
-    }
-    const savedWeek = loadWeek();
-    const savedActuals = loadActuals(savedWeek);
-    setWeek(savedWeek);
-    setActuals(savedActuals);
-    setReady(true);
+    let active = true;
+    loadVenueState()
+      .then((state) => {
+        if (!active) return;
+        if (!state.week) {
+          router.replace("/setup");
+          return;
+        }
+        setWeek(state.week);
+        setWeekStart(state.weekStart ?? "2026-06-22");
+        setActuals(state.actuals ?? forecastActuals());
+        setReady(true);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setLoadError(
+          error instanceof Error ? error.message : "Birdee could not load this venue.",
+        );
+        setReady(true);
+      });
+    return () => {
+      active = false;
+    };
   }, [router]);
 
   useEffect(() => {
@@ -195,6 +222,13 @@ function DashboardInner() {
   useEffect(() => {
     setScreen(screenFromParam(requestedScreen));
   }, [requestedScreen]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      screenRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [screen]);
 
   useEffect(() => {
     if (screenParam !== "what-happened" || initialScreen === "what-happened") return;
@@ -213,8 +247,8 @@ function DashboardInner() {
   }, [initialPeriod, initialRange.from, initialRange.to]);
 
   const view = useMemo(
-    () => buildPeriodView(periodKey, week, actuals, customRange),
-    [periodKey, week, actuals, customRange],
+    () => buildPeriodView(periodKey, week, actuals, weekStart, customRange),
+    [periodKey, week, actuals, weekStart, customRange],
   );
   const dailyRows = useMemo(
     () => dailyLedger(view.week, view.actuals),
@@ -281,7 +315,17 @@ function DashboardInner() {
 
   const selectPeriod = (key: PeriodKey) => {
     if (key === "custom") {
-      setCustomOpen((current) => !current);
+      setPeriodKey("custom");
+      setCustomRange(customDraft);
+      setChapter("revenue");
+      setScreen("dashboard");
+      setCustomOpen(true);
+      const query = new URLSearchParams({
+        period: "custom",
+        "from-date": customDraft.from,
+        "to-date": customDraft.to,
+      });
+      router.replace(`/app?${query.toString()}`, { scroll: false });
       return;
     }
     setPeriodKey(key);
@@ -318,14 +362,22 @@ function DashboardInner() {
   };
 
   if (!ready) return <DashboardSkeleton />;
+  if (loadError) return <DashboardLoadError message={loadError} />;
 
   const isFuture = periodKey === "next-week";
   const isHistory = view.scope === "history";
-  const periodProfit = view.scope === "day"
-    ? (ledger[view.dayIndex ?? 0]?.actual ?? ledger[view.dayIndex ?? 0]?.predicted).net
-    : isFuture
-      ? status.predictedNet
-      : actualTotals.net;
+  const selectedPeriodDay = view.scope === "day"
+    ? ledger[view.dayIndex ?? 0]
+    : null;
+  const periodProfit = periodHeadlineProfit({
+    scope: view.scope,
+    isFuture,
+    dayActualNet: selectedPeriodDay?.actual?.net,
+    dayPredictedNet: selectedPeriodDay?.predicted.net,
+    projectedNet: status.projectedNet,
+    predictedNet: status.predictedNet,
+    historyActualNet: actualTotals.net,
+  });
 
   const chapterContent = getChapterContent({
     chapter,
@@ -362,6 +414,14 @@ function DashboardInner() {
   const fullNumbersScope: "period" | "day" =
     numbersScope === "day" || view.scope === "day" ? "day" : "period";
   const fullNumbersRows = fullNumbersScope === "day" && selectedRow ? [selectedRow] : scopedRows;
+  const scenarioBaseCell = totalCells(scopedRows, "selected");
+  const scenarioBaseWeek: Week = {
+    ...view.week,
+    rev: scenarioBaseCell.rev,
+    lab: scenarioBaseCell.lab,
+    fix: scenarioBaseCell.fix,
+    recurringIncome: scenarioBaseCell.otherIncome,
+  };
   const fullNumbersTitle = fullNumbersScope === "day" && selectedRow
     ? `${fullDayName(selectedRow.label)} numbers`
     : `${view.title} numbers`;
@@ -377,7 +437,7 @@ function DashboardInner() {
             title={periodExplanationTitle(view.title)}
             numbersActionLabel={periodNumbersActionLabel(view.title)}
             rows={completedRows}
-            cogsPct={view.week.cogs}
+            week={view.week}
             onBack={navigateBack}
             onFullNumbers={() => openChild("full-numbers", { scope: view.scope === "day" ? "day" : "period", day: selectedDay })}
           />
@@ -386,9 +446,7 @@ function DashboardInner() {
         return (
           <WhatIfView
             periodTitle={view.title}
-            week={view.week}
-            baseline={status.projectedNet}
-            scenarioDays={view.scenarioDays ?? (view.scope === "day" ? 1 : 7)}
+            week={scenarioBaseWeek}
             onBack={navigateBack}
           />
         );
@@ -432,7 +490,7 @@ function DashboardInner() {
             title="What happened?"
             numbersActionLabel={`See ${fullDayName(selectedRow.label)}’s numbers`}
             rows={[selectedRow]}
-            cogsPct={view.week.cogs}
+            week={view.week}
             onBack={navigateBack}
             onFullNumbers={() => openChild("full-numbers", { day: selectedRow.index, scope: "day" })}
           />
@@ -474,12 +532,17 @@ function DashboardInner() {
     <div className="scoreboard-stage">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
+          ref={screenRef}
           key={screen}
           className="scoreboard-screen"
-          initial={reduceMotion ? false : { opacity: 0, x: 30, filter: "blur(5px)" }}
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-          exit={reduceMotion ? { opacity: 1 } : { opacity: 0, x: -18, filter: "blur(3px)" }}
-          transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.16, 1, 0.3, 1] }}
+          initial={reduceMotion ? false : { opacity: 0, transform: "translateX(10px)" }}
+          animate={{ opacity: 1, transform: "translateX(0px)" }}
+          exit={reduceMotion ? { opacity: 1 } : {
+            opacity: 0,
+            transform: "translateX(-6px)",
+            transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] },
+          }}
+          transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
         >
           {screenNode}
         </motion.div>
@@ -539,15 +602,12 @@ function DashboardView({
   onOpenDay: () => void;
   onFullNumbers: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const [dayPreviewOpen, setDayPreviewOpen] = useState(false);
   const yesterdayRow = periodKey === "yesterday" && selectedRow?.actual && selectedRow.variance
     ? selectedRow
     : null;
-  const answerSupport = periodKey === "yesterday" && chapter === "revenue" && selectedRow
-    ? `${fullDayName(selectedRow.label)}’s final result`
-    : periodKey === "this-week" && chapter === "revenue"
-      ? "From the days you’ve finished."
-      : chapterContent.support;
+  const answerSupport = chapterContent.support;
 
   const selectDay = (index: number) => {
     onSelectDay(index);
@@ -578,14 +638,17 @@ function DashboardView({
         />
       </section>
 
-      {customOpen && (
-        <CustomRangePanel
-          value={customDraft}
-          onChange={onCustomDraft}
-          onApply={onApplyCustom}
-          onClose={onCloseCustom}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {customOpen && (
+          <CustomRangePanel
+            key="custom-range"
+            value={customDraft}
+            onChange={onCustomDraft}
+            onApply={onApplyCustom}
+            onClose={onCloseCustom}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="chapter-tabs" role="tablist" aria-label="Choose the main result">
         {CHAPTERS.map((item) => (
@@ -606,11 +669,17 @@ function DashboardView({
       </div>
 
       <aside className="dashboard-answer" aria-live="polite">
-        <div className="dashboard-profit-copy">
+        <motion.div
+          key={`${periodKey}-${chapter}`}
+          className="dashboard-profit-copy"
+          initial={reduceMotion ? false : { opacity: 0, transform: "translateY(4px)" }}
+          animate={{ opacity: 1, transform: "translateY(0px)" }}
+          transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+        >
           <p>{chapterContent.label}</p>
           <strong className="tnum">{signedProfit(chapterContent.value)}</strong>
           <span>{answerSupport}</span>
-        </div>
+        </motion.div>
         <div className="dashboard-profit-actions" aria-label="Explore this result">
           {!isFuture && (
             <ProductButton
@@ -759,10 +828,10 @@ function DayPreviewOverlay({ row, onClose, onOpen }: {
           {money(Math.abs(difference))} {verdictLabel}
         </strong>
         <p className="day-preview-support">
-          You finished at {signedProfit(row.actual.net)} against a budget of {signedProfit(row.predicted.net)}.
+          Estimated profit finished at {signedProfit(row.actual.net)} against a budget of {signedProfit(row.predicted.net)}.
         </p>
         <dl className="day-preview-values">
-          <div><dt>Actual</dt><dd className="tnum">{signedProfit(row.actual.net)}</dd></div>
+          <div><dt>Estimated</dt><dd className="tnum">{signedProfit(row.actual.net)}</dd></div>
           <div><dt>Budget</dt><dd className="tnum">{signedProfit(row.predicted.net)}</dd></div>
         </dl>
         <div className="day-preview-insight">
@@ -792,7 +861,7 @@ function YesterdayComparison({ row }: { row: LedgerRow }) {
     <section className="day-comparison" aria-labelledby="day-comparison-title">
       <div className="day-comparison-card">
         <h2 id="day-comparison-title">Yesterday vs budget</h2>
-        <div className="day-comparison-track" aria-label={`Budget profit ${signedProfit(row.predicted.net)}, actual profit ${signedProfit(row.actual.net)}`}>
+        <div className="day-comparison-track" aria-label={`Budget profit ${signedProfit(row.predicted.net)}, estimated profit ${signedProfit(row.actual.net)}`}>
           <div className="day-comparison-point is-budget">
             <span>Budget profit</span>
             <strong className="tnum">{signedProfit(row.predicted.net)}</strong>
@@ -802,7 +871,7 @@ function YesterdayComparison({ row }: { row: LedgerRow }) {
             <ArrowRight weight="bold" />
           </div>
           <div className="day-comparison-point is-actual">
-            <span>Actual profit</span>
+            <span>Estimated profit</span>
             <strong className="tnum">{signedProfit(row.actual.net)}</strong>
           </div>
         </div>
@@ -852,9 +921,22 @@ function CustomRangePanel({ value, onChange, onApply, onClose }: {
   onApply: () => void;
   onClose: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const invalid = value.from > value.to;
   return (
-    <section className="custom-range-panel" role="dialog" aria-label="Choose custom reporting dates">
+    <motion.section
+      className="custom-range-panel"
+      role="dialog"
+      aria-label="Choose custom reporting dates"
+      initial={reduceMotion ? false : { opacity: 0, transform: "translateY(-8px) scale(0.98)" }}
+      animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+      exit={reduceMotion ? { opacity: 0 } : {
+        opacity: 0,
+        transform: "translateY(-5px) scale(0.985)",
+        transition: { duration: 0.14, ease: [0.23, 1, 0.32, 1] },
+      }}
+      transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+    >
       <div>
         <strong>Custom range</strong>
         <span>Demo records are available from 1 to 30 June 2026.</span>
@@ -869,7 +951,7 @@ function CustomRangePanel({ value, onChange, onApply, onClose }: {
       </label>
       <ProductButton variant="primary" size="compact" onClick={onApply} disabled={invalid}>View range</ProductButton>
       <button type="button" className="custom-range-close" onClick={onClose} aria-label="Close custom range"><X aria-hidden /></button>
-    </section>
+    </motion.section>
   );
 }
 
@@ -879,7 +961,7 @@ function ResultExplanationView({
   title,
   numbersActionLabel,
   rows,
-  cogsPct,
+  week,
   onBack,
   onFullNumbers,
 }: {
@@ -888,14 +970,14 @@ function ResultExplanationView({
   title: string;
   numbersActionLabel: string;
   rows: LedgerRow[];
-  cogsPct: number;
+  week: Week;
   onBack: () => void;
   onFullNumbers: () => void;
 }) {
   const actual = totalCells(rows, "actual");
   const budget = totalCells(rows, "predicted");
   const difference = actual.net - budget.net;
-  const drivers = profitDrivers(actual, budget, cogsPct);
+  const drivers = profitDrivers(actual, budget, week);
   const leadDriver = drivers[0];
   const leadDriverInsight = leadDriver?.key === "revenue"
     ? "Revenue did most of the pulling."
@@ -935,7 +1017,7 @@ function ResultExplanationView({
               )}
             </h2>
             <p className="result-explanation-comparison">
-              <span>Actual <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>{signedProfit(actual.net)}</strong></span>
+              <span>Estimated <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>{signedProfit(actual.net)}</strong></span>
               <i aria-hidden>{"\u00b7"}</i>
               <span>Budget <strong className={`tnum ${budget.net >= 0 ? "good" : "bad"}`}>{signedProfit(budget.net)}</strong></span>
             </p>
@@ -947,12 +1029,12 @@ function ResultExplanationView({
             <h3>Biggest drivers</h3>
           </div>
 
-          <div className="profit-bridge" role="list" aria-label="How budget profit became actual profit">
+          <div className="profit-bridge" role="list" aria-label="How budget profit became estimated profit">
             <BridgeStep kind="start" label="Budget profit" value={budget.net} />
             {drivers.map((driver) => (
               <BridgeStep key={driver.key} kind="driver" label={driver.label} value={driver.impact} detail={driver.detail} />
             ))}
-            <BridgeStep kind="finish" label="Actual profit" value={actual.net} />
+            <BridgeStep kind="finish" label="Estimated profit" value={actual.net} />
           </div>
 
           <div className="result-driver-insight">
@@ -971,7 +1053,6 @@ function ResultExplanationView({
           trailingIcon={<ArrowRight weight="bold" />}
         >
           <span className="result-action-full">{numbersActionLabel}</span>
-          <span className="result-action-compact">See all numbers</span>
         </ProductButton>
       </div>
     </div>
@@ -985,13 +1066,16 @@ type ProfitDriver = {
   impact: number;
 };
 
-function profitDrivers(actual: DayCell, budget: DayCell, cogsPct: number): ProfitDriver[] {
+function profitDrivers(actual: DayCell, budget: DayCell, week: Week): ProfitDriver[] {
   const revenueDelta = actual.rev - budget.rev;
   const wageDelta = actual.lab - budget.lab;
   const fixedDelta = actual.fix - budget.fix;
-  const budgetCogsRate = budget.rev ? budget.cogs / budget.rev : cogsPct / 100;
-  const revenueImpact = revenueDelta / GST_DIVISOR - budgetCogsRate * revenueDelta;
-  const expectedActualCogs = budget.cogs + budgetCogsRate * revenueDelta;
+  const revenueImpact =
+    revenueExGst(week, actual.rev) -
+    revenueExGst(week, budget.rev) -
+    (cogsForRevenue(week, actual.rev) -
+      cogsForRevenue(week, budget.rev));
+  const expectedActualCogs = cogsForRevenue(week, actual.rev);
   const cogsRateImpact = -(actual.cogs - expectedActualCogs);
   const wageImpact = -wageDelta;
   const fixedImpact = -fixedDelta;
@@ -1064,51 +1148,75 @@ function BridgeStep({ kind, label, value, detail }: {
 function WhatIfView({
   periodTitle,
   week,
-  baseline,
-  scenarioDays,
   onBack,
 }: {
   periodTitle: string;
   week: Week;
-  baseline: number;
-  scenarioDays: number;
   onBack: () => void;
 }) {
   const [activeDriver, setActiveDriver] = useState<Driver>("revenue");
   const [adjustments, setAdjustments] = useState<Adjustments>(DEFAULT_ADJUSTMENTS);
+  const [adjustmentDrafts, setAdjustmentDrafts] = useState<Record<Driver, string>>(DEFAULT_ADJUSTMENT_DRAFTS);
   const reduceMotion = useReducedMotion();
   const active = adjustments[activeDriver];
+  const activeDraft = adjustmentDrafts[activeDriver];
 
-  const scenarioWeek = applyScenario(week, adjustments, scenarioDays);
-  const scenarioResult = baseline + (profit(scenarioWeek) - profit(week));
+  const baseline = profit(week);
+  const scenarioWeek = applyScenario(week, adjustments);
+  const scenarioResult = profit(scenarioWeek);
   const change = scenarioResult - baseline;
-  const config = sliderConfig(activeDriver, active.mode);
-  const estimatedHours = activeDriver === "wages" && active.mode === "dollar"
-    ? Math.abs(active.value / 31)
+  const config = sliderConfig(activeDriver, active.mode, week);
+  const bounds = adjustmentBounds(activeDriver, active.mode, week);
+  const parsedDraft = parseAdjustmentDraft(activeDraft);
+  const draftError = adjustmentDraftError(activeDraft, parsedDraft, bounds, activeDriver, active.mode);
+  const sliderMin = Math.min(config.min, active.value);
+  const sliderMax = Math.max(config.max, active.value);
+  const estimatedHours =
+    activeDriver === "wages" &&
+    active.mode === "dollar" &&
+    week.loadedHourlyLabourCost
+    ? Math.abs(active.value / week.loadedHourlyLabourCost)
     : 0;
   const scenarioDeltaCopy = Math.abs(change) < 0.5
     ? "Same as now"
     : `${signedProfit(change)} ${change >= 0 ? "better" : "worse"} than now`;
-  const activeValue = activeDriver === "cogs"
-    ? `${scenarioWeek.cogs}%`
-    : formatAdjustment(activeDriver, active);
-  const activeUnit = activeDriver === "cogs"
-    ? adjustments.cogs.value === 0
-      ? "Current rate"
-      : `${formatAdjustment("cogs", adjustments.cogs)} from now`
-    : active.value === 0
-      ? ""
-    : active.mode === "dollar"
-      ? activeDriver === "fixed"
-        ? "per week"
-        : "per day"
-      : "change";
+  const activeResultCopy = scenarioDriverResultCopy(activeDriver, scenarioWeek, active.value === 0);
+  const activeInputUnit = activeDriver === "cogs" ? "pts" : active.mode === "percent" ? "%" : "$";
+  const activeInputId = `what-if-${activeDriver}-value`;
+  const activeInputHelpId = `what-if-${activeDriver}-value-help`;
 
-  const setActive = (patch: Partial<Adjustment>) => {
+  const setActiveMode = (mode: DriverMode) => {
     setAdjustments((current) => ({
       ...current,
-      [activeDriver]: { ...current[activeDriver], ...patch },
+      [activeDriver]: { value: 0, mode },
     }));
+    setAdjustmentDrafts((current) => ({ ...current, [activeDriver]: "0" }));
+  };
+
+  const setActiveValue = (value: number, syncDraft = true) => {
+    const nextValue = clampAdjustment(value, bounds);
+    setAdjustments((current) => ({
+      ...current,
+      [activeDriver]: { ...current[activeDriver], value: nextValue },
+    }));
+    if (syncDraft) {
+      setAdjustmentDrafts((current) => ({
+        ...current,
+        [activeDriver]: formatAdjustmentInput(nextValue),
+      }));
+    }
+  };
+
+  const updateActiveDraft = (value: string) => {
+    setAdjustmentDrafts((current) => ({ ...current, [activeDriver]: value }));
+    const parsed = parseAdjustmentDraft(value);
+    if (parsed == null || adjustmentDraftError(value, parsed, bounds, activeDriver, active.mode)) return;
+    setActiveValue(parsed, false);
+  };
+
+  const commitActiveDraft = () => {
+    const parsed = parseAdjustmentDraft(activeDraft);
+    setActiveValue(parsed == null ? active.value : parsed);
   };
 
   const resetScenario = () => {
@@ -1118,6 +1226,7 @@ function WhatIfView({
       wages: { value: 0, mode: "dollar" },
       fixed: { value: 0, mode: "dollar" },
     });
+    setAdjustmentDrafts(DEFAULT_ADJUSTMENT_DRAFTS);
     setActiveDriver("revenue");
   };
 
@@ -1136,7 +1245,7 @@ function WhatIfView({
     revenue: "See what a little more revenue could do.",
     wages: "Try a roster change and see where profit lands.",
     cogs: "Test a different cost-of-goods rate.",
-    fixed: "See how a weekly overhead change affects profit.",
+    fixed: "See how an overhead change affects this period.",
   };
 
   return (
@@ -1209,8 +1318,8 @@ function WhatIfView({
                             <div className="what-if-mode-row">
                               <span>Adjust by</span>
                               <div className="mode-control" role="group" aria-label="Choose adjustment unit">
-                                <button type="button" className={active.mode === "dollar" ? "is-active" : ""} onClick={() => setActive({ mode: "dollar", value: 0 })}>$</button>
-                                <button type="button" className={active.mode === "percent" ? "is-active" : ""} onClick={() => setActive({ mode: "percent", value: 0 })}>%</button>
+                                <button type="button" className={active.mode === "dollar" ? "is-active" : ""} onClick={() => setActiveMode("dollar")}>$</button>
+                                <button type="button" className={active.mode === "percent" ? "is-active" : ""} onClick={() => setActiveMode("percent")}>%</button>
                               </div>
                             </div>
                           )}
@@ -1219,18 +1328,39 @@ function WhatIfView({
                             <button
                               type="button"
                               aria-label={`Decrease ${DRIVER_LABELS[activeDriver]}`}
-                              onClick={() => setActive({ value: Math.max(config.min, active.value - config.step) })}
+                              onClick={() => setActiveValue(active.value - config.step)}
                             >
                               <Minus weight="regular" />
                             </button>
-                            <div>
-                              <strong className={`tnum ${driverTone(activeDriver, active.value)}`}>{activeValue}</strong>
-                              {activeUnit && <span>{activeUnit}</span>}
-                            </div>
+                            <label className="what-if-value-entry" htmlFor={activeInputId}>
+                              <span>Change by</span>
+                              <span className={`what-if-number-field ${draftError ? "has-error" : ""} ${driverTone(activeDriver, active.value)}`}>
+                                {activeInputUnit === "$" && <i aria-hidden>$</i>}
+                                <input
+                                  id={activeInputId}
+                                  className="tnum"
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={activeDraft}
+                                  onChange={(event) => updateActiveDraft(event.target.value)}
+                                  onBlur={commitActiveDraft}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter") event.currentTarget.blur();
+                                  }}
+                                  aria-label={`${DRIVER_LABELS[activeDriver]} change`}
+                                  aria-invalid={Boolean(draftError)}
+                                  aria-describedby={activeInputHelpId}
+                                />
+                                {activeInputUnit !== "$" && <i aria-hidden>{activeInputUnit}</i>}
+                              </span>
+                              <small id={activeInputHelpId} className={draftError ? "is-error" : ""}>
+                                {draftError ?? activeResultCopy}
+                              </small>
+                            </label>
                             <button
                               type="button"
                               aria-label={`Increase ${DRIVER_LABELS[activeDriver]}`}
-                              onClick={() => setActive({ value: Math.min(config.max, active.value + config.step) })}
+                              onClick={() => setActiveValue(active.value + config.step)}
                             >
                               <Plus weight="regular" />
                             </button>
@@ -1239,15 +1369,16 @@ function WhatIfView({
                           <input
                             className="what-if-range"
                             type="range"
-                            min={config.min}
-                            max={config.max}
+                            min={sliderMin}
+                            max={sliderMax}
                             step={config.step}
                             value={active.value}
-                            onChange={(event) => setActive({ value: Number(event.target.value) })}
+                            onChange={(event) => setActiveValue(Number(event.target.value))}
                             aria-label={`Adjust ${DRIVER_LABELS[activeDriver]}`}
+                            aria-valuetext={formatAdjustment(activeDriver, active)}
                           />
                           <p>{driverHint[activeDriver]}</p>
-                          {estimatedHours > 0 && <small>About {estimatedHours.toFixed(1)} fewer rostered hours a day.</small>}
+                          {estimatedHours > 0 && <small>About {estimatedHours.toFixed(1)} loaded labour hours in this period.</small>}
                         </div>
                       </motion.div>
                     )}
@@ -1302,8 +1433,11 @@ function FullNumbersView({
   const actual = totalCells(completed, "actual");
   const budgetToDate = totalCells(completed, "predicted");
   const scopeBudget = totalCells(rows, "predicted");
-  const difference = actual.net - budgetToDate.net;
-  const be = scopeBreakeven(rows, week.cogs);
+  const isFutureScope = rows.length > 0 && rows.every((row) => !row.actual);
+  const displayedResult = isFutureScope ? scopeBudget : actual;
+  const comparisonBudget = isFutureScope ? scopeBudget : budgetToDate;
+  const difference = displayedResult.net - comparisonBudget.net;
+  const be = scopeBreakeven(rows, week);
   const breakEvenDelta = scopeBudget.rev - be.breakeven;
   const isShortOfBreakEven = breakEvenDelta < 0;
   const breakEvenGap = Math.abs(breakEvenDelta);
@@ -1311,8 +1445,8 @@ function FullNumbersView({
   const revenuePlanPosition = Math.min(100, (scopeBudget.rev / breakEvenScale) * 100);
   const breakEvenPosition = Math.min(100, (be.breakeven / breakEvenScale) * 100);
   const gapPosition = (revenuePlanPosition + breakEvenPosition) / 2;
-  const wagesPct = scopeBudget.rev > 0
-    ? (scopeBudget.lab / (scopeBudget.rev / GST_DIVISOR)) * 100
+  const wagesPct = scopeBudget.netRevenue > 0
+    ? (scopeBudget.lab / scopeBudget.netRevenue) * 100
     : 0;
   const scopeKicker = mode === "day"
     ? "Day outlook"
@@ -1352,11 +1486,17 @@ function FullNumbersView({
         <div className="full-profit-result">
           <strong
             id="full-profit-value"
-            className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}
+            className={`tnum ${displayedResult.net >= 0 ? "good" : "bad"}`}
           >
-            {signedProfit(actual.net)}
+            {signedProfit(displayedResult.net)}
           </strong>
-          <span>{mode === "week" ? "Actual profit to date" : "Actual profit"}</span>
+          <span>
+            {isFutureScope
+              ? "Forecast profit"
+              : mode === "week"
+                ? "Estimated profit to date"
+                : "Estimated profit"}
+          </span>
         </div>
         <div className="full-profit-comparison">
           <p>
@@ -1369,7 +1509,10 @@ function FullNumbersView({
               </>
             )}
           </p>
-          <span><strong className="tnum">{signedProfit(budgetToDate.net)}</strong> {mode === "week" ? "budget to date" : "budget"}</span>
+          <span>
+            <strong className="tnum">{signedProfit(comparisonBudget.net)}</strong>{" "}
+            {isFutureScope ? "from your budget" : mode === "week" ? "budget to date" : "budget"}
+          </span>
         </div>
       </section>
 
@@ -1400,10 +1543,11 @@ function FullNumbersView({
       {(mode === "day" || activeView === "overview") ? (
         <div className="full-numbers-layout" role="tabpanel" aria-label="Overview">
           <ReconciliationTable
-            actual={actual}
-            budget={budgetToDate}
-            gstActual={gstFromGross(actual.rev)}
-            gstBudget={gstFromGross(budgetToDate.rev)}
+            actual={displayedResult}
+            budget={comparisonBudget}
+            gstActual={displayedResult.gst}
+            gstBudget={comparisonBudget.gst}
+            actualLabel={isFutureScope ? "Forecast" : "Result"}
             expanded={showAllNumbers}
             onToggle={() => setShowAllNumbers((current) => !current)}
           />
@@ -1448,7 +1592,7 @@ function FullNumbersView({
 
             <div className="break-even-cost-context">
               <div><span>Wages</span><strong className="tnum">{wagesPct.toFixed(1)}%</strong><small>of net revenue</small></div>
-              <div><span>COGS rate</span><strong className="tnum">{week.cogs.toFixed(1)}%</strong><small>of gross revenue</small></div>
+              <div><span>COGS rate</span><strong className="tnum">{week.cogs.toFixed(1)}%</strong><small>of revenue excluding GST</small></div>
             </div>
 
             <div className="break-even-callout">
@@ -1466,7 +1610,7 @@ function FullNumbersView({
             </div>
             {isDailyDetail && <span>Open a completed day for its full breakdown.</span>}
           </header>
-          <div className="daily-table-head"><span>{rowLabel}</span><span>Actual</span><span>Budget</span><span>Vs budget</span></div>
+          <div className="daily-table-head"><span>{rowLabel}</span><span>Estimated</span><span>Budget</span><span>Vs budget</span></div>
           {rows.map((row) => {
             const delta = row.variance?.net ?? 0;
             const canOpen = Boolean(row.actual && mode === "week");
@@ -1576,7 +1720,7 @@ function DayVerdictView({
           <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={116} />
           <div>
             <h2 id="day-verdict-headline">{verdict}</h2>
-            <span>Actual profit</span>
+            <span>Estimated profit</span>
             <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>{signedProfit(actual.net)}</strong>
           </div>
         </div>
@@ -1743,7 +1887,7 @@ function DayScore({
         <div className="day-flight-breakdown" aria-label={`${fullDayName(row.label)} budget breakdown`}>
           <strong>{fullDayName(row.label)}</strong>
           <dl>
-            <div><dt>Actual</dt><dd className="tnum">{signedProfit(actual)}</dd></div>
+            <div><dt>Estimated</dt><dd className="tnum">{signedProfit(actual)}</dd></div>
             <div><dt>Budget</dt><dd className="tnum">{signedProfit(row.predicted.net)}</dd></div>
           </dl>
           <p className={`tnum is-${performance}`}>
@@ -1771,6 +1915,7 @@ function ReconciliationTable({
   budget,
   gstActual,
   gstBudget,
+  actualLabel,
   expanded,
   onToggle,
 }: {
@@ -1778,6 +1923,7 @@ function ReconciliationTable({
   budget: DayCell;
   gstActual: number;
   gstBudget: number;
+  actualLabel: "Result" | "Forecast";
   expanded: boolean;
   onToggle: () => void;
 }) {
@@ -1791,16 +1937,30 @@ function ReconciliationTable({
       positive: "above budget",
       negative: "below budget",
       driver: true,
+      evidence: actual.componentProvenance.revenue,
+    },
+    {
+      key: "other-income",
+      label: "Recurring other income",
+      actual: actual.otherIncome,
+      budget: budget.otherIncome,
+      variance: actual.otherIncome - budget.otherIncome,
+      positive: "above budget",
+      negative: "below budget",
+      driver: false,
+      evidence: actual.componentProvenance.recurringIncome,
     },
     {
       key: "cogs",
       label: "COGS",
       actual: -actual.cogs,
       budget: -budget.cogs,
-      variance: budget.cogs - actual.cogs,
-      positive: "better than budget",
-      negative: "over budget",
+      variance: 0,
+      positive: "rate lower",
+      negative: "rate higher",
+      neutralLabel: "rate unchanged",
       driver: false,
+      evidence: actual.componentProvenance.cogs,
     },
     {
       key: "wages",
@@ -1811,16 +1971,19 @@ function ReconciliationTable({
       positive: "better than budget",
       negative: "over budget",
       driver: true,
+      evidence: actual.componentProvenance.labour,
     },
     {
       key: "gst",
       label: "GST",
       actual: -gstActual,
       budget: -gstBudget,
-      variance: gstBudget - gstActual,
-      positive: "better than budget",
-      negative: "over budget",
+      variance: 0,
+      positive: "lower",
+      negative: "higher",
+      neutralLabel: "follows revenue",
       driver: false,
+      evidence: actual.componentProvenance.gst,
     },
     {
       key: "fixed",
@@ -1831,30 +1994,32 @@ function ReconciliationTable({
       positive: "better than budget",
       negative: "over budget",
       driver: false,
+      evidence: actual.componentProvenance.otherCosts,
     },
     {
       key: "profit",
-      label: "Profit",
+      label: "Estimated profit",
       actual: actual.net,
       budget: budget.net,
       variance: actual.net - budget.net,
       positive: "ahead of budget",
       negative: "behind budget",
       driver: false,
+      evidence: actual.componentProvenance.profit,
     },
   ];
   const visibleRows = expanded ? rows : rows.filter((row) => row.driver);
 
   return (
     <section className={`numbers-reconciliation ${expanded ? "is-expanded" : "is-collapsed"}`} aria-labelledby="reconciliation-title">
-      <div id="full-reconciliation-table" className="reconciliation-table" role="table" aria-label="Actual compared with budget">
+      <div id="full-reconciliation-table" className="reconciliation-table" role="table" aria-label={`${actualLabel} compared with budget`}>
         <div className="reconciliation-head" role="row">
           <div role="columnheader">
             <h2 id="reconciliation-title">Where the gap came from</h2>
           </div>
           {expanded && (
             <>
-              <span role="columnheader">Actual</span>
+              <span role="columnheader">{actualLabel}</span>
               <span role="columnheader">Budget</span>
               <span role="columnheader">Vs budget</span>
             </>
@@ -1863,19 +2028,24 @@ function ReconciliationTable({
         {visibleRows.map((item) => {
           const neutral = Math.abs(item.variance) < 0.5;
           const tone = neutral ? "neutral" : item.variance > 0 ? "good" : "bad";
-          const descriptor = neutral ? "on budget" : item.variance > 0 ? item.positive : item.negative;
+          const descriptor = neutral ? item.neutralLabel ?? "on budget" : item.variance > 0 ? item.positive : item.negative;
           return (
             <div
               className={`reconciliation-row is-${item.key} ${item.driver ? "is-driver" : ""}`}
               role="row"
               key={item.key}
             >
-              <strong>
-                {item.driver && <i aria-hidden="true" />}
-                {item.label}
-              </strong>
-              <span className="tnum">{reconciliationValue(item.actual)}</span>
-              <span className="tnum">{reconciliationValue(item.budget)}</span>
+              <span className="reconciliation-label">
+                <strong>
+                  {item.driver && <i aria-hidden="true" />}
+                  {item.label}
+                </strong>
+                {expanded && (
+                  <small>{componentEvidenceLabel(item.evidence)}</small>
+                )}
+              </span>
+              <span className="tnum" data-label={actualLabel}>{reconciliationValue(item.actual)}</span>
+              <span className="tnum" data-label="Budget">{reconciliationValue(item.budget)}</span>
               <span className="reconciliation-variance">
                 <strong className={`tnum ${tone}`}>{varianceValue(item.variance)}</strong>
                 <small>{descriptor}</small>
@@ -1902,8 +2072,40 @@ function reconciliationValue(value: number) {
   return value >= 0 ? money(value) : signedProfit(value);
 }
 
+function componentEvidenceLabel(
+  evidence: DayCell["componentProvenance"]["revenue"],
+) {
+  const isDemo = evidence.label?.toLowerCase().includes("demo");
+  const source = isDemo
+    ? "Demo"
+    : evidence.source === "derived"
+      ? "Calculated"
+      : evidence.source === "forecast"
+        ? "Manual"
+        : evidence.source === "allocated-budget"
+          ? "Allocated"
+          : evidence.source === "pnl"
+            ? "P&L"
+            : evidence.source === "pos"
+              ? "POS"
+              : evidence.source.startsWith("timesheet")
+                ? "Timesheet"
+                : evidence.source === "roster-scheduled"
+                  ? "Roster"
+                  : "Manual";
+  const certainty = evidence.status === "forecast"
+    ? "forecast"
+    : evidence.status === "confirmed"
+      ? "confirmed"
+      : evidence.status === "provisional"
+        ? "provisional"
+        : "estimate";
+  const updated = evidence.updatedAt ? ` · ${evidence.updatedAt}` : " · Not live";
+  return `${source} ${certainty}${updated}`;
+}
+
 function varianceValue(value: number) {
-  return Math.abs(value) < 0.5 ? "$0" : signedProfit(value);
+  return Math.abs(value) < 0.5 ? "$0" : money(Math.abs(value));
 }
 
 function ViewBack({ label, onClick }: { label: string; onClick: () => void }) {
@@ -1923,32 +2125,138 @@ function ViewBack({ label, onClick }: { label: string; onClick: () => void }) {
 function getChapterContent({ chapter, periodProfit, budgetDifference, projected, budget, isFuture, isHistory }: { chapter: Chapter; periodProfit: number; budgetDifference: number; projected: number; budget: number; isFuture: boolean; isHistory: boolean }) {
   if (chapter === "budget") return { label: "Compared with budget", value: isFuture ? 0 : budgetDifference, support: isFuture ? "No actual result yet" : budgetDifference >= 0 ? "Ahead of budget" : "Behind budget", tone: budgetDifference >= 0 ? "tone-positive" : "tone-concerned" };
   if (chapter === "week") return { label: isFuture ? "Your forecast" : isHistory ? "Period result" : "Projected profit", value: isFuture ? budget : projected, support: `Budget ${signedProfit(budget)}`, tone: projected >= 0 ? "tone-focused" : "tone-concerned" };
-  return { label: isFuture ? "Your forecast" : "Your profit", value: periodProfit, support: isFuture ? "From the numbers you entered" : isHistory ? "Profit from this selected range" : "Profit from the days you’ve finished", tone: periodProfit >= 0 ? "tone-positive" : "tone-concerned" };
+  return { label: isFuture ? "Your forecast" : "Your estimated profit", value: periodProfit, support: isFuture ? "From the numbers you entered" : isHistory ? "Estimated EBITDA for this range" : "Available actuals, with remaining costs estimated", tone: periodProfit >= 0 ? "tone-positive" : "tone-concerned" };
 }
 
-function totalCells(rows: LedgerRow[], source: "actual" | "predicted"): DayCell {
+function totalCells(
+  rows: LedgerRow[],
+  source: "actual" | "predicted" | "selected",
+): DayCell {
   return rows.reduce<DayCell>((sum, row) => {
-    const cell = source === "actual" ? row.actual : row.predicted;
+    const cell =
+      source === "actual"
+        ? row.actual
+        : source === "selected"
+          ? row.actual ?? row.predicted
+          : row.predicted;
     if (!cell) return sum;
-    return { rev: sum.rev + cell.rev, cogs: sum.cogs + cell.cogs, lab: sum.lab + cell.lab, fix: sum.fix + cell.fix, net: sum.net + cell.net };
-  }, { rev: 0, cogs: 0, lab: 0, fix: 0, net: 0 });
+    return {
+      rev: sum.rev + cell.rev,
+      netRevenue: sum.netRevenue + cell.netRevenue,
+      gst: sum.gst + cell.gst,
+      cogs: sum.cogs + cell.cogs,
+      lab: sum.lab + cell.lab,
+      fix: sum.fix + cell.fix,
+      otherIncome: sum.otherIncome + cell.otherIncome,
+      net: sum.net + cell.net,
+      resultStatus:
+        sum.resultStatus === "forecast" || cell.resultStatus === "forecast"
+          ? "forecast"
+          : "estimated",
+      componentProvenance: mergeComponentProvenance(
+        sum.componentProvenance,
+        cell.componentProvenance,
+      ),
+    };
+  }, {
+    rev: 0,
+    netRevenue: 0,
+    gst: 0,
+    cogs: 0,
+    lab: 0,
+    fix: 0,
+    otherIncome: 0,
+    net: 0,
+    resultStatus: source === "predicted" ? "forecast" : "estimated",
+    componentProvenance: emptyComponentProvenance(
+      source === "predicted" ? "forecast" : "estimated",
+    ),
+  });
 }
 
-function gstFromGross(revenue: number) { return revenue - revenue / GST_DIVISOR; }
-
-function applyScenario(week: Week, adjustments: Adjustments, scenarioDays = 7): Week {
-  const scenarioWeeks = scenarioDays / 7;
-  const revenue = adjustments.revenue.mode === "dollar" ? week.rev + adjustments.revenue.value * scenarioDays : week.rev * (1 + adjustments.revenue.value / 100);
-  const wages = adjustments.wages.mode === "dollar" ? week.lab + adjustments.wages.value * scenarioDays : week.lab * (1 + adjustments.wages.value / 100);
-  const fixed = adjustments.fixed.mode === "dollar" ? week.fix + adjustments.fixed.value * scenarioWeeks : week.fix * (1 + adjustments.fixed.value / 100);
+function applyScenario(week: Week, adjustments: Adjustments): Week {
+  const revenue = adjustments.revenue.mode === "dollar" ? week.rev + adjustments.revenue.value : week.rev * (1 + adjustments.revenue.value / 100);
+  const wages = adjustments.wages.mode === "dollar" ? week.lab + adjustments.wages.value : week.lab * (1 + adjustments.wages.value / 100);
+  const fixed = adjustments.fixed.mode === "dollar" ? week.fix + adjustments.fixed.value : week.fix * (1 + adjustments.fixed.value / 100);
   return { ...week, rev: Math.max(0, revenue), lab: Math.max(0, wages), fix: Math.max(0, fixed), cogs: Math.max(0, Math.min(99, week.cogs + adjustments.cogs.value)) };
 }
 
-function sliderConfig(driver: Driver, mode: DriverMode) {
-  if (driver === "cogs") return { min: -10, max: 10, step: 0.5 };
-  if (mode === "percent") return { min: -30, max: 30, step: 1 };
-  if (driver === "fixed") return { min: -2000, max: 2000, step: 50 };
-  return { min: -300, max: 300, step: 10 };
+type AdjustmentBounds = {
+  min: number;
+  max: number;
+};
+
+function driverBaseline(driver: Driver, week: Week) {
+  if (driver === "revenue") return week.rev;
+  if (driver === "wages") return week.lab;
+  if (driver === "fixed") return week.fix;
+  return week.cogs;
+}
+
+function adjustmentBounds(driver: Driver, mode: DriverMode, week: Week): AdjustmentBounds {
+  if (driver === "cogs") {
+    return { min: -week.cogs, max: 99 - week.cogs };
+  }
+  if (mode === "percent") {
+    return { min: -100, max: Number.POSITIVE_INFINITY };
+  }
+  return { min: -driverBaseline(driver, week), max: Number.POSITIVE_INFINITY };
+}
+
+function clampAdjustment(value: number, bounds: AdjustmentBounds) {
+  return Math.max(bounds.min, Math.min(bounds.max, value));
+}
+
+function parseAdjustmentDraft(value: string) {
+  const normalized = value.replace(/,/g, "").trim();
+  if (!normalized || ["-", "+", ".", "-.", "+."].includes(normalized)) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatAdjustmentInput(value: number) {
+  const rounded = Math.round(value * 100) / 100;
+  return String(rounded);
+}
+
+function adjustmentDraftError(
+  rawValue: string,
+  parsed: number | null,
+  bounds: AdjustmentBounds,
+  driver: Driver,
+  mode: DriverMode,
+) {
+  const normalized = rawValue.replace(/,/g, "").trim();
+  if (!normalized || ["-", "+", ".", "-.", "+."].includes(normalized)) return null;
+  if (parsed == null) return "Enter a number.";
+  const unit = driver === "cogs" ? " pts" : mode === "percent" ? "%" : "";
+  if (parsed < bounds.min) return `Lowest possible change is ${formatAdjustmentInput(bounds.min)}${unit}.`;
+  if (parsed > bounds.max) return `Highest possible change is ${formatAdjustmentInput(bounds.max)}${unit}.`;
+  return null;
+}
+
+function scenarioDriverResultCopy(driver: Driver, scenarioWeek: Week, unchanged: boolean) {
+  const prefix = unchanged ? "Current" : "New";
+  if (driver === "revenue") return `${prefix} revenue ${money(scenarioWeek.rev)}`;
+  if (driver === "wages") return `${prefix} wages ${money(scenarioWeek.lab)}`;
+  if (driver === "fixed") return `${prefix} other costs ${money(scenarioWeek.fix)}`;
+  return `${prefix} COGS rate ${formatAdjustmentInput(scenarioWeek.cogs)}%`;
+}
+
+function sliderConfig(driver: Driver, mode: DriverMode, week: Week) {
+  if (driver === "cogs") {
+    return {
+      min: Math.max(-week.cogs, -20),
+      max: Math.min(99 - week.cogs, 20),
+      step: 0.5,
+    };
+  }
+  if (mode === "percent") return { min: -50, max: 100, step: 1 };
+
+  const baseline = driverBaseline(driver, week);
+  const step = baseline >= 10000 ? 100 : baseline >= 3000 ? 50 : baseline >= 1000 ? 25 : 10;
+  const band = Math.max(step * 10, Math.ceil((baseline * 0.5) / step) * step);
+  return { min: Math.max(-baseline, -band), max: band, step };
 }
 
 function formatAdjustment(driver: Driver, adjustment: Adjustment) {
@@ -1956,7 +2264,7 @@ function formatAdjustment(driver: Driver, adjustment: Adjustment) {
   const sign = adjustment.value > 0 ? "+" : "−";
   const amount = Math.abs(adjustment.value);
   if (driver === "cogs" || adjustment.mode === "percent") return `${sign}${amount}%`;
-  return `${sign}${money(amount)}${driver === "fixed" ? "/week" : "/day"}`;
+  return `${sign}${money(amount)}`;
 }
 
 function fullDayName(short: string) {
@@ -1981,4 +2289,19 @@ function periodNumbersActionLabel(periodTitle: string) {
 
 function DashboardSkeleton() {
   return <div className="scoreboard-skeleton" aria-label="Loading dashboard"><div /><div /><div /></div>;
+}
+
+function DashboardLoadError({ message }: { message: string }) {
+  return (
+    <section className="scoreboard-load-error" role="alert">
+      <BirdeeMascot state="loss" size={120} />
+      <div>
+        <h1>Birdee couldn&apos;t open this venue.</h1>
+        <p>{message}</p>
+        <ProductButton href="/account" variant="primary">
+          Check my venue
+        </ProductButton>
+      </div>
+    </section>
+  );
 }

@@ -1,0 +1,24 @@
+group: 6
+name: Scheduled Chirps
+status: queued
+queue_position: after_manual_reporting_loop
+depends_on: [0, 1, 3, 4]
+base_url: http://localhost:3000
+uat_spec: null
+result_workbook: docs/testing/results/GROUP_6_TEST_RESULTS.xlsx
+requirements_sources:
+  - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-6---scheduled-chirps
+design_sources:
+  - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+scope:
+  - Scheduled Chirp generation and delivery
+  - Honest source/certainty language
+  - Manual-mode Chirp behavior
+out_of_scope:
+  - Deputy connector implementation
+deferred_manual: []
+acceptance_policy:
+  product_functionality_may_accept_with_approved_deferrals: false
+  production_signoff_requires_deferred_checks: true
+notes: Create and approve a UAT specification before execution.
+

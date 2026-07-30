@@ -1932,6 +1932,27 @@
 .scoreboard-skeleton div:nth-child(2) { height: 180px; }
 .scoreboard-skeleton div:nth-child(3) { height: 230px; }
 
+.scoreboard-load-error {
+  display: flex;
+  min-height: 70dvh;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+  text-align: left;
+}
+
+.scoreboard-load-error h1 {
+  margin: 0 0 6px;
+  font-size: clamp(28px, 6vw, 42px);
+}
+
+.scoreboard-load-error p {
+  max-width: 480px;
+  margin: 0 0 18px;
+  color: var(--lb-muted);
+}
+
 @keyframes scoreboard-shimmer {
   to { background-position: -200% 0; }
 }
@@ -4135,7 +4156,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
     padding-block: 12px;
   }
 
-  body:has(.dashboard-view) .brand-header__update {
+  body:has(.dashboard-view) .brand-header__update-link {
     display: none;
   }
 
@@ -5051,11 +5072,11 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   }
 
   .reconciliation-row > span:nth-child(2)::before {
-    content: "Actual";
+    content: attr(data-label);
   }
 
   .reconciliation-row > span:nth-child(3)::before {
-    content: "Budget";
+    content: attr(data-label);
   }
 
   .reconciliation-row > span:nth-child(4) {
@@ -5120,7 +5141,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
     text-transform: uppercase;
   }
 
-  .daily-table-row > strong::before { content: "Actual"; }
+  .daily-table-row > strong::before { content: "Estimated"; }
   .daily-table-row > span:nth-child(4)::before { content: "Budget"; }
   .daily-table-row > span:nth-child(5)::before { content: "Vs budget"; }
 }
@@ -5766,7 +5787,15 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   line-height: 1.25;
 }
 
-.numbers-reconciliation .reconciliation-row > strong {
+.numbers-reconciliation .reconciliation-label {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  gap: 3px;
+}
+
+.numbers-reconciliation .reconciliation-label > strong {
   position: relative;
   display: flex;
   align-items: center;
@@ -5775,13 +5804,21 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   font-weight: 700;
 }
 
+.numbers-reconciliation .reconciliation-label > small {
+  color: var(--sb-muted);
+  font-size: 0.6875rem;
+  font-weight: 550;
+  line-height: 1.3;
+  white-space: normal;
+}
+
 .numbers-reconciliation .reconciliation-row > span:nth-child(2),
 .numbers-reconciliation .reconciliation-row > span:nth-child(3) {
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.numbers-reconciliation .reconciliation-row.is-driver > strong > i {
+.numbers-reconciliation .reconciliation-row.is-driver .reconciliation-label > strong > i {
   width: 3px;
   height: 24px;
   flex: 0 0 auto;
@@ -5826,7 +5863,7 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   padding-inline: 12px;
 }
 
-.numbers-reconciliation .reconciliation-row.is-profit > strong,
+.numbers-reconciliation .reconciliation-row.is-profit .reconciliation-label > strong,
 .numbers-reconciliation .reconciliation-row.is-profit .reconciliation-variance > strong {
   font-size: 0.875rem;
   font-weight: 700;
@@ -6524,10 +6561,21 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
     padding: 12px 16px;
   }
 
-  .numbers-reconciliation .reconciliation-row > strong {
+  .numbers-reconciliation .reconciliation-label {
     grid-area: label;
     align-self: center;
+  }
+
+  .numbers-reconciliation .reconciliation-label > strong {
     font-size: 0.875rem;
+  }
+
+  .numbers-reconciliation .reconciliation-label > small {
+    display: block;
+    overflow: visible;
+    margin-top: 3px;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .numbers-reconciliation .reconciliation-row > span:nth-child(2),
@@ -6559,11 +6607,11 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   }
 
   .numbers-reconciliation .reconciliation-row > span:nth-child(2)::before {
-    content: "Actual";
+    content: attr(data-label);
   }
 
   .numbers-reconciliation .reconciliation-row > span:nth-child(3)::before {
-    content: "Budget";
+    content: attr(data-label);
   }
 
   .numbers-reconciliation .reconciliation-row > .reconciliation-variance,
@@ -6721,7 +6769,7 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   }
 
   .full-numbers-detail-panel .daily-actual::before {
-    content: "Actual";
+    content: "Estimated";
   }
 
   .full-numbers-detail-panel .daily-budget::before {
@@ -6814,5 +6862,158 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
 
   .full-numbers-mobile-dock .product-button {
     min-height: 54px;
+  }
+}
+
+/* Mobile acceptance pass: preserve every action, make Custom a real anchored
+   surface, and keep history visible instead of allowing it to flex to a rail. */
+.period-button,
+.period-arrow,
+.chapter-tab,
+.custom-range-close {
+  transition:
+    transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms ease,
+    color 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.period-button:active:not(:disabled),
+.period-arrow:active:not(:disabled),
+.chapter-tab:active:not(:disabled),
+.custom-range-close:active {
+  transform: scale(0.97);
+}
+
+.custom-range-panel {
+  transform-origin: top center;
+}
+
+@media (max-width: 760px) {
+  .dashboard-view {
+    padding-bottom: calc(122px + env(safe-area-inset-bottom));
+  }
+
+  .dashboard-view .custom-range-panel {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
+    margin: 16px 0 24px;
+    border-radius: 16px;
+    padding: 18px 16px 16px;
+    box-shadow: 0 4px 0 color-mix(in srgb, var(--sb-yellow-deep) 24%, transparent);
+  }
+
+  .dashboard-view .custom-range-panel > div {
+    grid-column: 1 / -1;
+    padding-right: 40px;
+  }
+
+  .dashboard-view .custom-range-panel label {
+    min-width: 0;
+  }
+
+  .dashboard-view .custom-range-panel input {
+    min-width: 0;
+    min-height: 44px;
+  }
+
+  .dashboard-view .custom-range-panel > .product-button {
+    width: 100%;
+    grid-column: 1 / -1;
+    min-height: 44px;
+  }
+
+  .dashboard-view .custom-range-panel .custom-range-close {
+    position: absolute;
+    top: 12px;
+    right: 10px;
+    grid-column: auto;
+  }
+
+  .dashboard-answer:has(.dashboard-primary-action) {
+    min-height: 336px;
+    grid-template-rows: minmax(0, auto) auto;
+    align-items: start;
+    padding-bottom: 24px;
+  }
+
+  .dashboard-answer:has(.dashboard-primary-action) .dashboard-profit-copy,
+  .dashboard-answer:has(.dashboard-primary-action) .dashboard-birdee-stage {
+    align-self: center;
+  }
+
+  .dashboard-profit-actions {
+    min-width: 0;
+    align-self: stretch;
+    margin-top: 18px;
+  }
+
+  .dashboard-profit-actions .result-action {
+    width: 100%;
+    flex: none;
+  }
+
+  .dashboard-profit-copy span {
+    max-width: 23ch;
+  }
+
+  .dashboard-view .history-progress {
+    display: block;
+    min-height: 214px;
+    flex: none;
+    margin-top: 24px;
+    border: 1px solid var(--sb-line);
+    border-radius: 16px;
+    background: color-mix(in oklch, var(--lb-white) 90%, transparent);
+    padding: 18px 14px 16px;
+  }
+
+  .dashboard-view .history-progress .section-intro {
+    margin-bottom: 10px;
+  }
+
+  .dashboard-view .history-rail {
+    display: grid;
+    min-height: 126px;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(158px, 76%);
+    grid-auto-flow: column;
+    gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 4px 1px 10px;
+    scroll-padding-inline: 1px;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+  }
+
+  .dashboard-view .history-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-view .history-score {
+    min-width: 0;
+    min-height: 118px;
+    scroll-snap-align: start;
+  }
+
+  .dashboard-view .history-progress + .view-footer-action {
+    min-height: 54px;
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-view .custom-range-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-answer:has(.dashboard-primary-action) {
+    min-height: 344px;
+  }
+
+  .dashboard-view .history-rail {
+    grid-auto-columns: 84%;
   }
 }

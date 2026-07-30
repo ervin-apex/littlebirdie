@@ -36,7 +36,7 @@ export function LittleBirdee({
         style={{
           transform: droop ? "rotate(7deg) translateY(4px)" : "rotate(0deg)",
           transformOrigin: "56px 62px",
-          transition: "transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: "transform 0.22s cubic-bezier(0.23, 1, 0.32, 1)",
         }}
       >
         {/* tail */}

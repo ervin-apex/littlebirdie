@@ -1,0 +1,604 @@
+.account-page {
+  display: grid;
+  gap: 24px;
+  padding-block: 8px 38px;
+}
+
+.account-heading {
+  max-width: 760px;
+}
+
+.account-heading h1 {
+  margin: 0 0 5px;
+  color: var(--lb-ink);
+  font-size: 46px;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.account-heading p,
+.account-section-heading p {
+  margin: 0;
+  color: var(--lb-muted);
+  font-size: 15px;
+}
+
+.account-message {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  border: 1px solid;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 750;
+}
+
+.account-message svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.account-message--error {
+  border-color: #d96c64;
+  background: #fff1ef;
+  color: #8c2e28;
+}
+
+.account-setup-paused {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid color-mix(in oklch, var(--lb-yellow-edge) 56%, var(--lb-line));
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--lb-yellow-soft);
+}
+
+.account-setup-paused > svg {
+  width: 24px;
+  height: 24px;
+  color: var(--lb-yellow-edge);
+}
+
+.account-setup-paused span {
+  color: color-mix(in oklch, var(--lb-yellow-edge) 70%, var(--lb-ink));
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.account-setup-paused h2 {
+  margin: 1px 0 2px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.account-setup-paused p {
+  margin: 0;
+  color: color-mix(in oklch, var(--lb-muted) 82%, var(--lb-ink));
+  font-size: 13px;
+}
+
+.account-identity-section,
+.account-venue-section {
+  display: grid;
+  gap: 10px;
+}
+
+.account-identity-section > h2,
+.account-section-heading h2 {
+  margin: 0;
+  color: var(--lb-ink);
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.account-section-heading h2 {
+  margin-bottom: 2px;
+  font-size: 22px;
+}
+
+.account-identity {
+  display: grid;
+  grid-template-columns: auto minmax(210px, 0.8fr) minmax(460px, 1.7fr);
+  align-items: center;
+  gap: 20px;
+  border-top: 1px solid var(--lb-line);
+  border-bottom: 1px solid var(--lb-line);
+  padding: 18px 4px;
+}
+
+.account-avatar {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  box-shadow: 0 3px 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.account-identity__main {
+  min-width: 0;
+}
+
+.account-identity__main strong,
+.account-identity__main span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-identity__main strong {
+  color: var(--lb-ink);
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.account-identity__main span {
+  margin-top: 3px;
+  color: var(--lb-muted);
+  font-size: 13px;
+}
+
+.account-identity__details {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-left: 1px solid var(--lb-line);
+  padding-left: 16px;
+}
+
+.account-identity__details > div {
+  min-width: 0;
+  padding: 4px 14px;
+}
+
+.account-identity__details dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lb-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.account-identity__details dt svg {
+  width: 15px;
+  height: 15px;
+}
+
+.account-identity__details dd {
+  overflow: hidden;
+  margin: 4px 0 0;
+  color: var(--lb-ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-venues {
+  overflow: hidden;
+  border: 1px solid var(--lb-line);
+  border-radius: 16px;
+  background: color-mix(in oklch, var(--lb-white) 96%, transparent);
+}
+
+.account-venue {
+  display: grid;
+  min-height: 76px;
+  box-sizing: border-box;
+  grid-template-columns: 44px minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  color: var(--lb-ink);
+  text-decoration: none;
+  transition: background-color var(--lb-duration-state) var(--lb-ease-out);
+}
+
+.account-venue + .account-venue {
+  border-top: 1px solid var(--lb-line);
+}
+
+.account-venue.is-current {
+  background: color-mix(in oklch, var(--lb-yellow-soft) 66%, var(--lb-white));
+}
+
+.account-venue.needs-setup {
+  background: color-mix(in oklch, var(--lb-yellow-soft) 40%, var(--lb-white));
+}
+
+.account-venue__icon,
+.account-venue__add-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--lb-yellow-soft) 82%, var(--lb-white));
+  color: var(--lb-ink);
+}
+
+.account-venue__icon svg,
+.account-venue__add-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.account-venue__identity {
+  min-width: 0;
+}
+
+.account-venue__identity strong,
+.account-venue__identity span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-venue__identity strong {
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+}
+
+.account-venue__identity span {
+  margin-top: 2px;
+  color: var(--lb-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.account-venue__status {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.account-venue__current,
+.account-venue__ready,
+.account-venue__setup {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.account-venue__current {
+  color: var(--lb-ink);
+}
+
+.account-venue__ready {
+  color: var(--lb-success);
+}
+
+.account-venue__setup {
+  color: color-mix(in oklch, var(--lb-yellow-edge) 72%, var(--lb-ink));
+}
+
+.account-venue__current svg,
+.account-venue__ready svg,
+.account-venue__setup svg {
+  width: 19px;
+  height: 19px;
+}
+
+.account-venue__status small {
+  color: var(--lb-muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.account-venue__status form {
+  margin: 0;
+}
+
+.account-venue__status button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 10px;
+  padding: 0 9px;
+  background: transparent;
+  color: var(--lb-yellow-edge);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.account-venue__status button:hover {
+  background: var(--lb-yellow-soft);
+  color: var(--lb-ink);
+}
+
+.account-venue__status button:focus-visible {
+  outline: 3px solid var(--lb-yellow);
+  outline-offset: -3px;
+}
+
+.account-venue__status button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.account-venue__status .account-venue__continue {
+  border: 1px solid color-mix(in oklch, var(--lb-yellow-edge) 64%, var(--lb-yellow));
+  padding-inline: 12px;
+  background: var(--lb-yellow);
+  box-shadow: 0 2px 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+}
+
+.account-add-venue {
+  display: grid;
+  min-height: 132px;
+  grid-template-columns: 176px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 2.5vw, 34px);
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--lb-yellow-edge) 46%, var(--lb-line));
+  border-radius: 16px;
+  background: var(--lb-yellow-soft);
+  padding: 0 clamp(18px, 2.4vw, 32px) 0 10px;
+}
+
+.account-add-venue__birdee {
+  width: 168px;
+  height: 132px;
+  align-self: end;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 5px 4px rgb(94 60 0 / 10%));
+}
+
+.account-add-venue__copy {
+  min-width: 0;
+  padding-block: 20px;
+}
+
+.account-add-venue__copy h3 {
+  margin: 0;
+  color: var(--lb-ink);
+  font-family: var(--font-display), "Trebuchet MS", system-ui, sans-serif;
+  font-size: 22px;
+  letter-spacing: -0.025em;
+}
+
+.account-add-venue__copy p {
+  max-width: 650px;
+  margin: 5px 0 11px;
+  color: color-mix(in oklch, var(--lb-muted) 82%, var(--lb-ink));
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.account-add-venue__copy > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lb-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.account-add-venue__copy > span svg {
+  width: 17px;
+  height: 17px;
+  color: var(--lb-yellow-edge);
+}
+
+.account-add-venue__copy > span i {
+  color: var(--lb-yellow-edge);
+  font-style: normal;
+}
+
+.account-add-venue__button {
+  min-width: 196px;
+}
+
+@media (max-width: 950px) {
+  .account-heading h1 {
+    font-size: 40px;
+  }
+
+  .account-identity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .account-identity__details {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--lb-line);
+    border-left: 0;
+    padding-top: 12px;
+    padding-left: 0;
+  }
+
+  .account-add-venue {
+    grid-template-columns: 138px minmax(0, 1fr);
+    padding-right: 18px;
+  }
+
+  .account-add-venue__birdee {
+    width: 138px;
+  }
+
+  .account-add-venue__button {
+    width: 100%;
+    grid-column: 2;
+    margin: 0 0 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .account-page {
+    gap: 20px;
+    padding-block: 3px 28px;
+  }
+
+  .account-heading h1 {
+    font-size: 34px;
+    letter-spacing: -0.035em;
+  }
+
+  .account-heading p,
+  .account-section-heading p {
+    font-size: 14px;
+  }
+
+  .account-setup-paused {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .account-setup-paused .product-button {
+    width: 100%;
+    grid-column: 1 / -1;
+  }
+
+  .account-identity {
+    gap: 13px;
+    padding-block: 15px;
+  }
+
+  .account-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 21px;
+  }
+
+  .account-identity__details {
+    grid-template-columns: 1fr;
+  }
+
+  .account-identity__details > div {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 7px 2px;
+  }
+
+  .account-identity__details dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  .account-venue {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .account-venue__icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .account-venue__status {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    padding-left: 52px;
+  }
+
+  .account-venue__status form {
+    margin-left: auto;
+  }
+
+  .account-add-venue {
+    min-height: 0;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 8px 14px;
+    padding: 14px;
+  }
+
+  .account-add-venue__birdee {
+    width: 92px;
+    height: 104px;
+    align-self: center;
+  }
+
+  .account-add-venue__copy {
+    padding-block: 4px;
+  }
+
+  .account-add-venue__copy h3 {
+    font-size: 20px;
+  }
+
+  .account-add-venue__copy p {
+    font-size: 13px;
+  }
+
+  .account-add-venue__copy > span {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .account-add-venue__button {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .account-venue__status {
+    gap: 8px 12px;
+    padding-left: 0;
+  }
+
+  .account-venue__status small {
+    display: none;
+  }
+
+  .account-venue__status form {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .account-venue__status button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .account-add-venue {
+    grid-template-columns: 72px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .account-add-venue__birdee {
+    width: 72px;
+    height: 92px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-page,
+  .account-venue,
+  .account-add-venue {
+    animation: none;
+    transition: none;
+  }
+}
