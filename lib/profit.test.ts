@@ -63,7 +63,24 @@ describe("legacy screen model on the Group 0 engine", () => {
     const [row] = dailyLedger(week(), {
       todayIndex: 1,
       actuals: [
-        { rev: 11_000, lab: 2_500 },
+        {
+          rev: 11_000,
+          lab: 2_500,
+          revenueSource: "manual",
+          revenueStatus: "confirmed",
+          labourSource: "allocated-budget",
+          labourStatus: "estimated",
+          revision: 1,
+          snapshot: {
+            rev: 11_000,
+            lab: 2_500,
+            fix: 2_000,
+            otherIncome: 0,
+            cogs: 30,
+            gstRegistration: "registered-fully-taxable",
+            revenueEntryBasis: "gst-inclusive",
+          },
+        },
         null,
         null,
         null,
@@ -76,6 +93,42 @@ describe("legacy screen model on the Group 0 engine", () => {
     expect(row.actual?.cogs).toBe(3_000);
     expect(row.actual?.net).toBe(2_500);
     expect(row.actual?.resultStatus).toBe("estimated");
+  });
+
+  it("keeps an actual day's original plan comparison after the weekly plan changes", () => {
+    const [row] = dailyLedger(
+      week({
+        rev: 22_000,
+        days: [22_000, 0, 0, 0, 0, 0, 0],
+        lab: 4_000,
+      }),
+      {
+        todayIndex: 1,
+        actuals: [{
+          rev: 12_000,
+          lab: 2_500,
+          revenueSource: "manual",
+          revenueStatus: "confirmed",
+          labourSource: "allocated-budget",
+          labourStatus: "estimated",
+          revision: 2,
+          snapshot: {
+            rev: 11_000,
+            lab: 2_500,
+            fix: 2_000,
+            otherIncome: 0,
+            cogs: 30,
+            gstRegistration: "registered-fully-taxable",
+            revenueEntryBasis: "gst-inclusive",
+          },
+        }, null, null, null, null, null, null],
+      },
+    );
+
+    expect(row.predicted.rev).toBe(11_000);
+    expect(row.variance?.rev).toBe(1_000);
+    expect(row.variance?.lab).toBe(0);
+    expect(row.variance?.driver).toBe("revenue");
   });
 
   it("does not lose labour or other costs in an all-zero forecast week", () => {

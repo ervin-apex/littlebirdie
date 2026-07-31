@@ -18,6 +18,7 @@ export type Week = {
   gstRegistration: GstRegistration;
   revenueEntryBasis: RevenueEntryBasis;
   recurringIncome: number; // recurring operating other income for the week
+  recurringIncomeConfirmed?: boolean;
   loadedHourlyLabourCost?: number;
   cogsProvenance?: Provenance;
   labourProvenance?: Provenance;
@@ -81,6 +82,7 @@ export const DEFAULTS: Week = {
   gstRegistration: "registered-fully-taxable",
   revenueEntryBasis: "gst-inclusive",
   recurringIncome: 0,
+  recurringIncomeConfirmed: true,
 };
 
 // The starting point for a venue that has never saved a plan. Authenticated
@@ -95,6 +97,7 @@ export const BLANK_WEEK: Week = {
   gstRegistration: "registered-fully-taxable",
   revenueEntryBasis: "gst-inclusive",
   recurringIncome: 0,
+  recurringIncomeConfirmed: false,
 };
 
 const forecastProvenance: Provenance = {
@@ -315,7 +318,32 @@ export function clearLegacyWeekStorage(): void {
 }
 
 // ── Budget vs actual: per-day actuals (Mon..Sun) ──────────────────────────
-export type DayActual = { rev: number; lab: number } | null;
+export type DayActualSnapshot = {
+  rev: number;
+  lab: number;
+  fix: number;
+  otherIncome: number;
+  cogs: number;
+  gstRegistration: GstRegistration;
+  revenueEntryBasis: RevenueEntryBasis;
+};
+
+export type DayActual = {
+  rev: number;
+  lab: number;
+  revenueSource: "manual" | "pos";
+  revenueStatus: ValueStatus;
+  labourSource:
+    | "manual"
+    | "allocated-budget"
+    | "roster-scheduled"
+    | "timesheet-worked"
+    | "timesheet-approved";
+  labourStatus: ValueStatus;
+  revision: number;
+  updatedAt?: string;
+  snapshot: DayActualSnapshot;
+} | null;
 
 export type WeekActuals = {
   todayIndex: number; // 0..6 (Mon..Sun); days before this are "past" (have actuals)
@@ -336,10 +364,24 @@ export function seedActuals(w: Week, todayIndex = 3): WeekActuals {
   const actuals: DayActual[] = pred.map((dayRev, i) => {
     if (i >= todayIndex) return null;
     const share = dayRev / sum;
-    return {
-      rev: Math.round(dayRev * SEED_REV_FACTORS[i]),
-      lab: Math.round(share * w.lab * SEED_LAB_FACTORS[i]),
-    };
+      return {
+        rev: Math.round(dayRev * SEED_REV_FACTORS[i]),
+        lab: Math.round(share * w.lab * SEED_LAB_FACTORS[i]),
+        revenueSource: "manual",
+        revenueStatus: "estimated",
+        labourSource: "manual",
+        labourStatus: "estimated",
+        revision: 1,
+        snapshot: {
+          rev: dayRev,
+          lab: Math.round(share * w.lab),
+          fix: share * w.fix,
+          otherIncome: share * w.recurringIncome,
+          cogs: w.cogs,
+          gstRegistration: w.gstRegistration,
+          revenueEntryBasis: w.revenueEntryBasis,
+        },
+      };
   });
   return { todayIndex, actuals };
 }
@@ -449,10 +491,21 @@ function cell(
   fix: number,
   otherIncome: number,
   inputStatus: "forecast" | "confirmed",
+  actualInput?: Exclude<DayActual, null>,
 ): DayCell {
   const revenueProvenance: Provenance = inputStatus === "forecast"
     ? forecastProvenance
-    : demoRevenueProvenance;
+    : actualInput
+      ? {
+          source: actualInput.revenueSource,
+          status: actualInput.revenueStatus,
+          label:
+            actualInput.revenueSource === "manual"
+              ? "Entered manually for this day"
+              : "Imported from the venue POS",
+          updatedAt: actualInput.updatedAt,
+        }
+      : demoRevenueProvenance;
   const revenue = normalizedRevenue(w, rev, revenueProvenance);
   const result = calculateEbitda({
     revenueExGst: revenue.revenueExGst,
@@ -464,7 +517,17 @@ function cell(
       amountCents: dollarsToCents(lab),
       provenance: inputStatus === "forecast"
         ? labourProvenance(w)
-        : demoLabourProvenance,
+        : actualInput
+          ? {
+              source: actualInput.labourSource,
+              status: actualInput.labourStatus,
+              label:
+                actualInput.labourSource === "allocated-budget"
+                  ? "Estimated from the locked weekly roster budget"
+                  : "Recorded labour for this day",
+              updatedAt: actualInput.updatedAt,
+            }
+          : demoLabourProvenance,
     },
     otherOperatingCosts: {
       amountCents: dollarsToCents(fix),
@@ -531,14 +594,33 @@ export function dailyLedger(w: Week, a: WeekActuals): LedgerRow[] {
       "forecast",
     );
     const av = a.actuals[i];
+    const comparisonWeek = av
+      ? {
+          ...w,
+          cogs: av.snapshot.cogs,
+          gstRegistration: av.snapshot.gstRegistration,
+          revenueEntryBasis: av.snapshot.revenueEntryBasis,
+        }
+      : w;
+    const comparisonPredicted = av
+      ? cell(
+          comparisonWeek,
+          av.snapshot.rev,
+          av.snapshot.lab,
+          av.snapshot.fix,
+          av.snapshot.otherIncome,
+          "forecast",
+        )
+      : predicted;
     const actual = av
       ? cell(
-          w,
+          comparisonWeek,
           av.rev,
           av.lab,
-          predFix,
-          predOtherIncome,
+          av.snapshot.fix,
+          av.snapshot.otherIncome,
           "confirmed",
+          av,
         )
       : null;
     const status: LedgerRow["status"] =
@@ -548,28 +630,38 @@ export function dailyLedger(w: Week, a: WeekActuals): LedgerRow[] {
     if (actual) {
       // Scott's rule: the light shows whether the day BEAT its predicted target,
       // not whether it merely turned a profit.
-      light = actual.net >= predicted.net ? "green" : "red";
-      const revDelta = actual.rev - predicted.rev;
-      const labDelta = actual.lab - predicted.lab;
+      light = actual.net >= comparisonPredicted.net ? "green" : "red";
+      const revDelta = actual.rev - comparisonPredicted.rev;
+      const labDelta = actual.lab - comparisonPredicted.lab;
       const revImpact =
         actual.netRevenue -
-        predicted.netRevenue -
-        (actual.cogs - predicted.cogs);
-      const labImpact = -labDelta;
+        comparisonPredicted.netRevenue -
+        (actual.cogs - comparisonPredicted.cogs);
+      const labourIsEstimated = av?.labourSource === "allocated-budget";
+      const labImpact = labourIsEstimated ? 0 : -labDelta;
       const driver: "revenue" | "labour" | "both" =
-        Math.abs(revImpact) >= Math.abs(labImpact) * 1.25
+        labourIsEstimated || Math.abs(revImpact) >= Math.abs(labImpact) * 1.25
           ? "revenue"
           : Math.abs(labImpact) >= Math.abs(revImpact) * 1.25
             ? "labour"
             : "both";
       variance = {
-        net: actual.net - predicted.net,
+        net: actual.net - comparisonPredicted.net,
         rev: revDelta,
         lab: labDelta,
         driver,
       };
     }
-    return { index: i, label: DAY_LABELS[i], share, predicted, actual, status, light, variance };
+    return {
+      index: i,
+      label: DAY_LABELS[i],
+      share,
+      predicted: comparisonPredicted,
+      actual,
+      status,
+      light,
+      variance,
+    };
   });
 }
 

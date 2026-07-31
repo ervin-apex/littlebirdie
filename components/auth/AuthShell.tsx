@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
+import { createClient } from "@/lib/supabase/server";
 
-export function AuthShell({
+export async function AuthShell({
   title,
   description,
   children,
@@ -11,8 +12,12 @@ export function AuthShell({
   description: string;
   children: ReactNode;
 }) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const brandHref = data?.claims ? "/app" : "/";
+
   return (
-    <AppShell maxWidth="max-w-5xl" center headerVariant="home">
+    <AppShell maxWidth="max-w-5xl" center headerVariant="home" brandHref={brandHref}>
       <div className="auth-workspace">
         <section className="auth-welcome" aria-labelledby="auth-title">
           <div className="auth-birdee" aria-hidden>

@@ -5,24 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CaretDown,
+  CalendarBlank,
   CheckCircle,
-  PencilSimpleLine,
   Plus,
   SignOut,
   Storefront,
   UserCircle,
 } from "@phosphor-icons/react";
-import { switchVenue } from "@/app/account/actions";
 import type { VenueNavigationItem } from "@/lib/venues/navigation";
-import { assetPath, withoutBasePath } from "@/lib/site";
+import { assetPath, BRAND_LOGO_PATH, withoutBasePath } from "@/lib/site";
 
 const NAV = [
   {
-    href: "/setup",
-    matchPath: "/setup",
-    label: "Update numbers",
-    mobileLabel: "Update",
-    icon: PencilSimpleLine,
+    href: "/app/plan",
+    matchPath: "/app/plan",
+    label: "Weekly Budget",
+    mobileLabel: "Budget",
+    icon: CalendarBlank,
     className: "brand-header__update-link",
   },
 ];
@@ -32,11 +31,13 @@ export function BrandHeader({
   accountLabel,
   venues = [],
   selectedVenueId,
+  brandHref,
 }: {
   variant?: "default" | "home";
   accountLabel?: string;
   venues?: VenueNavigationItem[];
   selectedVenueId?: string | null;
+  brandHref?: string;
 }) {
   const pathname = withoutBasePath(usePathname());
   const isHomeReference = variant === "home";
@@ -49,14 +50,14 @@ export function BrandHeader({
     >
       <div className="brand-header__left">
         <Link
-          href={isHomeReference ? "/" : "/app?period=this-week"}
+          href={brandHref ?? (isHomeReference ? "/" : "/app")}
           className={`brand-header__logo${isHomeReference ? " brand-header__logo--home" : ""}`}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={assetPath("/brand/birdee-mark.png")}
-            width={isHomeReference ? 40 : 26}
-            height={isHomeReference ? 40 : 26}
+            src={assetPath(BRAND_LOGO_PATH)}
+            width={isHomeReference ? 48 : 32}
+            height={isHomeReference ? 48 : 32}
             alt=""
           />
           <span>
@@ -84,6 +85,7 @@ export function BrandHeader({
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 className={`brand-header__update ${item.className}${active ? " is-active" : ""}`}
               >
@@ -122,17 +124,17 @@ function VenueSwitcher({
   useEffect(() => {
     if (!open) return;
 
-    const closeOnPointerDown = (event: PointerEvent) => {
+    const closeOnClick = (event: MouseEvent) => {
       if (!switcherRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
 
-    document.addEventListener("pointerdown", closeOnPointerDown);
+    document.addEventListener("click", closeOnClick);
     window.addEventListener("keydown", closeOnEscape);
     return () => {
-      document.removeEventListener("pointerdown", closeOnPointerDown);
+      document.removeEventListener("click", closeOnClick);
       window.removeEventListener("keydown", closeOnEscape);
     };
   }, [open]);
@@ -162,31 +164,34 @@ function VenueSwitcher({
           className="venue-switcher__menu"
           role="menu"
           aria-label="Choose a venue"
+          onClick={(event) => event.stopPropagation()}
         >
           <div className="venue-switcher__list">
             {venues.map((venue) => {
               const active = venue.id === selectedVenue.id;
               return (
-                <form action={switchVenue} key={venue.id}>
-                  <input type="hidden" name="venueId" value={venue.id} />
-                  <button
-                    type="submit"
-                    className={`venue-switcher__option${active ? " is-current" : ""}`}
-                    role="menuitem"
-                  >
-                    <span>
-                      <strong>{venue.name}</strong>
-                      <small>
-                        {active
-                          ? "Current venue"
-                          : venue.hasPlan
-                            ? venue.businessName
-                            : "Setup required"}
-                      </small>
-                    </span>
-                    {active && <CheckCircle weight="fill" aria-hidden />}
-                  </button>
-                </form>
+                <a
+                  key={venue.id}
+                  href={`${assetPath("/api/venues/select")}?venueId=${encodeURIComponent(venue.id)}`}
+                  className={`venue-switcher__option${active ? " is-current" : ""}`}
+                  role="menuitem"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    window.location.assign(event.currentTarget.href);
+                  }}
+                >
+                  <span>
+                    <strong>{venue.name}</strong>
+                    <small>
+                      {active
+                        ? "Current venue"
+                        : venue.hasPlan
+                          ? venue.businessName
+                          : "Setup required"}
+                    </small>
+                  </span>
+                  {active && <CheckCircle weight="fill" aria-hidden />}
+                </a>
               );
             })}
           </div>

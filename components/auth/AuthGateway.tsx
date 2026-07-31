@@ -5,7 +5,7 @@ import { useEffect, useState, type KeyboardEvent } from "react";
 import { AuthBirdee } from "@/components/auth/AuthBirdee";
 import { CreateAccountForm } from "@/components/auth/CreateAccountForm";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { assetPath } from "@/lib/site";
+import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
 
 export type AuthGatewayMode = "signup" | "login";
 
@@ -77,11 +77,11 @@ export function AuthGateway({
   return (
     <main className="auth-gateway">
       <section className="auth-gateway__promise" aria-labelledby="auth-promise-title">
-        <div className="auth-gateway__brand" aria-label="Little Birdee">
+        <Link href="/" className="auth-gateway__brand" aria-label="Little Birdee home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={assetPath("/brand/birdee-mark.png")} width={42} height={42} alt="" />
+          <img src={assetPath(BRAND_LOGO_PATH)} width={42} height={42} alt="" />
           <span>Little Birdee</span>
-        </div>
+        </Link>
 
         <div className="auth-gateway__promise-copy">
           <p className="auth-gateway__eyebrow">Your profit companion</p>

@@ -27,7 +27,7 @@ import {
   saveVenueWeek,
   updateVenueDraftName,
 } from "@/lib/persistence/venue-state";
-import { assetPath } from "@/lib/site";
+import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
 import {
   completedStepsAfterAdvance,
   resumeSetupStepIndex,
@@ -124,6 +124,18 @@ const NUMBER_STEPS: StepDefinition[] = [
     help: "Ordinary running costs such as rent, power, insurance and software. Leave out tax, interest, depreciation, loan principal and owner drawings.",
     scoreLabel: "Other costs",
     scoreCaption: "Weekly total",
+    nextLabel: "Next: other income",
+    birdeeAsset: "/brand/birdee-setup-other-costs-v1.png",
+  },
+  {
+    key: "income",
+    label: "Other income",
+    title: "Any other income each week?",
+    description: "Add ordinary, recurring income such as supplier rebates.",
+    helpLabel: "What counts as other income?",
+    help: "Include recurring operating income that belongs in EBITDA, such as regular supplier rebates. Leave out one-off or exceptional income.",
+    scoreLabel: "Other income",
+    scoreCaption: "Added to EBITDA",
     nextLabel: "See my profit",
     birdeeAsset: "/brand/birdee-setup-other-costs-v1.png",
   },
@@ -138,6 +150,7 @@ export default function SetupPage() {
   const reduceMotion = useReducedMotion();
   const setupSource = searchParams.get("from");
   const isNewVenueFlow = setupSource === "new-venue";
+  const isWeeklyPlanEdit = setupSource === "weekly-update";
   const includesVenueStep =
     isNewVenueFlow || setupSource === "venue-switch";
   const steps = includesVenueStep
@@ -218,6 +231,10 @@ export default function SetupPage() {
   }, [helpOpen]);
 
   const leaveSetup = () => {
+    if (isWeeklyPlanEdit) {
+      router.push("/app?period=this-week");
+      return;
+    }
     if (isNewVenueFlow && !hasVenueRecord) {
       router.push("/account");
       return;
@@ -245,9 +262,9 @@ export default function SetupPage() {
         </svg>
 
         <header className="setup-header">
-          <Link href="/app?period=this-week" className="setup-brand">
+          <Link href="/app" className="setup-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={assetPath("/brand/birdee-mark.png")} width={34} height={34} alt="" />
+            <img src={assetPath(BRAND_LOGO_PATH)} width={34} height={34} alt="" />
             <span>Little <strong>Birdee</strong></span>
           </Link>
           <ProductButton
@@ -257,7 +274,7 @@ export default function SetupPage() {
             className="exit-setup"
             onClick={leaveSetup}
           >
-            Exit setup
+            {isWeeklyPlanEdit ? "Back to dashboard" : "Exit setup"}
           </ProductButton>
         </header>
 
@@ -279,8 +296,10 @@ export default function SetupPage() {
     : step.key === "wages"
       ? money(week.lab)
       : step.key === "cogs"
-        ? `${week.cogs}%`
-        : money(week.fix);
+      ? `${week.cogs}%`
+        : step.key === "fixed"
+          ? money(week.fix)
+          : money(week.recurringIncome);
 
   const toggleHelp = () => {
     setHelpOpen((open) => !open);
@@ -414,9 +433,9 @@ export default function SetupPage() {
       </svg>
 
       <header className="setup-header">
-        <Link href="/app?period=this-week" className="setup-brand">
+        <Link href="/app" className="setup-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={assetPath("/brand/birdee-mark.png")} width={34} height={34} alt="" />
+          <img src={assetPath(BRAND_LOGO_PATH)} width={34} height={34} alt="" />
           <span>Little <strong>Birdee</strong></span>
         </Link>
         <ProductButton
@@ -426,15 +445,21 @@ export default function SetupPage() {
           className="exit-setup"
           onClick={leaveSetup}
         >
-          Exit setup
+          {isWeeklyPlanEdit ? "Back to dashboard" : "Exit setup"}
         </ProductButton>
       </header>
 
       <main className="setup-layout">
         <div className="setup-progress" aria-label={`Step ${stepIndex + 1} of ${steps.length}: ${step.label}`}>
-          {(requiresFirstPlan || includesVenueStep) && (
+          {(requiresFirstPlan || includesVenueStep || isWeeklyPlanEdit) && (
             <div className="setup-venue-context" role="status">
-              <span>{includesVenueStep ? "New venue setup" : "Setting up"}</span>
+              <span>
+                {isWeeklyPlanEdit
+                  ? "Weekly plan"
+                  : includesVenueStep
+                    ? "New venue setup"
+                    : "Setting up"}
+              </span>
               <strong>{venueName.trim() || "Name your venue"}</strong>
               <p>{stepIndex + 1} of {steps.length} · {step.label}</p>
             </div>
@@ -446,17 +471,15 @@ export default function SetupPage() {
           </div>
         </div>
 
-        <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
-          <motion.section
-            key={step.key}
-            custom={stepDirection}
-            className="setup-screen"
-            variants={STEP_VARIANTS}
-            initial={reduceMotion ? false : "enter"}
-            animate="center"
-            exit={reduceMotion ? undefined : "exit"}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: STEP_EASE }}
-          >
+        <motion.section
+          key={step.key}
+          custom={stepDirection}
+          className="setup-screen"
+          variants={STEP_VARIANTS}
+          initial={reduceMotion ? false : "enter"}
+          animate="center"
+          transition={{ duration: reduceMotion ? 0 : 0.22, ease: STEP_EASE }}
+        >
             <div className="setup-question">
               <h1>{step.title}</h1>
               <p className="setup-description">{step.description}</p>
@@ -515,12 +538,13 @@ export default function SetupPage() {
                 />
               ) : step.key === "revenue" ? (
                 <RevenueInputs week={week} onChange={setWeek} />
+              ) : step.key === "income" ? (
+                <RecurringIncomeInput week={week} onChange={setWeek} />
               ) : (
                 <SingleInput step={step.key} week={week} onChange={setWeek} />
               )}
             </div>
-          </motion.section>
-        </AnimatePresence>
+        </motion.section>
 
         <aside
           className={`setup-score-panel${step.key === "venue" ? " setup-score-panel--venue" : ""}`}
@@ -539,6 +563,11 @@ export default function SetupPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={assetPath(step.birdeeAsset)} alt="" />
               </div>
+              {step.key === "income" && (
+                <p className="setup-score-rule">
+                  Regular income only — leave out one-offs.
+                </p>
+              )}
             </>
           )}
         </aside>
@@ -566,7 +595,15 @@ export default function SetupPage() {
             variant="primary"
             className="setup-continue"
             onClick={goNext}
-            disabled={loadingVenue || (step.key === "venue" && !venueName.trim())}
+            disabled={
+              loadingVenue
+              || (step.key === "venue" && !venueName.trim())
+              || (
+                step.key === "income"
+                && week.recurringIncome === 0
+                && !week.recurringIncomeConfirmed
+              )
+            }
             state={saving ? "loading" : undefined}
             trailingIcon={<ArrowRight weight="bold" />}
           >
@@ -578,7 +615,9 @@ export default function SetupPage() {
                   : "Saving this step…"
               : loadingVenue
                 ? "Opening venue…"
-                : step.nextLabel}
+                : isWeeklyPlanEdit && stepIndex === steps.length - 1
+                  ? "Save weekly plan"
+                  : step.nextLabel}
           </ProductButton>
         </nav>
       </main>
@@ -756,7 +795,7 @@ function SingleInput({
   week,
   onChange,
 }: {
-  step: Exclude<SetupStepKey, "venue" | "revenue">;
+  step: Exclude<SetupStepKey, "venue" | "revenue" | "income">;
   week: Week;
   onChange: (week: Week) => void;
 }) {
@@ -799,7 +838,7 @@ function SingleInput({
         <input
           id={`setup-${step}`}
           className="tnum"
-          inputMode={step === "cogs" ? "decimal" : "numeric"}
+          inputMode="decimal"
           value={step === "cogs" ? value : formatInputMoney(value)}
           onChange={(event) => {
             const parsed = step === "cogs"
@@ -824,8 +863,68 @@ function SingleInput({
   );
 }
 
+function RecurringIncomeInput({
+  week,
+  onChange,
+}: {
+  week: Week;
+  onChange: (week: Week) => void;
+}) {
+  const hasIncome = week.recurringIncome > 0;
+  return (
+    <section className="single-input-panel recurring-income-panel">
+      <label htmlFor="setup-income">Weekly recurring income</label>
+      <div className="single-money-input">
+        <span>$</span>
+        <input
+          id="setup-income"
+          className="tnum"
+          inputMode="decimal"
+          value={formatInputMoney(week.recurringIncome)}
+          onChange={(event) => {
+            const recurringIncome = parseMoney(event.target.value);
+            onChange({
+              ...week,
+              recurringIncome,
+              recurringIncomeConfirmed: recurringIncome > 0,
+            });
+          }}
+        />
+      </div>
+      {!hasIncome && (
+        <label className="income-zero-confirmation">
+          <input
+            type="checkbox"
+            checked={Boolean(week.recurringIncomeConfirmed)}
+            onChange={(event) =>
+              onChange({
+                ...week,
+                recurringIncomeConfirmed: event.target.checked,
+              })}
+          />
+          <span>
+            <strong>We do not have recurring other income.</strong>
+            <small>Confirm this so Birdee knows zero is intentional.</small>
+          </span>
+        </label>
+      )}
+      <p className="input-confirmation">
+        <span><Check weight="bold" /></span>
+        {hasIncome
+          ? "Got it — this will be added to weekly EBITDA."
+          : week.recurringIncomeConfirmed
+            ? "Confirmed — no recurring other income."
+            : "Confirm zero before Birdee saves the plan."}
+      </p>
+    </section>
+  );
+}
+
 function formatInputMoney(value: number) {
-  return new Intl.NumberFormat("en-AU", { maximumFractionDigits: 0 }).format(Math.round(value));
+  return new Intl.NumberFormat("en-AU", {
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(value);
 }
 
 function parseMoney(value: string) {

@@ -20,10 +20,13 @@ export type WeeklyPlanRecord = {
 
 export type WeeklyPlanDayRecord = {
   id: string;
+  weekly_plan_id?: string;
   service_date: string;
   day_index: number;
   planned_revenue_cents: number | string;
   planned_labour_cents: number | string;
+  planned_other_operating_costs_cents?: number | string;
+  planned_recurring_operating_income_cents?: number | string;
 };
 
 export type DailyActualRevisionRecord = {
@@ -31,6 +34,32 @@ export type DailyActualRevisionRecord = {
   revision: number;
   entered_revenue_cents: number | string | null;
   labour_cents: number | string | null;
+  revenue_source?: "manual" | "pos" | null;
+  revenue_status?: "estimated" | "provisional" | "confirmed" | null;
+  labour_source?:
+    | "manual"
+    | "allocated-budget"
+    | "roster-scheduled"
+    | "timesheet-worked"
+    | "timesheet-approved"
+    | null;
+  labour_status?: "estimated" | "provisional" | "confirmed" | null;
+  revenue_entry_basis?: Week["revenueEntryBasis"] | null;
+  gst_registration?: Week["gstRegistration"] | null;
+  cogs_rate_basis_points?: number | null;
+  other_operating_costs_cents?: number | string | null;
+  recurring_operating_income_cents?: number | string | null;
+  source_updated_at?: string | null;
+  plan_day_snapshot_id?: string | null;
+  snapshot?: {
+    planned_revenue_cents: number | string;
+    planned_labour_cents: number | string;
+    planned_other_operating_costs_cents: number | string;
+    planned_recurring_operating_income_cents: number | string;
+    cogs_rate_basis_points: number;
+    gst_registration: Week["gstRegistration"];
+    revenue_entry_basis: Week["revenueEntryBasis"];
+  };
 };
 
 export type SaveWeekPlanPayload = {
@@ -77,6 +106,21 @@ export function currentMondayIso(
   const isoDay = atUtcMidnight.getUTCDay() || 7;
   atUtcMidnight.setUTCDate(atUtcMidnight.getUTCDate() - (isoDay - 1));
   return atUtcMidnight.toISOString().slice(0, 10);
+}
+
+export function localDateIso(
+  now = new Date(),
+  timeZone = "Australia/Sydney",
+): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 export function weekToPlanPayload(
@@ -142,6 +186,7 @@ export function weekFromPlan(
     gstRegistration: plan.gst_registration,
     revenueEntryBasis: plan.revenue_entry_basis,
     recurringIncome: dollars(plan.weekly_recurring_operating_income_cents),
+    recurringIncomeConfirmed: true,
     loadedHourlyLabourCost:
       plan.loaded_hourly_labour_cost_cents == null
         ? undefined
@@ -156,6 +201,7 @@ export function weekFromPlan(
 export function actualsFromRevisions(
   dayRows: WeeklyPlanDayRecord[],
   revisions: DailyActualRevisionRecord[],
+  currentDate = localDateIso(),
 ): WeekActuals {
   const latestByDate = new Map<string, DailyActualRevisionRecord>();
   for (const revision of revisions) {
@@ -165,21 +211,55 @@ export function actualsFromRevisions(
     }
   }
 
-  let lastCompletedIndex = -1;
-  const actuals: DayActual[] = [...dayRows]
-    .sort((left, right) => left.day_index - right.day_index)
+  const orderedDays = [...dayRows]
+    .sort((left, right) => left.day_index - right.day_index);
+  const actuals: DayActual[] = orderedDays
     .map((day) => {
       const revision = latestByDate.get(day.service_date);
       if (!revision) return null;
-      lastCompletedIndex = Math.max(lastCompletedIndex, day.day_index);
+      const snapshot = revision.snapshot ?? {
+        planned_revenue_cents: day.planned_revenue_cents,
+        planned_labour_cents: day.planned_labour_cents,
+        planned_other_operating_costs_cents:
+          day.planned_other_operating_costs_cents ?? 0,
+        planned_recurring_operating_income_cents:
+          day.planned_recurring_operating_income_cents ?? 0,
+        cogs_rate_basis_points: revision.cogs_rate_basis_points ?? 0,
+        gst_registration:
+          revision.gst_registration ?? "registered-fully-taxable",
+        revenue_entry_basis:
+          revision.revenue_entry_basis ?? "gst-inclusive",
+      };
       return {
-        rev: dollars(revision.entered_revenue_cents ?? day.planned_revenue_cents),
-        lab: dollars(revision.labour_cents ?? day.planned_labour_cents),
+        rev: dollars(revision.entered_revenue_cents),
+        lab: dollars(revision.labour_cents ?? snapshot.planned_labour_cents),
+        revenueSource: revision.revenue_source ?? "manual",
+        revenueStatus: revision.revenue_status ?? "confirmed",
+        labourSource: revision.labour_source ?? "allocated-budget",
+        labourStatus: revision.labour_status ?? "estimated",
+        revision: revision.revision,
+        updatedAt: revision.source_updated_at ?? undefined,
+        snapshot: {
+          rev: dollars(snapshot.planned_revenue_cents),
+          lab: dollars(snapshot.planned_labour_cents),
+          fix: dollars(snapshot.planned_other_operating_costs_cents),
+          otherIncome: dollars(
+            snapshot.planned_recurring_operating_income_cents,
+          ),
+          cogs: snapshot.cogs_rate_basis_points / 100,
+          gstRegistration: snapshot.gst_registration,
+          revenueEntryBasis: snapshot.revenue_entry_basis,
+        },
       };
     });
 
+  let todayIndex = orderedDays.findIndex(
+    (day) => day.service_date >= currentDate,
+  );
+  if (todayIndex < 0) todayIndex = 7;
+
   return {
-    todayIndex: Math.min(7, lastCompletedIndex + 1),
+    todayIndex,
     actuals,
   };
 }

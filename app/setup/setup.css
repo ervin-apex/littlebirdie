@@ -630,6 +630,55 @@
   margin-top: 20px;
 }
 
+.recurring-income-panel {
+  justify-content: flex-start;
+}
+
+.income-zero-confirmation {
+  display: flex;
+  width: min(100%, 430px);
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  border: 1px solid var(--setup-line);
+  border-radius: 12px;
+  padding: 13px 14px;
+  background: color-mix(in oklch, var(--setup-yellow) 10%, var(--lb-white));
+  cursor: pointer;
+}
+
+.income-zero-confirmation:focus-within {
+  outline: 3px solid color-mix(in oklch, var(--lb-focus) 24%, transparent);
+  outline-offset: 2px;
+}
+
+.income-zero-confirmation input {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: var(--setup-yellow-deep);
+}
+
+.income-zero-confirmation span,
+.income-zero-confirmation strong,
+.income-zero-confirmation small {
+  display: block;
+}
+
+.income-zero-confirmation strong {
+  color: var(--setup-ink);
+  font-size: 14px;
+}
+
+.income-zero-confirmation small {
+  margin-top: 3px;
+  color: var(--setup-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .setup-score-panel {
   position: static;
   display: flex;
@@ -678,6 +727,19 @@
   color: color-mix(in srgb, var(--setup-ink) 72%, var(--setup-yellow));
   font-size: clamp(17px, 1.4vw, 23px);
   font-weight: 500;
+}
+
+.setup-score-rule {
+  position: absolute;
+  right: clamp(32px, 4vw, 72px);
+  bottom: 36px;
+  z-index: 4;
+  max-width: 29ch;
+  margin: 0;
+  color: var(--setup-ink);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .setup-score-birdee {
@@ -957,6 +1019,14 @@
     transform: none;
   }
 
+  .setup-score-rule {
+    position: static;
+    grid-column: 1 / -1;
+    max-width: none;
+    margin: 8px 0 0;
+    font-size: 13px;
+  }
+
   .setup-actions {
     min-height: 92px;
     order: 5;
@@ -1064,6 +1134,11 @@
   .setup-score-panel {
     min-height: 188px;
     grid-template-columns: minmax(0, 1fr) 132px;
+  }
+
+  .setup-score-rule {
+    margin-top: 2px;
+    font-size: 12px;
   }
 
   .setup-score-copy span {
@@ -1439,7 +1514,7 @@
   }
 }
 
-/* Additional venues begin inside the same five-step Setup stage. */
+/* Additional venues begin inside the same six-step Setup stage. */
 .venue-name-panel {
   display: flex;
   width: min(100%, 42vw);

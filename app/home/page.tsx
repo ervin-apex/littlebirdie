@@ -2,15 +2,22 @@ import { ArrowRight, SignIn, UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { AppShell } from "@/components/AppShell";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { ProductButton } from "@/components/ProductButton";
+import { createClient } from "@/lib/supabase/server";
 import "./home.css";
 
 /**
  * Account gateway. The old localStorage check could mistake demo numbers for
  * a real account, so authentication now owns the route into setup and results.
  */
-export default function HomeHub() {
+export const dynamic = "force-dynamic";
+
+export default async function HomeHub() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const brandHref = data?.claims ? "/app" : "/";
+
   return (
-    <AppShell maxWidth="max-w-7xl" headerVariant="home">
+    <AppShell maxWidth="max-w-7xl" headerVariant="home" brandHref={brandHref}>
       <div className="home-hub fade-up">
         <section className="home-workspace" aria-labelledby="home-question">
           <div className="home-birdee-stage" aria-hidden>

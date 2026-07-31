@@ -32,42 +32,43 @@ describe("setupExitPath", () => {
 });
 
 describe("resumable setup progress", () => {
-  const fiveSteps: SetupStepKey[] = [
+  const sixSteps: SetupStepKey[] = [
     "venue",
     "revenue",
     "wages",
     "cogs",
     "fixed",
+    "income",
   ];
 
   it("records the completed step without moving progress backwards", () => {
     expect(completedStepsAfterAdvance({
       currentCompletedSteps: 1,
       stepIndex: 1,
-      totalSteps: 5,
+      totalSteps: 6,
     })).toBe(2);
     expect(completedStepsAfterAdvance({
       currentCompletedSteps: 3,
       stepIndex: 1,
-      totalSteps: 5,
+      totalSteps: 6,
     })).toBe(3);
   });
 
   it("keeps the last financial step pending until the final plan save succeeds", () => {
     expect(completedStepsAfterAdvance({
-      currentCompletedSteps: 4,
-      stepIndex: 4,
-      totalSteps: 5,
-    })).toBe(4);
+      currentCompletedSteps: 5,
+      stepIndex: 5,
+      totalSteps: 6,
+    })).toBe(5);
   });
 
   it("resumes at the persisted next step and derives how many remain", () => {
-    expect(resumeSetupStepIndex(fiveSteps, "wages")).toBe(2);
-    expect(setupStepsRemaining(2, 5)).toBe(3);
+    expect(resumeSetupStepIndex(sixSteps, "wages")).toBe(2);
+    expect(setupStepsRemaining(2, 6)).toBe(4);
   });
 
   it("falls back safely when a persisted step is unavailable", () => {
-    expect(resumeSetupStepIndex(fiveSteps, null)).toBe(0);
+    expect(resumeSetupStepIndex(sixSteps, null)).toBe(0);
   });
 });
 

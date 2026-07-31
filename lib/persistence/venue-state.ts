@@ -17,6 +17,7 @@ export type VenueState = {
   weekStart: string | null;
   week: Week | null;
   actuals: WeekActuals | null;
+  currentDate: string;
   setupDraft: VenueSetupDraft | null;
 };
 
@@ -48,6 +49,26 @@ export async function saveVenueWeek(week: Week) {
   });
   if (!response.ok) throw new Error(await readError(response));
   return response.json() as Promise<{ planId: string; version: number }>;
+}
+
+export async function saveDailyRevenue({
+  serviceDate,
+  revenue,
+}: {
+  serviceDate: string;
+  revenue: number;
+}) {
+  const response = await fetch("/api/daily-actuals", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ serviceDate, revenue }),
+  });
+  if (!response.ok) throw new Error(await readError(response));
+  return response.json() as Promise<{
+    actualRevisionId: string;
+    revision: number;
+  }>;
 }
 
 export async function saveVenueSetupDraft({

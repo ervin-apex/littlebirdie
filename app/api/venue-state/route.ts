@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   actualsFromRevisions,
   currentMondayIso,
+  localDateIso,
   weekFromPlan,
   weekToPlanPayload,
   type DailyActualRevisionRecord,
@@ -35,7 +36,11 @@ function validWeek(value: unknown): value is Week {
   const validBasis = ["gst-inclusive", "gst-exclusive"].includes(
     String(week.revenueEntryBasis),
   );
-  return validNumbers && validDays && validGst && validBasis && Number(week.cogs) <= 100;
+  return validNumbers
+    && validDays
+    && validGst
+    && validBasis
+    && Number(week.cogs) <= 100;
 }
 
 type SetupDraftRow = {
@@ -63,7 +68,7 @@ function validDraftProgress(value: unknown): value is {
   const completedSteps = Number(draft.completedSteps);
   return validWeek(draft.week)
     && Number.isInteger(totalSteps)
-    && [4, 5].includes(totalSteps)
+    && [4, 5, 6].includes(totalSteps)
     && Number.isInteger(completedSteps)
     && completedSteps >= 1
     && completedSteps < totalSteps
@@ -189,6 +194,7 @@ export async function GET() {
   );
 
   if (!planRow) {
+    const currentDate = localDateIso(new Date(), venue.time_zone);
     return withVenueCookie(NextResponse.json({
       venueId: venue.id,
       businessId: venue.business_id,
@@ -197,13 +203,18 @@ export async function GET() {
       weekStart: null,
       week: null,
       actuals: null,
+      currentDate,
       setupDraft,
     }), venue.id, shouldSetCookie);
   }
 
   const { data: dayRows, error: dayError } = await supabase
     .from("weekly_plan_days")
-    .select("id, service_date, day_index, planned_revenue_cents, planned_labour_cents")
+    .select(`
+      id, weekly_plan_id, service_date, day_index, planned_revenue_cents,
+      planned_labour_cents, planned_other_operating_costs_cents,
+      planned_recurring_operating_income_cents
+    `)
     .eq("weekly_plan_id", planRow.id)
     .order("day_index");
 
@@ -215,7 +226,13 @@ export async function GET() {
   const to = dayRows[dayRows.length - 1].service_date;
   const { data: revisionRows, error: revisionError } = await supabase
     .from("daily_actual_revisions")
-    .select("service_date, revision, entered_revenue_cents, labour_cents")
+    .select(`
+      service_date, revision, entered_revenue_cents, labour_cents,
+      revenue_source, revenue_status, labour_source, labour_status,
+      revenue_entry_basis, gst_registration, cogs_rate_basis_points,
+      other_operating_costs_cents, recurring_operating_income_cents,
+      source_updated_at, plan_day_snapshot_id
+    `)
     .eq("venue_id", venue.id)
     .gte("service_date", from)
     .lte("service_date", to)
@@ -228,7 +245,96 @@ export async function GET() {
 
   const plan = planRow as WeeklyPlanRecord;
   const days = dayRows as WeeklyPlanDayRecord[];
-  const revisions = (revisionRows ?? []) as DailyActualRevisionRecord[];
+  const revisionRecords = (revisionRows ?? []) as DailyActualRevisionRecord[];
+  const snapshotIds = [
+    ...new Set(
+      revisionRecords
+        .map((revision) => revision.plan_day_snapshot_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const { data: snapshotRows, error: snapshotError } = snapshotIds.length
+    ? await supabase
+      .from("weekly_plan_days")
+      .select(`
+        id, weekly_plan_id, planned_revenue_cents, planned_labour_cents,
+        planned_other_operating_costs_cents,
+        planned_recurring_operating_income_cents
+      `)
+      .in("id", snapshotIds)
+    : { data: [], error: null };
+
+  if (snapshotError) {
+    return NextResponse.json(
+      { error: "Birdee could not load the saved comparison snapshots." },
+      { status: 500 },
+    );
+  }
+
+  type SnapshotRow = {
+    id: string;
+    weekly_plan_id: string;
+    planned_revenue_cents: number | string;
+    planned_labour_cents: number | string;
+    planned_other_operating_costs_cents: number | string;
+    planned_recurring_operating_income_cents: number | string;
+  };
+  const snapshots = (snapshotRows ?? []) as SnapshotRow[];
+  const snapshotPlanIds = [
+    ...new Set(snapshots.map((snapshot) => snapshot.weekly_plan_id)),
+  ];
+  const { data: snapshotPlanRows, error: snapshotPlanError } =
+    snapshotPlanIds.length
+      ? await supabase
+        .from("weekly_plans")
+        .select(`
+          id, cogs_rate_basis_points, gst_registration, revenue_entry_basis
+        `)
+        .in("id", snapshotPlanIds)
+      : { data: [], error: null };
+
+  if (snapshotPlanError) {
+    return NextResponse.json(
+      { error: "Birdee could not load the saved plan assumptions." },
+      { status: 500 },
+    );
+  }
+
+  type SnapshotPlanRow = Pick<
+    WeeklyPlanRecord,
+    "id" | "cogs_rate_basis_points" | "gst_registration" | "revenue_entry_basis"
+  >;
+  const snapshotById = new Map(
+    snapshots.map((snapshot) => [snapshot.id, snapshot]),
+  );
+  const snapshotPlanById = new Map(
+    ((snapshotPlanRows ?? []) as SnapshotPlanRow[])
+      .map((snapshotPlan) => [snapshotPlan.id, snapshotPlan]),
+  );
+  const revisions = revisionRecords.map((revision) => {
+    const snapshot = revision.plan_day_snapshot_id
+      ? snapshotById.get(revision.plan_day_snapshot_id)
+      : undefined;
+    const snapshotPlan = snapshot
+      ? snapshotPlanById.get(snapshot.weekly_plan_id)
+      : undefined;
+    if (!snapshot || !snapshotPlan) return revision;
+    return {
+      ...revision,
+      snapshot: {
+        planned_revenue_cents: snapshot.planned_revenue_cents,
+        planned_labour_cents: snapshot.planned_labour_cents,
+        planned_other_operating_costs_cents:
+          snapshot.planned_other_operating_costs_cents,
+        planned_recurring_operating_income_cents:
+          snapshot.planned_recurring_operating_income_cents,
+        cogs_rate_basis_points: snapshotPlan.cogs_rate_basis_points,
+        gst_registration: snapshotPlan.gst_registration,
+        revenue_entry_basis: snapshotPlan.revenue_entry_basis,
+      },
+    };
+  });
+  const currentDate = localDateIso(new Date(), venue.time_zone);
   return withVenueCookie(NextResponse.json({
     venueId: venue.id,
     businessId: venue.business_id,
@@ -236,7 +342,8 @@ export async function GET() {
     hasPlan: true,
     weekStart: plan.week_start,
     week: weekFromPlan(plan, days),
-    actuals: actualsFromRevisions(days, revisions),
+    actuals: actualsFromRevisions(days, revisions, currentDate),
+    currentDate,
     setupDraft,
   }), venue.id, shouldSetCookie);
 }
@@ -319,6 +426,15 @@ export async function PUT(request: Request) {
   const body = await request.json().catch(() => null) as { week?: unknown } | null;
   if (!validWeek(body?.week)) {
     return NextResponse.json({ error: "Check the weekly values and try again." }, { status: 400 });
+  }
+  if (
+    body.week.recurringIncome === 0
+    && body.week.recurringIncomeConfirmed !== true
+  ) {
+    return NextResponse.json(
+      { error: "Confirm that this venue has no recurring other income." },
+      { status: 400 },
+    );
   }
 
   const payload = weekToPlanPayload(

@@ -1,4 +1,5 @@
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+export const BRAND_LOGO_PATH = "/brand/birdee-face-square.png";
 
 export function assetPath(path: string) {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;

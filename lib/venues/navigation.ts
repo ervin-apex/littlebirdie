@@ -116,7 +116,7 @@ export async function loadVenueNavigation(
       businessName: businessById.get(venue.business_id) ?? "My business",
       hasPlan,
       setupCompletedSteps: setupDraft?.completed_steps ?? (hasPlan ? 0 : 1),
-      setupTotalSteps: setupDraft?.total_steps ?? (hasPlan ? 4 : 5),
+      setupTotalSteps: setupDraft?.total_steps ?? (hasPlan ? 5 : 6),
       setupNextStep: setupDraft?.next_step ?? (hasPlan ? null : "revenue"),
     };
   });

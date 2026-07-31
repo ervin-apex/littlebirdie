@@ -1,16 +1,21 @@
 group: 3
 name: Weekly plan and daily actual-data workflow
-status: queued
-queue_position: next_after_group_1
+status: uat_complete_pending_manual_security
+queue_position: current
 depends_on: [0, 1]
 base_url: http://localhost:3000
-uat_spec: null
+uat_spec: docs/testing/test-cases/GROUP_3_USER_ACCEPTANCE_TEST_PROCEDURES_2026-07-30.md
 result_workbook: docs/testing/results/GROUP_3_TEST_RESULTS.xlsx
 requirements_sources:
   - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-3---weekly-plan-and-daily-actual-data-workflow
   - docs/Meetings/07-28-2026-scott-financial-contract-email-response.md
 design_sources:
   - docs/SCOTT_PRODUCT_UX_CONTRACT.md
+  - docs/design/group-3/daily-update-desktop-design-reference.png
+  - docs/design/group-3/daily-update-mobile-design-reference.png
+  - docs/design/group-3/recurring-income-setup-design-reference.png
+  - docs/design/group-3/daily-update-desktop-implemented.png
+  - docs/design/group-3/daily-update-mobile-implemented.png
 scope:
   - Manual actual revenue
   - Honest planned versus actual labour states
@@ -19,9 +24,24 @@ scope:
 out_of_scope:
   - Deputy connector
   - P&L ingestion
-deferred_manual: []
+deferred_manual:
+  - G3-E07 read-only venue-member write rejection; no read-only role fixture exists yet
+  - G3-C09 physical mouse activation of the header venue menu; keyboard activation and venue isolation passed, but Chrome connector pointer hit-testing was inconclusive
 acceptance_policy:
   product_functionality_may_accept_with_approved_deferrals: false
   production_signoff_requires_deferred_checks: true
-notes: Create and approve a UAT specification before execution.
-
+default_viewports:
+  desktop: 1440x900
+  medium: 1024x768
+  mobile: 390x844
+  short_mobile: 390x700
+implementation:
+  migration: supabase/migrations/20260730131539_save_daily_actual_revenue.sql
+  setup_draft_compatibility_migration: supabase/migrations/20260731030553_expand_venue_setup_draft_steps.sql
+  migration_applied_to_test_project: 2026-07-30
+  weekly_plan_route: /app/plan
+  daily_entry_route: /app/check-in
+  legacy_daily_entry_redirect: /app/update
+  api_route: /api/daily-actuals
+  automated_checks: [typescript, vitest, production_build]
+notes: Browser UAT run G3-UAT-2026-07-31-B completed 31 of 32 cases as PASS. G3-E07 passed signed-out and cross-account protections but retains one deferred read-only-role check. All discovered product defects were repaired and independently retested, including setup draft compatibility, missing-day wording, EBITDA/not-cash-flow copy, revenue validation, setup step transitions, and cents display. A real-device mouse check remains for the header venue selector because keyboard activation and the authorised selection endpoint passed while Chrome connector pointer activation was inconclusive.

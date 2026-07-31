@@ -14,6 +14,7 @@ import {
   CaretLeft,
   CaretRight,
   CaretUp,
+  CalendarBlank,
   ChartBar,
   ChartLineUp,
   Check,
@@ -57,6 +58,10 @@ import {
   type WeekActuals,
 } from "@/lib/profit";
 import { loadVenueState } from "@/lib/persistence/venue-state";
+import {
+  isoDateAtIndex,
+  missingPastDailyRevenueDates,
+} from "@/lib/persistence/daily-actual";
 import "./scoreboard.css";
 import "./what-happened.css";
 import "./what-if.css";
@@ -73,6 +78,12 @@ type Driver = "revenue" | "cogs" | "wages" | "fixed";
 type DriverMode = "dollar" | "percent";
 type Adjustment = { value: number; mode: DriverMode };
 type Adjustments = Record<Driver, Adjustment>;
+type DailyCheckInTask = {
+  date: string;
+  dayIndex: number;
+  dayName: string;
+  missingCount: number;
+};
 
 const CHAPTERS: { key: Chapter; label: string }[] = [
   { key: "revenue", label: "Revenue" },
@@ -181,6 +192,7 @@ function DashboardInner() {
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [weekStart, setWeekStart] = useState("2026-06-22");
   const [actuals, setActuals] = useState<WeekActuals>(() => forecastActuals());
+  const [currentDate, setCurrentDate] = useState("");
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(dayParam);
@@ -201,6 +213,7 @@ function DashboardInner() {
         setWeek(state.week);
         setWeekStart(state.weekStart ?? "2026-06-22");
         setActuals(state.actuals ?? forecastActuals());
+        setCurrentDate(state.currentDate);
         setReady(true);
       })
       .catch((error: unknown) => {
@@ -258,6 +271,36 @@ function DashboardInner() {
   const rawStatus = useMemo(
     () => weekStatus(view.week, view.actuals),
     [view.week, view.actuals],
+  );
+  const dailyCheckInTasks = useMemo<DailyCheckInTask[]>(() => {
+    if (!weekStart || !currentDate) return [];
+    const dates = Array.from({ length: 7 }, (_, index) =>
+      isoDateAtIndex(weekStart, index));
+    const missing = missingPastDailyRevenueDates(
+      weekStart,
+      currentDate,
+      actuals.actuals,
+    )
+      .map((date) => {
+        const dayIndex = dates.indexOf(date);
+        return {
+          date,
+          dayIndex,
+          dayName: fullDayName(dailyRows[dayIndex]?.label ?? ""),
+          missingCount: 0,
+        };
+      })
+      .filter((task) => task.dayIndex >= 0 && !actuals.actuals[task.dayIndex]);
+    return missing.map((task) => ({ ...task, missingCount: missing.length }));
+  }, [actuals, currentDate, dailyRows, weekStart]);
+  const dailyCheckInTask =
+    periodKey === "this-week" ? dailyCheckInTasks.at(-1) ?? null : null;
+  const checkInDatesByDay = useMemo(
+    () =>
+      Object.fromEntries(
+        dailyCheckInTasks.map((task) => [task.dayIndex, task.date]),
+      ),
+    [dailyCheckInTasks],
   );
 
   const scopedRows = view.scope === "day" && view.dayIndex != null
@@ -523,6 +566,10 @@ function DashboardInner() {
             onSelectDay={setSelectedDay}
             onOpenDay={openSelectedDay}
             onFullNumbers={() => openChild("full-numbers", { scope: view.scope === "day" ? "day" : "period", day: selectedDay })}
+            dailyCheckInTask={dailyCheckInTask}
+            checkInDatesByDay={checkInDatesByDay}
+            onCheckInDay={(date) =>
+              router.push(`/app/check-in?date=${encodeURIComponent(date)}`)}
           />
         );
     }
@@ -576,6 +623,9 @@ function DashboardView({
   onSelectDay,
   onOpenDay,
   onFullNumbers,
+  dailyCheckInTask,
+  checkInDatesByDay,
+  onCheckInDay,
 }: {
   viewTitle: string;
   dateLabel: string;
@@ -601,6 +651,9 @@ function DashboardView({
   onSelectDay: (index: number) => void;
   onOpenDay: () => void;
   onFullNumbers: () => void;
+  dailyCheckInTask: DailyCheckInTask | null;
+  checkInDatesByDay: Record<number, string>;
+  onCheckInDay: (date: string) => void;
 }) {
   const reduceMotion = useReducedMotion();
   const [dayPreviewOpen, setDayPreviewOpen] = useState(false);
@@ -710,6 +763,30 @@ function DashboardView({
         </div>
       </aside>
 
+      {dailyCheckInTask && (
+        <section className="daily-check-in-task" aria-label="Daily revenue needed">
+          <span className="daily-check-in-task__icon" aria-hidden="true">
+            <CalendarBlank weight="duotone" />
+          </span>
+          <div className="daily-check-in-task__copy">
+            <strong>{dailyCheckInTask.dayName} is waiting for revenue.</strong>
+            <span>
+              {dailyCheckInTask.missingCount > 1
+                ? `${dailyCheckInTask.missingCount} past days still need a revenue figure.`
+                : "Add it to finish Birdee's result for that day."}
+            </span>
+          </div>
+          <ProductButton
+            href={`/app/check-in?date=${encodeURIComponent(dailyCheckInTask.date)}`}
+            variant="primary"
+            size="compact"
+            trailingIcon={<ArrowRight weight="bold" />}
+          >
+            Add {dailyCheckInTask.dayName}&rsquo;s revenue
+          </ProductButton>
+        </section>
+      )}
+
       {isWeek && (
         <section className="week-progress" aria-labelledby="week-progress-title">
           <div className="flight-path-intro">
@@ -723,6 +800,8 @@ function DashboardView({
             selectedDay={selectedDay}
             onSelect={selectDay}
             onOpenSelected={openSelectedDay}
+            checkInDatesByDay={checkInDatesByDay}
+            onCheckIn={onCheckInDay}
           />
           <FlightPathLegend />
           <div className="view-footer-action">
@@ -765,17 +844,19 @@ function DashboardView({
         </div>
       )}
 
-      <div className="dashboard-mobile-dock" aria-label="Dashboard action">
-        <ProductButton
-          href="/setup"
-          variant="primary"
-          fullWidth
-          leadingIcon={<Plus size={20} weight="bold" />}
-          trailingIcon={<ArrowRight size={18} weight="bold" />}
-        >
-          Update numbers
-        </ProductButton>
-      </div>
+      {dailyCheckInTask && (
+        <div className="dashboard-mobile-dock" aria-label="Daily check-in">
+          <ProductButton
+            href={`/app/check-in?date=${encodeURIComponent(dailyCheckInTask.date)}`}
+            variant="primary"
+            fullWidth
+            leadingIcon={<Plus size={20} weight="bold" />}
+            trailingIcon={<ArrowRight size={18} weight="bold" />}
+          >
+            Add {dailyCheckInTask.dayName}&rsquo;s revenue
+          </ProductButton>
+        </div>
+      )}
 
       {dayPreviewOpen && selectedRow?.actual && typeof document !== "undefined" && createPortal(
         <DayPreviewOverlay
@@ -1492,10 +1573,10 @@ function FullNumbersView({
           </strong>
           <span>
             {isFutureScope
-              ? "Forecast profit"
+              ? "Forecast EBITDA · not cash flow"
               : mode === "week"
-                ? "Estimated profit to date"
-                : "Estimated profit"}
+                ? "Estimated EBITDA to date · not cash flow"
+                : "Estimated EBITDA · not cash flow"}
           </span>
         </div>
         <div className="full-profit-comparison">
@@ -1617,7 +1698,11 @@ function FullNumbersView({
             const isAhead = delta >= 0;
             const statusLabel = row.actual
               ? isAhead ? "Ahead" : "Behind"
-              : row.status === "today" ? "Today" : "Upcoming";
+              : row.status === "past"
+                ? "Missing"
+                : row.status === "today" ? "Today" : "Upcoming";
+            const emptyValueLabel =
+              row.status === "future" ? "Not yet" : "Not entered";
             const rowClassName = [
               "daily-table-row",
               row.actual ? "is-complete" : "",
@@ -1628,14 +1713,14 @@ function FullNumbersView({
               <>
                 <span className="daily-day-cell">
                   <strong>{isDailyDetail ? fullDayName(row.label) : row.label}</strong>
-                  <span className={`daily-status ${row.actual ? isAhead ? "is-ahead" : "is-behind" : row.status === "today" ? "is-current" : "is-upcoming"}`}>
+                  <span className={`daily-status ${row.actual ? isAhead ? "is-ahead" : "is-behind" : row.status === "past" ? "is-missing" : row.status === "today" ? "is-current" : "is-upcoming"}`}>
                     {row.actual && (isAhead ? <Check weight="bold" aria-hidden /> : <ArrowDown weight="bold" aria-hidden />)}
                     {!row.actual && <i aria-hidden />}
                     {statusLabel}
                   </span>
                 </span>
                 <strong className={`tnum daily-actual ${row.actual ? row.actual.net >= 0 ? "good" : "bad" : "daily-empty"}`}>
-                  {row.actual ? signedProfit(row.actual.net) : row.status === "today" ? "Not entered" : "Not yet"}
+                  {row.actual ? signedProfit(row.actual.net) : emptyValueLabel}
                 </strong>
                 <span className="tnum daily-budget">{signedProfit(row.predicted.net)}</span>
                 <span className={`daily-variance ${row.actual ? isAhead ? "good" : "bad" : "daily-empty"}`}>
@@ -1676,12 +1761,12 @@ function FullNumbersView({
       {typeof document !== "undefined" && createPortal(
         <div className="full-numbers-mobile-dock" aria-label="Full numbers action">
           <ProductButton
-            href="/setup"
+            href="/app/plan"
             variant="primary"
             fullWidth
             leadingIcon={<PencilSimpleLine weight="bold" />}
           >
-            Update numbers
+            Weekly plan
           </ProductButton>
         </div>,
         document.body,
@@ -1754,12 +1839,16 @@ function DayRail({
   onSelect,
   onOpenSelected,
   compact = false,
+  checkInDatesByDay,
+  onCheckIn,
 }: {
   rows: LedgerRow[];
   selectedDay: number | null;
   onSelect: (index: number) => void;
   onOpenSelected?: () => void;
   compact?: boolean;
+  checkInDatesByDay?: Record<number, string>;
+  onCheckIn?: (date: string) => void;
 }) {
   return (
     <div className={`day-rail ${compact ? "is-compact" : ""}`} role="list" aria-label="Profit by day">
@@ -1771,6 +1860,11 @@ function DayRail({
           compact={compact}
           onSelect={() => row.actual && onSelect(row.index)}
           onOpen={selectedDay === row.index ? onOpenSelected : undefined}
+          onCheckIn={
+            checkInDatesByDay?.[row.index] && onCheckIn
+              ? () => onCheckIn(checkInDatesByDay[row.index])
+              : undefined
+          }
         />
       ))}
     </div>
@@ -1802,12 +1896,14 @@ function DayScore({
   compact,
   onSelect,
   onOpen,
+  onCheckIn,
 }: {
   row: LedgerRow;
   selected: boolean;
   compact: boolean;
   onSelect: () => void;
   onOpen?: () => void;
+  onCheckIn?: () => void;
 }) {
   const actual = row.actual?.net;
   const difference = row.variance?.net;
@@ -1820,8 +1916,8 @@ function DayScore({
         type="button"
         role="listitem"
         className={`day-score ${selected ? "is-selected" : ""} ${!isCompleted ? "is-upcoming" : ""}`}
-        onClick={onSelect}
-        disabled={!isCompleted}
+        onClick={isCompleted ? onSelect : onCheckIn}
+        disabled={!isCompleted && !onCheckIn}
         aria-pressed={selected}
       >
         <span className="day-name">{row.label}</span>
@@ -1857,21 +1953,27 @@ function DayScore({
   return (
     <div
       role="listitem"
-      className={`day-flight-stop is-${performance} ${selected ? "is-selected" : ""}`}
+      className={`day-flight-stop is-${performance} ${selected ? "is-selected" : ""} ${onCheckIn && !isCompleted ? "is-check-in" : ""}`}
     >
       <button
         type="button"
         className="day-flight-trigger"
-        onClick={onSelect}
-        disabled={!isCompleted}
+        onClick={isCompleted ? onSelect : onCheckIn}
+        disabled={!isCompleted && !onCheckIn}
         aria-pressed={selected}
         aria-label={isCompleted
           ? `${fullDayName(row.label)}, ${signedProfit(difference ?? 0)} ${performanceLabel} budget`
-          : `${fullDayName(row.label)}, ${performanceLabel}`}
+          : onCheckIn
+            ? `Add ${fullDayName(row.label)} revenue`
+            : `${fullDayName(row.label)}, ${performanceLabel}`}
       >
         <span className="day-name">{row.label}</span>
         <span className="day-flight-marker" aria-hidden="true">
-          {isCompleted && <PerformanceIcon weight="bold" />}
+          {isCompleted
+            ? <PerformanceIcon weight="bold" />
+            : onCheckIn
+              ? <Plus weight="bold" />
+              : null}
         </span>
         {isCompleted ? (
           <>
@@ -1879,7 +1981,7 @@ function DayScore({
             <small>{performanceLabel}</small>
           </>
         ) : (
-          <small>{performanceLabel}</small>
+          <small>{onCheckIn ? "Add revenue" : performanceLabel}</small>
         )}
       </button>
 
@@ -1998,7 +2100,7 @@ function ReconciliationTable({
     },
     {
       key: "profit",
-      label: "Estimated profit",
+      label: "Estimated EBITDA",
       actual: actual.net,
       budget: budget.net,
       variance: actual.net - budget.net,

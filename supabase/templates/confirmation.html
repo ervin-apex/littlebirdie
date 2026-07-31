@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Confirm your Little Birdee account</title>
+    <style>
+      @media only screen and (max-width: 620px) {
+        .email-shell { width: 100% !important; }
+        .email-card { padding: 34px 24px 30px !important; }
+        .email-header { padding: 22px 24px !important; }
+        .email-title { font-size: 32px !important; line-height: 1.08 !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0; padding:0; background:#f1f3f6; color:#10203c;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0;">Confirm your email and put profit front and centre.</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background:#f1f3f6;">
+      <tr>
+        <td align="center" style="padding:32px 12px;">
+          <table role="presentation" class="email-shell" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px; max-width:600px;">
+            <tr>
+              <td class="email-header" style="padding:22px 42px; background:#fcb400; border:2px solid #10203c; border-bottom:0; border-radius:22px 22px 0 0;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td width="58" valign="middle">
+                      <img src="https://littlebirdie-gray.vercel.app/brand/birdee-mark.png" width="48" height="48" alt="" style="display:block; width:48px; height:48px; border:0;">
+                    </td>
+                    <td valign="middle" style="font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif; font-size:22px; line-height:26px; font-weight:800; color:#10203c;">Little Birdee</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-card" style="padding:44px 42px 38px; background:#f9f9f9; border:2px solid #10203c; border-radius:0 0 22px 22px;">
+                <p style="margin:0 0 14px; font-family:Arial,sans-serif; font-size:12px; line-height:18px; font-weight:700; letter-spacing:1.4px; color:#6b4c00;">ONE QUICK TAP</p>
+                <h1 class="email-title" style="margin:0 0 18px; font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif; font-size:38px; line-height:42px; font-weight:800; letter-spacing:-0.7px; color:#10203c;">Finish setting up yr Little Birdee.</h1>
+                <p style="margin:0 0 26px; font-family:'Trebuchet MS',Arial,sans-serif; font-size:17px; line-height:27px; color:#566783;">You're nearly in. Confirm this email and Birdee can keep yr numbers in the right place.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td bgcolor="#fcb400" style="background:#fcb400; border:2px solid #10203c; border-bottom:5px solid #c88400; border-radius:12px; mso-padding-alt:15px 24px;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:13px 24px; font-family:'Trebuchet MS',Arial,sans-serif; font-size:16px; line-height:20px; font-weight:700; color:#10203c; text-decoration:none;">Confirm my email</a>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:30px;">
+                  <tr>
+                    <td style="padding:18px 20px; background:#fff5d6; border-left:4px solid #fcb400; border-radius:8px;">
+                      <p style="margin:0; font-family:'Trebuchet MS',Arial,sans-serif; font-size:15px; line-height:23px; color:#10203c;"><strong>Then you're all set.</strong> See your profit before and as it happens - without wrestling a spreadsheet.</p>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:30px 0 8px; font-family:'Trebuchet MS',Arial,sans-serif; font-size:13px; line-height:20px; color:#566783;">Button playing up? Copy this link into your browser:</p>
+                <p style="margin:0; font-family:Arial,sans-serif; font-size:12px; line-height:19px; word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#315b98;">{{ .ConfirmationURL }}</a></p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:22px 24px 0; font-family:'Trebuchet MS',Arial,sans-serif; font-size:12px; line-height:19px; color:#566783;">
+                Little Birdee &middot; Improve yr profit.<br>
+                You received this because {{ .Email }} started creating an account.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

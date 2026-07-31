@@ -17,6 +17,7 @@ export function AppShell({
   venues,
   selectedVenueId,
   headerWide = false,
+  brandHref,
 }: {
   children: React.ReactNode;
   maxWidth?: string;
@@ -27,6 +28,7 @@ export function AppShell({
   venues?: VenueNavigationItem[];
   selectedVenueId?: string | null;
   headerWide?: boolean;
+  brandHref?: string;
 }) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col text-ink">
@@ -47,6 +49,7 @@ export function AppShell({
             accountLabel={accountLabel}
             venues={venues}
             selectedVenueId={selectedVenueId}
+            brandHref={brandHref}
           />
         </div>
       )}

@@ -4,6 +4,7 @@ import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
 import { createClient } from "@/lib/supabase/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
+import "./app-shell.css";
 
 export const dynamic = "force-dynamic";
 

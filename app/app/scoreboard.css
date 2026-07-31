@@ -4157,7 +4157,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   }
 
   body:has(.dashboard-view) .brand-header__update-link {
-    display: none;
+    display: inline-flex;
   }
 
   .dashboard-view {
@@ -5204,6 +5204,12 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   padding-top: 12px;
 }
 
+@media (min-width: 761px) {
+  .dashboard-view .week-progress > .day-rail:not(.is-compact):not(:has(.day-flight-stop.is-selected)) {
+    min-height: 132px;
+  }
+}
+
 .result-driver-insight {
   display: flex;
   min-height: 66px;
@@ -5298,9 +5304,9 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   }
 
   .dashboard-answer {
-    min-height: 208px;
+    min-height: clamp(220px, 28vh, 270px);
     margin-top: 10px;
-    padding-block: 18px 16px;
+    padding-block: 20px 18px;
   }
 
   .dashboard-view .week-progress {
@@ -7015,5 +7021,83 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
 
   .dashboard-view .history-rail {
     grid-auto-columns: 84%;
+  }
+}
+
+/* Daily revenue is a contextual task; weekly planning remains in the app header. */
+.dashboard-view .daily-check-in-task {
+  order: 5;
+  display: flex;
+  width: min(66vw, 1040px);
+  min-height: 68px;
+  align-items: center;
+  gap: 14px;
+  margin: 18px auto 0;
+  border: 1px solid color-mix(in oklch, var(--sb-yellow-edge) 52%, var(--sb-line));
+  border-radius: 14px;
+  background: var(--sb-yellow-soft);
+  padding: 10px 12px 10px 16px;
+}
+
+.dashboard-view .daily-check-in-task__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sb-yellow);
+  color: var(--sb-ink);
+}
+
+.dashboard-view .daily-check-in-task__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dashboard-view .daily-check-in-task__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-view .daily-check-in-task__copy strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.dashboard-view .daily-check-in-task__copy span {
+  color: var(--sb-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.dashboard-view .daily-check-in-task + .week-progress {
+  order: 6;
+}
+
+.dashboard-view .day-flight-stop.is-check-in .day-flight-marker {
+  border-color: var(--sb-yellow-deep);
+  background: var(--sb-yellow-soft);
+  color: var(--sb-ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-view .day-flight-stop.is-check-in .day-flight-trigger:hover .day-flight-marker {
+    background: var(--sb-yellow);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .dashboard-view .daily-check-in-task {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-view .daily-check-in-task {
+    display: none;
   }
 }

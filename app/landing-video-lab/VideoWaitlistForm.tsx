@@ -34,7 +34,7 @@ export function VideoWaitlistForm() {
           type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder="you@company.com"
+          placeholder="Enter your email"
           value={email}
           aria-invalid={state === "error"}
           aria-describedby={`${emailId}-message`}
@@ -53,6 +53,8 @@ export function VideoWaitlistForm() {
         data-state={state}
         aria-live="polite"
       >
+        {state === "idle" &&
+          "Be the first to know when Little Birdee is ready."}
         {state === "error" && "Pop a real email in first."}
         {state === "success" && "You're in. Birdee will chirp when we're ready."}
       </p>

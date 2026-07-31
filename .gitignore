@@ -1,5 +1,7 @@
 /node_modules
 /.next
+/.next-uat
+/tmp/
 /out
 /build
 /.vercel

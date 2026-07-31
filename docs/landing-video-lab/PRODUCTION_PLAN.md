@@ -6,6 +6,8 @@ Owner route: `/landing-video-lab`
 
 This document is the single source of truth for the new motion-led Little Birdee landing-page experiment. Update it whenever a reference, prompt, generation, implementation decision, or test result changes.
 
+Current motion architecture and implementation progress are tracked in `docs/landing-video-lab/MOTION_IMPLEMENTATION_PLAN.md`.
+
 ## Objective
 
 Build a fast, mobile-first, vertical landing page in which Birdee guides the reader from section to section. Birdee is generated as short, controlled video plates rather than rendered as a live WebGL model.
@@ -14,6 +16,31 @@ The page has two jobs:
 
 1. Explain clearly what Little Birdee does.
 2. Capture the waitlist.
+
+## Approved launch-page information architecture — 2026-07-27
+
+Scott approved the existing visual direction and requested a focused launch-readiness pass rather than a redesign. The agreed page order is:
+
+1. Hero — retain the accepted motion concept and state the fixed `$12 AUD / week` price.
+2. The problem — retain the accountant/calendar story.
+3. Four numbers, one answer — retain the plain arithmetic explanation.
+4. What's different — retain the `What if` and `What happened` product distinction.
+5. Daily chirp and phone experience — show how a chosen-time prompt leads into a simple mobile profit view.
+6. Plain-deal pricing — `$12 a week`, no setup fee, no tiers, no hidden costs, no lock-in, cancel whenever the operator likes.
+7. Privacy and compliance — explain what data is used, why, and how it can be removed once the final legal and product facts are confirmed.
+8. Waitlist and expanded footer.
+
+The first pass is deliberately static apart from the accepted hero. The phone section uses an illustrative product preview with clearly labelled demo data.
+
+### Deferred Hyperframes walkthrough
+
+A Hyperframes demo video may replace or sit inside the phone-experience section later. Do not author that video until:
+
+- the product functionality shown in the walkthrough is implemented or explicitly approved;
+- the responsive phone UI and interaction sequence are stable;
+- the demo script can describe real behavior without invented integrations, notifications, data freshness, or recommendations.
+
+When those gates are met, the walkthrough should be designed for the existing phone-stage aspect ratio, have a still poster, respect reduced motion, and remain optional rather than blocking the page's core explanation.
 
 ## Current production pass
 
@@ -459,3 +486,12 @@ For every later clip:
 - Keep the camera locked and the background keyable.
 - Generate only Birdee and physical props; keep all explanatory text and numbers in HTML.
 - Key, compress, add a poster, test at 390 × 844, and verify that Birdee never covers the answer.
+
+## Deferred Daily Chirp motion handoff
+
+Keep the current phone and Birdee still as the layout-safe fallback. The later
+generated-motion pass should begin with Birdee hidden behind the phone, trigger a
+small notification ping inside the phone, then let Birdee peek and step out from
+behind its right edge. Preserve the phone above Birdee in the layer stack so the
+reveal feels native, and finish on the same readable notification state used by
+the static composition.

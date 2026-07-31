@@ -1,0 +1,2353 @@
+/* Little Birdee — /landing ("Landing Page v2")
+ *
+ * Translated from the Claude Design import. The design-tool scaffolding
+ * (preview-viewport frame, heroMotion / revealMotion prop toggles and the
+ * !important tweak block) is gone; the responsive corrections that block
+ * encoded are folded into the media queries at the bottom of this file.
+ *
+ * Colour and control-geometry values come from tokens.css (the Little Birdee
+ * design system). Tokens the design system defines but tokens.css does not yet
+ * carry are declared locally on .lb-landing so nothing global shifts.
+ */
+
+.lb-landing {
+  --lb-font-display: var(--font-lb-display), "Outfit", system-ui, -apple-system, sans-serif;
+  --lb-font-sans: var(--font-lb-body), "DM Sans", system-ui, -apple-system, sans-serif;
+  --lb-shell-width: min(100%, 1440px);
+  --lb-gutter: clamp(1.25rem, 4.4vw, 4.25rem);
+
+  background: var(--lb-paper);
+  color: var(--lb-ink);
+  font-family: var(--lb-font-sans);
+  font-size: 16px;
+  overflow-x: clip;
+}
+
+html:has(.lb-landing) {
+  scroll-behavior: smooth;
+  scroll-padding-top: clamp(6.5rem, 9vw, 8.25rem);
+}
+
+.lb-landing *,
+.lb-landing *::before,
+.lb-landing *::after {
+  box-sizing: border-box;
+}
+
+.lb-landing img,
+.lb-landing video,
+.lb-landing canvas {
+  display: block;
+  max-width: 100%;
+}
+
+/* :where() so this cannot outrank the single-class rules that set each link's
+   own weight — as a plain `.lb-landing a` it did, and every anchor on the page
+   (wordmark, nav, both CTAs, footer) silently fell back to 400.
+   No font-weight reset here on purpose: nothing in the cascade bolds links, so
+   it was defensive and became destructive. */
+:where(.lb-landing) :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Zero-specificity element reset — :where() keeps it out of the cascade so the
+   single-class rules further down always win their own margins back. */
+:where(.lb-landing) :where(h1, h2, h3, p, ul, ol, li, figure) {
+  margin: 0;
+  padding: 0;
+}
+
+:where(.lb-landing) :where(ul, ol) {
+  list-style: none;
+}
+
+.lb-landing h1,
+.lb-landing h2,
+.lb-landing h3 {
+  font-family: var(--lb-font-display);
+}
+
+.lb-landing :focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--lb-focus) 60%, transparent);
+  outline-offset: 3px;
+}
+
+.lb-tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================================================
+   Motion
+   ============================================================ */
+
+@keyframes lb-rise {
+  from { opacity: 0; transform: translateY(34px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lb-slide-l {
+  from { opacity: 0; transform: translateX(-34px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes lb-slide-r {
+  from { opacity: 0; transform: translateX(34px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes lb-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes lb-hero-copy-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lb-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(-1.2deg); }
+}
+
+@keyframes lb-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes lb-perch {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-1.6deg); }
+}
+
+@keyframes lb-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+@keyframes lb-ping {
+  0% { opacity: 0; transform: scale(0.72); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.85); }
+}
+
+/* Scroll-driven reveals. Browsers without animation-timeline run these once on
+   load instead, which lands on the same end state. */
+.lb-reveal-rise {
+  animation: lb-rise 0.9s var(--lb-ease-out) both;
+  animation-timeline: view();
+  animation-range: entry 4% cover 30%;
+}
+
+.lb-reveal-left {
+  animation: lb-slide-l 0.9s var(--lb-ease-out) both;
+  animation-timeline: view();
+  animation-range: entry 4% cover 30%;
+}
+
+.lb-reveal-right {
+  animation: lb-slide-r 0.9s var(--lb-ease-out) both;
+  animation-timeline: view();
+  animation-range: entry 2% cover 28%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.lb-landing) {
+    scroll-behavior: auto;
+  }
+
+  .lb-landing *,
+  .lb-landing *::before,
+  .lb-landing *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ============================================================
+   Shared
+   ============================================================ */
+
+.lb-shell {
+  width: var(--lb-shell-width);
+  margin-inline: auto;
+  padding-inline: var(--lb-gutter);
+}
+
+.lb-eyebrow {
+  margin-bottom: 1rem;
+  color: var(--lb-yellow-ink);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lb-eyebrow--dark {
+  color: var(--lb-yellow);
+}
+
+/* On the brand-yellow field. --lb-yellow-ink is documented for soft-yellow
+   surfaces and only manages 4.39:1 against full yellow — under AA. */
+.lb-eyebrow--on-brand {
+  color: var(--lb-ink);
+}
+
+.lb-section-title {
+  font-family: var(--lb-font-display);
+  font-size: clamp(2.65rem, 5vw, 5.35rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.lb-skip-link {
+  position: absolute;
+  z-index: 90;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.7rem 1.1rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 0.9rem;
+  background: var(--lb-yellow);
+  font-size: 0.95rem;
+  font-weight: 900;
+  transform: translateY(-160%);
+  transition: transform 140ms var(--lb-ease-out);
+}
+
+.lb-skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Tactile primary button — the design-system hallmark. */
+.lb-cta {
+  display: inline-flex;
+  min-height: 4.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-inline: clamp(1.65rem, 3vw, 2.6rem);
+  border: 3px solid var(--lb-ink);
+  border-radius: 1rem;
+  background: var(--lb-yellow);
+  box-shadow: 0 6px 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+  cursor: pointer;
+  font-family: var(--lb-font-display);
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  transition:
+    background-color 160ms ease,
+    box-shadow 120ms var(--lb-ease-out),
+    transform 120ms var(--lb-ease-out);
+}
+
+.lb-cta:hover {
+  background: var(--lb-yellow-hover);
+  box-shadow: 0 5px 0 var(--lb-yellow-edge);
+  transform: translateY(-1px);
+}
+
+.lb-cta:active {
+  box-shadow: 0 1px 0 var(--lb-yellow-edge);
+  transform: translateY(3px);
+}
+
+.lb-cta__arrow {
+  font-size: 1.35em;
+  line-height: 1;
+}
+
+.lb-cta--hero {
+  min-height: 5.9rem;
+  font-size: clamp(1.15rem, 2vw, 1.75rem);
+}
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+
+.lb-nav {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 0.6rem;
+  gap: 24px;
+  padding: clamp(1rem, 2.2vw, 1.5rem) var(--lb-gutter);
+  background: color-mix(in srgb, var(--lb-paper) 90%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 var(--lb-line), 0 10px 24px rgb(16 32 60 / 6%);
+}
+
+.lb-nav__wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--lb-font-display);
+  font-size: clamp(1.35rem, 2.2vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.lb-nav__wordmark img {
+  width: clamp(3.25rem, 5vw, 4.7rem);
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.lb-nav__links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 0.6rem;
+  gap: clamp(1rem, 4.4vw, 4.2rem);
+}
+
+.lb-nav__link {
+  font-size: clamp(0.88rem, 1.25vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.lb-nav__link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--lb-yellow-edge);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3rem;
+}
+
+.lb-nav__cta {
+  min-height: 4rem;
+  gap: 0.6rem;
+  padding-inline: clamp(1.15rem, 2.2vw, 1.75rem);
+  font-family: var(--lb-font-sans);
+  font-size: clamp(0.88rem, 1.25vw, 1.15rem);
+  letter-spacing: -0.025em;
+}
+
+.lb-nav__cta .lb-cta__arrow {
+  font-size: 1.3em;
+}
+
+.lb-nav__burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 0.9rem;
+  background: var(--lb-yellow);
+  box-shadow: 0 4px 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+  cursor: pointer;
+  transition: box-shadow 120ms var(--lb-ease-out), transform 120ms var(--lb-ease-out);
+}
+
+.lb-nav__burger:active {
+  box-shadow: 0 1px 0 var(--lb-yellow-edge);
+  transform: translateY(3px);
+}
+
+.lb-nav__sheet {
+  position: absolute;
+  top: 100%;
+  right: var(--lb-gutter);
+  left: var(--lb-gutter);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.6rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 1.1rem;
+  background: var(--lb-white);
+  box-shadow: 0 0.6rem 0 var(--lb-yellow-edge);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.5rem) scale(0.98);
+  transform-origin: top right;
+  visibility: hidden;
+  transition:
+    opacity 140ms ease,
+    transform 180ms var(--lb-ease-out),
+    visibility 0s linear 180ms;
+}
+
+.lb-nav__sheet[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+  transition:
+    opacity 140ms ease,
+    transform 180ms var(--lb-ease-out),
+    visibility 0s linear 0s;
+}
+
+.lb-nav__sheet a {
+  padding: 0.85rem 0.9rem;
+  border-radius: 0.7rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.lb-nav__sheet a:hover {
+  background: var(--lb-yellow-soft);
+}
+
+.lb-nav__sheet .lb-nav__sheet-cta {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 0.9rem;
+  background: var(--lb-yellow);
+  box-shadow: 0 4px 0 var(--lb-yellow-edge);
+  font-weight: 900;
+}
+
+.lb-nav__sheet .lb-nav__sheet-cta:hover {
+  background: var(--lb-yellow-hover);
+}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+
+.lb-hero {
+  position: relative;
+  min-height: max(44rem, 100svh);
+  overflow: hidden;
+  background: var(--lb-paper);
+}
+
+/* Full-bleed yellow field, then a single cream cutout painted over it. One
+   shape, so the hero curve runs unbroken into the problem section's cove. */
+.lb-hero__field {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  background: var(--lb-yellow);
+  pointer-events: none;
+}
+
+.lb-hero__cutout {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lb-hero__cutout path {
+  fill: var(--lb-paper);
+}
+
+.lb-hero__curve--narrow {
+  display: none;
+}
+
+.lb-hero__birdlayer {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lb-hero__bird {
+  position: absolute;
+  inset: auto -3% 0 auto;
+  width: 64%;
+  height: min(100%, 78vw);
+  object-fit: contain;
+}
+
+/* Entrance → hover-loop is a hard cut. No transition on purpose: crossfading
+   drops both layers below full opacity for the duration, and the yellow hero
+   field reads straight through the pair as a ghost of Birdee. The loop opens on
+   the landed pose, so swapping in one frame shows no seam. */
+.lb-hero__bird--entrance {
+  z-index: 2;
+  opacity: 1;
+}
+
+.lb-hero__bird--loop {
+  z-index: 1;
+  opacity: 0;
+}
+
+.lb-hero__birdlayer[data-mode="loop"] .lb-hero__bird--entrance {
+  opacity: 0;
+}
+
+.lb-hero__birdlayer[data-mode="loop"] .lb-hero__bird--loop {
+  z-index: 3;
+  opacity: 1;
+}
+
+.lb-hero__shell {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  min-height: max(44rem, 100svh);
+  align-items: center;
+  width: var(--lb-shell-width);
+  margin-inline: auto;
+  padding: clamp(7rem, 13vh, 9rem) var(--lb-gutter) clamp(3.5rem, 8vh, 6rem);
+}
+
+.lb-hero__copy {
+  width: min(100%, max(49vw, 20rem), 47rem);
+}
+
+.lb-hero__copy > * {
+  animation: lb-hero-copy-in 520ms var(--lb-ease-out) both;
+}
+
+.lb-hero__copy > :nth-child(2) { animation-delay: 55ms; }
+.lb-hero__copy > :nth-child(3) { animation-delay: 110ms; }
+.lb-hero__copy > :nth-child(4) { animation-delay: 165ms; }
+.lb-hero__copy > :nth-child(5) { animation-delay: 220ms; }
+
+.lb-hero__copy h1 {
+  font-size: clamp(3.65rem, 5.45vw, 5.45rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.lb-hero__lede {
+  max-width: 36.5rem;
+  margin-top: clamp(1.6rem, 3.5vh, 2.5rem);
+  color: color-mix(in srgb, var(--lb-ink) 78%, var(--lb-muted));
+  font-size: clamp(1.05rem, 1.7vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.lb-hero__proof {
+  margin: clamp(1.55rem, 3.7vh, 2.65rem) 0 clamp(1.7rem, 3.4vh, 2.5rem);
+  font-size: clamp(1rem, 1.45vw, 1.35rem);
+  font-weight: 700;
+}
+
+.lb-hero__badge {
+  position: absolute;
+  z-index: 7;
+  right: clamp(4.2rem, 8.5vw, 8.5rem);
+  bottom: clamp(4rem, 8vh, 6.2rem);
+  display: grid;
+  width: clamp(6.1rem, 9.4vw, 8.8rem);
+  aspect-ratio: 1;
+  place-content: center;
+  border: 3px solid var(--lb-ink);
+  border-radius: 50%;
+  background: var(--lb-paper);
+  box-shadow: 0 7px 0 var(--lb-yellow-edge);
+  text-align: center;
+  transform: rotate(5deg);
+}
+
+.lb-hero__badge strong {
+  font-family: var(--lb-font-display);
+  font-size: clamp(1.35rem, 2.1vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.lb-hero__badge span {
+  margin-top: 0.25rem;
+  font-size: clamp(0.72rem, 1.2vw, 1rem);
+  font-weight: 900;
+}
+
+/* ============================================================
+   Problem
+   ============================================================ */
+
+.lb-problem {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(5rem, 10vw, 9rem);
+  background: var(--lb-paper);
+}
+
+.lb-problem__cove {
+  position: absolute;
+  z-index: 0;
+  top: -1px;
+  right: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lb-problem__cove path {
+  fill: var(--lb-yellow);
+}
+
+.lb-problem__curve--narrow {
+  display: none;
+}
+
+.lb-problem__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  align-items: center;
+  gap: clamp(3rem, 9vw, 9rem);
+}
+
+.lb-problem__scene {
+  position: relative;
+  min-height: 580px;
+}
+
+.lb-problem__calendar {
+  position: absolute;
+  z-index: 2;
+  top: 2%;
+  right: -2%;
+  display: grid;
+  width: min(58%, 330px);
+  aspect-ratio: 0.82;
+  place-content: center;
+  border: 3px solid var(--lb-ink);
+  border-radius: 1.7rem;
+  background: var(--lb-white);
+  box-shadow: 9px 10px 0 var(--lb-ink);
+  text-align: center;
+  transform: rotate(3deg);
+}
+
+.lb-problem__calendar-band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 25%;
+  border-bottom: 3px solid var(--lb-ink);
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--lb-yellow);
+}
+
+.lb-problem__calendar-ring {
+  position: absolute;
+  z-index: 2;
+  top: -1.1rem;
+  width: 1.15rem;
+  height: 3.2rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 999px;
+  background: var(--lb-paper);
+}
+
+.lb-problem__calendar-ring--left { left: 25%; }
+.lb-problem__calendar-ring--right { right: 25%; }
+
+.lb-problem__calendar-eyebrow {
+  margin-top: 3.4rem;
+  color: var(--lb-muted);
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lb-problem__calendar-day {
+  font-family: var(--lb-font-display);
+  font-size: clamp(7rem, 11vw, 10rem);
+  font-weight: 800;
+  letter-spacing: -0.08em;
+  line-height: 0.95;
+}
+
+/* Nested inside the numeral rather than absolutely positioned against the card.
+   As `right: 5%; bottom: 31%` it was pinned to the card's edge, so widening the
+   calendar on mobile stranded it ~40px away from the "10".
+   Both sizes are em-relative to the numeral, so the pairing holds at every
+   breakpoint: 0.17em for the type size, and a -2.05em rise that resolves to
+   0.35 × the numeral's size. `position: relative` keeps it out of the line box,
+   so raising it cannot shift the "10" it sits beside. */
+.lb-problem__calendar-ordinal {
+  position: relative;
+  top: -2.05em;
+  /* The numeral's -0.08em tracking is applied after its last glyph and drags the
+     ordinal back onto it, so this offsets that before adding the real gap. */
+  margin-left: 0.42em;
+  font-size: 0.17em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lb-problem__birdee {
+  position: absolute;
+  z-index: 3;
+  left: calc(-2rem - var(--lb-gutter));
+  bottom: -8%;
+  width: min(104%, 560px);
+  transform: scaleX(-1);
+}
+
+/* Class-only, not `.lb-problem__copy p` — a descendant-type selector would
+   outrank the eyebrow and the price pill that also live in this column. */
+.lb-problem__line {
+  max-width: 34rem;
+  margin-top: 1.35rem;
+  color: var(--lb-muted);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.lb-problem__answer {
+  color: var(--lb-ink);
+  font-weight: 800;
+}
+
+.lb-problem__price {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.9rem;
+  padding: 0.65rem 1.05rem;
+  border: 2px solid var(--lb-ink);
+  border-radius: 999px;
+  background: var(--lb-white);
+  box-shadow: 0 3px 0 var(--lb-ink);
+  color: var(--lb-ink);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.lb-problem__price svg {
+  color: var(--lb-positive);
+}
+
+/* ============================================================
+   How it works
+   ============================================================ */
+
+.lb-how {
+  padding-block: clamp(5rem, 10vw, 9rem);
+  background: var(--lb-paper);
+}
+
+.lb-how__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
+  align-items: center;
+  gap: clamp(3rem, 7vw, 6.5rem);
+}
+
+.lb-how__copy {
+  max-width: 34rem;
+}
+
+.lb-how__copy h2 {
+  font-size: clamp(2.65rem, 5vw, 5.35rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
+}
+
+.lb-how__copy h2 span {
+  color: var(--lb-yellow-edge);
+}
+
+.lb-how__lede {
+  margin-top: 1.6rem;
+  color: var(--lb-muted);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.lb-how__lede + p {
+  margin-top: 0.5rem;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.lb-how__note {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 2.1rem;
+  padding: 0.95rem 1.15rem;
+  border: 2px solid var(--lb-ink);
+  border-radius: 1rem;
+  background: var(--lb-white);
+  box-shadow: 0 4px 0 var(--lb-yellow-edge);
+}
+
+.lb-how__note-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+}
+
+.lb-how__note p {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.lb-how__note strong {
+  font-weight: 900;
+}
+
+.lb-how__stage {
+  position: relative;
+  padding-top: clamp(2.8rem, 3.8vw, 3.4rem);
+}
+
+/* The card's perch: a white shoulder the bird can stand on above the ledger. */
+.lb-how__perch-shoulder {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 43%;
+  height: calc(clamp(2.8rem, 3.8vw, 3.4rem) + 1.75rem);
+  border-radius: 2.6rem 1rem 0 0;
+  background: var(--lb-white);
+}
+
+.lb-how__perch-bird {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  bottom: calc(100% - clamp(2.8rem, 3.8vw, 3.4rem) - 1.1rem);
+  width: 43%;
+  animation: lb-bob 5s ease-in-out infinite;
+}
+
+.lb-how__perch-bird img {
+  width: 100%;
+  height: auto;
+}
+
+.lb-ledger {
+  position: relative;
+  z-index: 2;
+  border-radius: 1rem;
+  background: var(--lb-white);
+  box-shadow: 0 0.55rem 0 var(--lb-yellow-edge);
+  overflow: hidden;
+}
+
+.lb-ledger__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  border-bottom: 1px solid var(--lb-line);
+}
+
+.lb-ledger__head-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.lb-ledger__live-dot {
+  display: block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--lb-positive);
+  animation: lb-blink 2.2s ease-in-out infinite;
+}
+
+.lb-ledger__badge {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: var(--lb-yellow-soft);
+  color: var(--lb-yellow-ink);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lb-ledger__row {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid var(--lb-line);
+  animation: lb-rise 0.6s var(--lb-ease-out) both;
+  animation-timeline: view();
+}
+
+.lb-ledger__row:last-child {
+  border-bottom: 0;
+}
+
+.lb-ledger__row:nth-child(1) { animation-range: entry 0% cover 24%; }
+.lb-ledger__row:nth-child(2) { animation-range: entry 0% cover 28%; }
+.lb-ledger__row:nth-child(3) { animation-range: entry 0% cover 32%; }
+.lb-ledger__row:nth-child(4) { animation-range: entry 0% cover 36%; }
+
+.lb-ledger__tick {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  box-shadow: 0 2px 0 var(--lb-yellow-edge);
+}
+
+.lb-ledger__name {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.lb-ledger__name small {
+  color: var(--lb-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lb-ledger__name strong {
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.lb-ledger__value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lb-ledger__value--out {
+  color: var(--lb-muted);
+}
+
+.lb-ledger__total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem 1.4rem;
+  border-top: 3px solid var(--lb-ink);
+  background: color-mix(in oklch, var(--lb-yellow) 12%, var(--lb-white));
+  animation: lb-pop 0.55s var(--lb-ease-out) both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 40%;
+}
+
+.lb-ledger__total-figure {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.lb-ledger__total-figure small {
+  color: var(--lb-yellow-ink);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lb-ledger__total-figure strong {
+  font-family: var(--lb-font-display);
+  font-size: clamp(2.4rem, 3.6vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.lb-ledger__verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: var(--lb-positive-soft);
+  color: var(--lb-positive);
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+/* ============================================================
+   What's different
+   ============================================================ */
+
+.lb-different {
+  padding-block: clamp(4rem, 6vw, 5.5rem);
+  background:
+    radial-gradient(circle at 50% 42%, rgb(252 180 0 / 7%), transparent 32%),
+    var(--lb-paper);
+}
+
+.lb-different__heading {
+  text-align: center;
+}
+
+.lb-different__heading .lb-eyebrow {
+  margin-bottom: 0.8rem;
+}
+
+.lb-different__heading h2 {
+  max-width: 18ch;
+  margin-inline: auto;
+  font-size: clamp(2.75rem, 4.7vw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.lb-lens {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: clamp(2rem, 3vw, 2.75rem);
+}
+
+.lb-lens__bird {
+  position: relative;
+  z-index: 2;
+  width: 8.5rem;
+  height: auto;
+  margin-bottom: -1.05rem;
+  filter: drop-shadow(0 0.3rem 0.35rem rgb(16 32 60 / 24%));
+  transform-origin: 47% 100%;
+  animation: lb-perch 6.5s ease-in-out infinite;
+}
+
+.lb-lens__switch {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 2px solid var(--lb-yellow-edge);
+  border-radius: 1.2rem;
+  background: var(--lb-yellow);
+  box-shadow: 0 0.45rem 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+}
+
+/* The bird's shadow on the bar she perches on. */
+.lb-lens__shadow {
+  position: absolute;
+  top: 0.1rem;
+  left: 50%;
+  width: 3.4rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: rgb(16 32 60 / 20%);
+  filter: blur(2px);
+  transform: translateX(-50%);
+}
+
+.lb-lens__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.1rem;
+  border: 0;
+  border-radius: 0.85rem;
+  background: transparent;
+  box-shadow: none;
+  color: var(--lb-ink);
+  cursor: pointer;
+  font-family: var(--lb-font-sans);
+  font-size: 0.85rem;
+  font-weight: 900;
+  transition: background-color 180ms ease, box-shadow 120ms var(--lb-ease-out);
+}
+
+/* data-active, not aria-pressed: the chips are toggle buttons on wide screens and
+   tabs on narrow ones, so the selected state cannot hang off one ARIA attribute. */
+.lb-lens__chip[data-active="true"] {
+  background: var(--lb-white);
+  box-shadow: 0 2px 0 var(--lb-yellow-edge);
+}
+
+.lb-lens__track {
+  position: relative;
+  width: 6rem;
+  height: 1.6rem;
+  align-self: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgb(16 32 60 / 14%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.lb-lens__track[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+.lb-lens__knob {
+  position: absolute;
+  top: 50%;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 2px solid var(--lb-ink);
+  border-radius: 50%;
+  background: var(--lb-white);
+  box-shadow: 0 2px 0 var(--lb-ink);
+  transform: translate(-50%, -50%);
+  transition: left 220ms var(--lb-ease-out);
+}
+
+.lb-lens__track[data-dragging="true"] .lb-lens__knob {
+  transition: none;
+}
+
+.lb-different__panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  align-items: stretch;
+  gap: clamp(1.25rem, 2.5vw, 2.25rem);
+  margin-top: clamp(1.5rem, 2.5vw, 2rem);
+}
+
+/* Inactive: quieter surface, no tactile base, fractionally set back. Text stays
+   at full strength — the previous 0.88 opacity was too faint to register as a
+   state at all, and pushing it far enough to read as secondary would have taken
+   the body copy under 4.5:1. */
+.lb-panel {
+  position: relative;
+  min-height: 27rem;
+  padding: clamp(1.4rem, 2.4vw, 2.1rem);
+  border: 1px solid var(--lb-line);
+  border-radius: 1rem;
+  background: var(--lb-surface-muted);
+  box-shadow: 0 0.5rem 1.5rem rgb(16 32 60 / 5%);
+  transform: scale(0.99);
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms var(--lb-ease-out),
+    transform 220ms var(--lb-ease-out);
+}
+
+/* Active: white, the design system's tactile yellow base, and a brand-tinted
+   border — the same "this control is live" language as the buttons. */
+.lb-panel[data-active="true"] {
+  border-color: color-mix(in srgb, var(--lb-yellow-edge) 50%, var(--lb-line));
+  background: var(--lb-white);
+  box-shadow: 0 0.5rem 0 var(--lb-yellow-edge), 0 1rem 2.5rem rgb(16 32 60 / 9%);
+  transform: none;
+}
+
+.lb-panel[hidden] {
+  display: none;
+}
+
+.lb-panel__tag {
+  color: var(--lb-positive);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lb-panel h3 {
+  margin: 0.35rem 0 1.5rem;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.lb-panel__question {
+  min-height: 5.25rem;
+  padding: 1.05rem;
+  border: 1px solid var(--lb-line);
+  border-radius: 0.7rem;
+  background: var(--lb-paper);
+  font-size: clamp(1rem, 1.35vw, 1.14rem);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.lb-lever {
+  margin-top: 1.6rem;
+}
+
+.lb-lever__scale {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 0.7rem;
+  color: var(--lb-muted);
+  font-size: 0.67rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.lb-lever__hint {
+  margin-top: 0.8rem;
+  color: var(--lb-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Range input, per the design system's .lb-range spec. */
+.lb-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--lb-yellow) 0 var(--lb-range-fill, 50%),
+    var(--lb-line) var(--lb-range-fill, 50%) 100%
+  );
+  cursor: pointer;
+}
+
+.lb-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border: 3px solid var(--lb-white);
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--lb-ink) 30%, transparent);
+  cursor: pointer;
+}
+
+.lb-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--lb-white);
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--lb-ink) 30%, transparent);
+  cursor: pointer;
+}
+
+.lb-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+}
+
+.lb-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lb-yellow) 40%, transparent);
+}
+
+.lb-projection {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1.6rem;
+  padding-top: 1.3rem;
+  border-top: 1px solid var(--lb-line);
+}
+
+.lb-projection__figure {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.lb-projection__figure small {
+  color: var(--lb-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.lb-projection__figure strong {
+  font-family: var(--lb-font-display);
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.lb-projection__delta {
+  padding: 0.5rem 0.8rem;
+  border-radius: 999px;
+  background: var(--lb-surface-muted);
+  color: var(--lb-muted);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.lb-projection__delta[data-tone="up"] {
+  background: var(--lb-positive-soft);
+  color: var(--lb-positive);
+}
+
+.lb-projection__delta[data-tone="down"] {
+  background: var(--lb-negative-soft);
+  color: var(--lb-negative);
+}
+
+.lb-drivers {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.lb-drivers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 1.15rem;
+  border: 1px solid var(--lb-line);
+  border-radius: 0.7rem;
+  background: var(--lb-paper);
+}
+
+.lb-drivers strong {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.lb-drivers small {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.lb-drivers small[data-tone="down"] {
+  background: var(--lb-negative-soft);
+  color: var(--lb-negative);
+}
+
+.lb-drivers small[data-tone="up"] {
+  background: var(--lb-positive-soft);
+  color: var(--lb-positive);
+}
+
+.lb-explained {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1.6rem;
+  padding: 1.3rem;
+  border: 1px solid color-mix(in srgb, var(--lb-yellow-edge) 42%, var(--lb-line));
+  border-radius: 1rem;
+  background: color-mix(in oklch, var(--lb-yellow) 9%, var(--lb-white));
+}
+
+.lb-explained__figure {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.lb-explained__figure small {
+  color: var(--lb-yellow-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.lb-explained__figure strong {
+  font-family: var(--lb-font-display);
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.lb-explained__seal {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--lb-positive-soft);
+  color: var(--lb-positive);
+}
+
+/* ============================================================
+   Daily chirp
+   ============================================================ */
+
+.lb-chirp {
+  padding-block: clamp(5.5rem, 8vw, 8rem);
+  background:
+    radial-gradient(circle at 79% 53%, rgb(252 180 0 / 12%), transparent 32%),
+    var(--lb-ink);
+  color: var(--lb-white);
+}
+
+.lb-chirp__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
+  align-items: center;
+  gap: clamp(3.5rem, 7vw, 7rem);
+}
+
+.lb-chirp__copy {
+  max-width: 36rem;
+}
+
+.lb-chirp__copy .lb-eyebrow {
+  margin-bottom: 1.25rem;
+  font-size: 0.82rem;
+}
+
+.lb-chirp__copy h2 {
+  max-width: 8.5ch;
+  font-size: clamp(3.2rem, 6vw, 5.9rem);
+  font-weight: 800;
+  letter-spacing: -0.038em;
+  line-height: 0.94;
+}
+
+.lb-chirp__lede {
+  max-width: 32rem;
+  margin-top: clamp(1.5rem, 2.5vw, 2.25rem);
+  color: rgb(255 255 255 / 82%);
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.lb-chirp__steps {
+  display: grid;
+  margin-top: clamp(2.25rem, 4vw, 3.25rem);
+}
+
+.lb-chirp__steps li {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: center;
+  gap: 1.1rem;
+  padding-block: 1.15rem;
+  border-top: 1px solid rgb(255 255 255 / 24%);
+}
+
+.lb-chirp__steps li:last-child {
+  border-bottom: 1px solid rgb(255 255 255 / 24%);
+}
+
+.lb-chirp__steps li > span {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  color: var(--lb-ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.lb-chirp__steps strong {
+  display: block;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.lb-chirp__steps small {
+  display: block;
+  margin-top: 0.25rem;
+  color: rgb(255 255 255 / 70%);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lb-chirp__try {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1.9rem;
+}
+
+.lb-chirp__try-label {
+  color: rgb(255 255 255 / 70%);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.lb-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 0.9rem;
+  background: var(--lb-white);
+}
+
+.lb-segment {
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--lb-muted);
+  cursor: pointer;
+  font-family: var(--lb-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 180ms ease, color 180ms ease, box-shadow 120ms var(--lb-ease-out);
+}
+
+.lb-segment:hover {
+  background: color-mix(in srgb, var(--lb-ink) 6%, transparent);
+  color: var(--lb-ink);
+}
+
+.lb-segment[aria-pressed="true"] {
+  background: var(--lb-yellow);
+  box-shadow: 0 3px 0 var(--lb-yellow-edge);
+  color: var(--lb-ink);
+}
+
+.lb-chirp__wrap {
+  position: relative;
+  display: flex;
+  min-height: clamp(30rem, 44vw, 38rem);
+  align-items: center;
+  justify-content: center;
+}
+
+.lb-chirp__stage {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 44rem);
+  aspect-ratio: 1;
+  container-type: inline-size;
+}
+
+.lb-chirp__disc {
+  position: absolute;
+  z-index: 0;
+  top: 7%;
+  right: -8%;
+  width: 76%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+}
+
+.lb-chirp__bezel {
+  position: absolute;
+  z-index: 1;
+  left: 30.2%;
+  top: 9.5%;
+  width: 39.5%;
+  height: 80%;
+  border-radius: 15% / 7.4%;
+  background: #17163c;
+}
+
+.lb-chirp__phone {
+  position: absolute;
+  z-index: 2;
+  left: 32%;
+  top: 11.2%;
+  width: 35.9%;
+  height: 76.5%;
+}
+
+.lb-chirp__screen {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 5%;
+  height: 100%;
+  padding: 9% 4% 12%;
+  border-radius: 11% / 5.1%;
+  background: linear-gradient(180deg, #fff6de, #f6efe0);
+  color: var(--lb-ink);
+  overflow: hidden;
+}
+
+.lb-chirp__clock {
+  display: grid;
+  gap: 0.15rem;
+  text-align: center;
+}
+
+.lb-chirp__clock strong {
+  font-family: var(--lb-font-display);
+  font-size: clamp(1.9rem, 5.2cqw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.lb-chirp__clock span {
+  color: var(--lb-muted);
+  font-size: clamp(0.6rem, 1.4cqw, 0.85rem);
+  font-weight: 700;
+}
+
+.lb-chirp__notification {
+  display: grid;
+  gap: 0.45rem;
+  align-self: center;
+  padding: 6% 5%;
+  border: 1px solid rgb(16 32 60 / 8%);
+  border-radius: 9%;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 0.4rem 1rem rgb(16 32 60 / 8%);
+}
+
+.lb-chirp__notification-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lb-chirp__notification-head img {
+  width: 15%;
+  height: auto;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  border-radius: 25%;
+}
+
+.lb-chirp__notification-head strong {
+  font-size: clamp(0.5rem, 1.15cqw, 0.72rem);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lb-chirp__notification-head time {
+  margin-left: auto;
+  color: var(--lb-muted);
+  font-size: clamp(0.45rem, 1.05cqw, 0.66rem);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lb-chirp__notification-body {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.lb-chirp__notification-body span {
+  color: var(--lb-muted);
+  font-size: clamp(0.55rem, 1.35cqw, 0.8rem);
+  font-weight: 700;
+}
+
+.lb-chirp__notification-body strong {
+  font-size: clamp(1.05rem, 2.7cqw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.lb-chirp__notification-body small {
+  color: var(--lb-positive);
+  font-size: clamp(0.5rem, 1.25cqw, 0.75rem);
+  font-weight: 900;
+}
+
+/* Keyed video frames, drawn over the bezel and the live lock-screen. The phone's
+   screen aperture keys out, so the HTML screen below shows through it. */
+.lb-chirp__canvas {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lb-chirp__source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Pricing
+   ============================================================ */
+
+.lb-pricing {
+  padding-block: clamp(5.5rem, 8vw, 8rem) clamp(4rem, 6vw, 6rem);
+  background: var(--lb-paper);
+}
+
+.lb-pricing__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
+  align-items: center;
+  gap: clamp(1.5rem, 2.5vw, 2.75rem);
+}
+
+.lb-pricing__copy {
+  max-width: 33rem;
+}
+
+.lb-pricing__copy h2 {
+  max-width: 8.5ch;
+  font-size: clamp(3.1rem, 5.6vw, 5.6rem);
+  font-weight: 800;
+  letter-spacing: -0.038em;
+  line-height: 0.94;
+}
+
+.lb-pricing__promises {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 2.4rem;
+}
+
+.lb-pricing__promises li {
+  display: grid;
+  grid-template-columns: 1.65rem 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.lb-pricing__promises span {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+}
+
+.lb-pricing__art {
+  width: 100%;
+  height: auto;
+  max-height: 34rem;
+  object-fit: contain;
+  object-position: left center;
+  justify-self: stretch;
+}
+
+.lb-pricing__cta {
+  display: grid;
+  justify-items: center;
+  margin-top: clamp(2.25rem, 4vw, 3.5rem);
+}
+
+.lb-pricing__cta p {
+  margin-top: 0.9rem;
+  color: var(--lb-muted);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* ============================================================
+   Privacy
+   ============================================================ */
+
+.lb-privacy {
+  padding-block: clamp(3.5rem, 5vw, 5rem);
+  background: var(--lb-ink);
+  color: var(--lb-white);
+}
+
+.lb-privacy__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 25rem), 1fr));
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+}
+
+.lb-privacy__lead {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 1.8rem);
+}
+
+.lb-privacy__shield {
+  width: clamp(8.5rem, 13vw, 12rem);
+  height: auto;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0.8rem 0.7rem rgb(0 0 0 / 22%));
+}
+
+.lb-privacy__lead-copy {
+  max-width: 19rem;
+}
+
+.lb-privacy__lead-copy h2 {
+  font-size: clamp(2.35rem, 3.4vw, 3.7rem);
+  font-weight: 800;
+  letter-spacing: -0.038em;
+  line-height: 0.96;
+}
+
+.lb-privacy__points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+}
+
+.lb-privacy__points span {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  color: var(--lb-ink);
+}
+
+.lb-privacy__points h3 {
+  margin-top: 1.15rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.lb-privacy__points p {
+  max-width: 19rem;
+  margin-top: 0.5rem;
+  color: rgb(255 255 255 / 78%);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Sign-up close + footer
+   ============================================================ */
+
+.lb-signup {
+  background: var(--lb-yellow);
+}
+
+.lb-signup__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  min-height: clamp(31rem, 40vw, 38rem);
+  width: var(--lb-shell-width);
+  margin-inline: auto;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 78% 44%, rgb(255 255 255 / 28%), transparent 28%),
+    var(--lb-yellow);
+}
+
+.lb-signup__copy {
+  align-self: center;
+  padding: clamp(4rem, 7vw, 6.5rem) var(--lb-gutter) clamp(5.5rem, 8vw, 7rem);
+}
+
+.lb-signup__copy .lb-eyebrow {
+  margin-bottom: 1.25rem;
+}
+
+.lb-signup__copy h2 {
+  max-width: 16ch;
+  font-size: clamp(2.8rem, 4.7vw, 4.8rem);
+  font-weight: 800;
+  letter-spacing: -0.038em;
+  line-height: 0.96;
+}
+
+.lb-signup__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.15rem 1.6rem;
+  margin-top: 1.9rem;
+}
+
+/* Ink, not the usual yellow primary: this CTA sits on the brand-yellow field,
+   where a yellow button has nothing to stand against. Same tactile base as every
+   other control, so it still presses the same way. */
+.lb-signup__cta {
+  display: inline-flex;
+  min-height: 4.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding-inline: clamp(1.65rem, 3vw, 2.4rem);
+  border: 3px solid var(--lb-ink);
+  border-radius: 1rem;
+  background: var(--lb-ink);
+  box-shadow: 0 6px 0 var(--lb-yellow-edge);
+  color: var(--lb-white);
+  font-family: var(--lb-font-display);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  transition:
+    background-color 160ms ease,
+    box-shadow 120ms var(--lb-ease-out),
+    transform 120ms var(--lb-ease-out);
+}
+
+.lb-signup__cta span {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.lb-signup__cta:hover {
+  background: color-mix(in oklch, var(--lb-ink) 88%, var(--lb-white));
+  box-shadow: 0 5px 0 var(--lb-yellow-edge);
+  transform: translateY(-1px);
+}
+
+.lb-signup__cta:active {
+  box-shadow: 0 1px 0 var(--lb-yellow-edge);
+  transform: translateY(3px);
+}
+
+/* Ink rather than --lb-yellow-ink for anything sitting on the brand yellow:
+   that token is specified for soft-yellow surfaces and only reaches 4.39:1 here,
+   just under AA. Ink measures ~9:1 on the same field. */
+.lb-signup__alt {
+  color: var(--lb-ink);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lb-signup__alt a {
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25rem;
+}
+
+.lb-signup__alt a:hover {
+  text-decoration-color: var(--lb-white);
+}
+
+.lb-signup__terms {
+  margin-top: 1.15rem;
+  color: var(--lb-ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.lb-signup__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(92%, 31rem);
+  height: clamp(24rem, 34vw, 33rem);
+  margin: 0 auto;
+  align-self: center;
+}
+
+.lb-signup__ping {
+  position: absolute;
+  z-index: 1;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 30%);
+  animation: lb-ping 3.6s ease-out infinite;
+}
+
+.lb-signup__chirp {
+  position: absolute;
+  z-index: 4;
+  top: 28%;
+  left: -2%;
+  padding: 0.6rem 1rem;
+  border: 3px solid var(--lb-ink);
+  border-radius: 999px;
+  background: var(--lb-white);
+  box-shadow: 0 4px 0 var(--lb-ink);
+  color: var(--lb-ink);
+  font-family: var(--lb-font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  transform: rotate(-6deg);
+}
+
+.lb-signup__cheer {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: lb-float 6s ease-in-out infinite;
+}
+
+.lb-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  min-height: 4.75rem;
+  width: var(--lb-shell-width);
+  margin-inline: auto;
+  padding: 1.3rem var(--lb-gutter);
+  border-top: 3px solid var(--lb-ink);
+}
+
+.lb-footer__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--lb-font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.lb-footer__mark img {
+  width: 2.1rem;
+  height: auto;
+}
+
+.lb-footer nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.lb-footer nav a {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.lb-footer nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+/* Same yellow field as the sign-up block, same reason for ink over yellow-ink. */
+.lb-footer__sign-off {
+  color: var(--lb-ink);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+/* ============================================================
+   Responsive corrections
+   ============================================================ */
+
+/* The nav collapses on its own breakpoint, not the layout's. Adding "Log in"
+   alongside "Create account" takes the row past the viewport at ~666px, and
+   flex-wrap then stacks it into a 172px-tall two-row header that overlaps the
+   hero copy. Three items used to fit down to 640px; four do not. */
+@media (max-width: 768px) {
+  .lb-nav__links {
+    display: none;
+  }
+
+  .lb-nav__burger {
+    display: inline-flex;
+  }
+}
+
+/* Between the stacked mobile hero and ~1000px the one-line headline outruns the
+   diagonal, whose paper edge sits at ~0.49vw through the copy band. Capping the
+   copy column below 430px there forces the headline to wrap while it would
+   still collide. */
+@media (min-width: 641px) and (max-width: 999px) {
+  .lb-hero__copy {
+    width: min(100%, max(38vw - 2.5rem, 15rem));
+  }
+
+  /* The problem grid's 23rem floor cannot fit two tracks under 1000px, so it
+     stacked the 580px scene above the copy and doubled the section's scroll
+     length. */
+  .lb-problem__grid {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 2.25rem;
+  }
+
+  .lb-problem__scene {
+    min-height: 340px;
+  }
+
+  .lb-problem__calendar {
+    width: 60%;
+    aspect-ratio: 1;
+  }
+
+  .lb-problem__calendar-eyebrow {
+    margin-top: 1.6rem;
+  }
+
+  /* Same correction as mobile: her widest point is the wing, low on the body,
+     so the box is narrowed until that point clears the numeral rather than
+     nudged down. */
+  .lb-problem__birdee {
+    width: 88%;
+    left: -14%;
+    bottom: -8%;
+  }
+
+  .lb-chirp__wrap {
+    min-height: 0;
+  }
+
+  .lb-chirp__grid {
+    gap: 2.25rem;
+  }
+
+  .lb-chirp {
+    padding-block: 4rem;
+  }
+
+  .lb-chirp__stage {
+    margin-block: -7%;
+  }
+}
+
+/* The navigation is already compact at this width, and the problem story needs
+   the same breakpoint. Keeping its tablet two-column grid down to 641px squeezes
+   the headline into a narrow rail and lets the long desktop cove run through the
+   copy. Stack the scene above the message and close the yellow field beneath the
+   illustration, matching the phone composition without changing the hero. */
+@media (max-width: 768px) {
+  .lb-problem {
+    padding-block: 3.25rem;
+  }
+
+  .lb-problem__cove {
+    height: calc(clamp(300px, 46vw, 340px) + 3.25rem + 1rem);
+  }
+
+  .lb-problem__curve--wide {
+    display: none;
+  }
+
+  .lb-problem__curve--narrow {
+    display: block;
+  }
+
+  .lb-problem__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  .lb-problem__scene {
+    min-height: clamp(300px, 46vw, 340px);
+  }
+
+  .lb-problem__calendar {
+    top: -4%;
+    right: -2%;
+    width: min(62%, 23rem);
+    aspect-ratio: 1.05;
+  }
+
+  .lb-problem__calendar-eyebrow {
+    margin-top: 1.5rem;
+  }
+
+  .lb-problem__birdee {
+    left: -8%;
+    bottom: -20%;
+    width: 88%;
+  }
+
+  .lb-problem__copy {
+    width: min(100%, 36rem);
+  }
+}
+
+@media (max-width: 640px) {
+  /* Same construction as desktop: one full-bleed yellow field with a single
+     cream cutout over it, re-proportioned for portrait. Cream owns the left
+     column where the copy sits; yellow owns the top-right, the right flank and
+     the full-width bottom. */
+  .lb-hero,
+  .lb-hero__shell {
+    min-height: 35rem;
+  }
+
+  .lb-hero__field {
+    inset: 0;
+    height: auto;
+  }
+
+  .lb-hero__cutout {
+    inset: 0;
+    height: 100%;
+  }
+
+  .lb-hero__curve--wide {
+    display: none;
+  }
+
+  .lb-hero__curve--narrow {
+    display: block;
+  }
+
+  /* Above the cutout, so her beak and wing can cross the curve onto the cream. */
+  .lb-hero__birdlayer {
+    z-index: 4;
+  }
+
+  /* Scaled up to sit closer to the standing Birdee's presence in the problem
+     section. Only 19.4%–85.5% of her frame is opaque, so the box has to grow
+     well past what the number suggests. Pushed further off the right edge at the
+     same time: growing the box alone walks her opaque left edge into the
+     headline, and her tail is the part that crops harmlessly. */
+  .lb-hero__bird {
+    inset: 5.5rem -19% auto auto;
+    width: 76%;
+    height: auto;
+    transform: none;
+  }
+
+  .lb-hero__shell {
+    align-items: flex-start;
+    padding-top: 6rem;
+    padding-bottom: 3rem;
+  }
+
+  .lb-hero__copy {
+    width: 62%;
+  }
+
+  .lb-hero__copy h1 {
+    font-size: 2.7rem;
+  }
+
+  /* 5.9rem is a 94px slab on a phone. */
+  .lb-cta--hero {
+    min-height: 4.25rem;
+  }
+
+  /* Restored on mobile, but parked on the yellow flank to the right of the CTA
+     rather than under it — that band is genuinely empty (Birdee finishes well
+     above it) whereas stacking it below the button both collided with the button
+     and forced the hero taller again. A cream disc on the yellow also reads as a
+     deliberate sticker instead of a leftover. */
+  .lb-hero__badge {
+    right: var(--lb-gutter);
+    left: auto;
+    bottom: 3.5rem;
+    width: 5rem;
+    box-shadow: 0 5px 0 var(--lb-yellow-edge);
+    transform: rotate(-6deg);
+  }
+
+  /* Birdee perches above the ledger by hanging out of the top of the stage — on
+     one column that puts her over the copy block's last element. She clears
+     0.868 × her own height above the stage (13.2% of her frame is empty above her
+     head), and that height tracked the column width while the gap stayed at 48px,
+     so the overlap grew as the viewport widened. Capping her height makes the
+     clearance a constant 62.6px, which the gap below now covers at every width. */
+  .lb-how__grid {
+    gap: 4.5rem;
+  }
+
+  .lb-how__perch-shoulder,
+  .lb-how__perch-bird {
+    width: min(43%, 9rem);
+  }
+
+  .lb-problem {
+    padding-block: 3.25rem;
+  }
+
+  /* Two bands rather than one long diagonal: the yellow closes off just under
+     the scene, so every line of copy sits wholly on cream. Height is pinned to
+     what it has to cover — the scene plus the section's top padding — because a
+     percentage would drift with the copy's own height. */
+  .lb-problem__cove {
+    height: calc(300px + 3.25rem + 1rem);
+  }
+
+  .lb-problem__curve--wide {
+    display: none;
+  }
+
+  .lb-problem__curve--narrow {
+    display: block;
+  }
+
+  .lb-problem__grid {
+    gap: 1.75rem;
+  }
+
+  .lb-problem__scene {
+    min-height: 300px;
+  }
+
+  /* Sized and lifted so it lands on Birdee's sight line: she is looking up and to
+     her right, so the calendar reads as the thing she is looking at only if it
+     sits above her eye level rather than squarely beside her. Raising it makes the
+     pairing diagonal, which is why the horizontal gap can open back up a little
+     without them drifting apart. */
+  .lb-problem__calendar {
+    width: 62%;
+    top: -4%;
+    right: -2%;
+    aspect-ratio: 1.05;
+  }
+
+  .lb-problem__calendar-eyebrow {
+    margin-top: 1.5rem;
+  }
+
+  /* Only 7.5%–40.8% of her frame is opaque (measured off the alpha channel, and
+     she is mirrored) — the remaining 59% is empty transparency on the calendar
+     side. So the gap to the calendar is set by where her pixels stop, not where
+     her box does, and closing it means moving the box further right than looks
+     right on paper. */
+  .lb-problem__birdee {
+    width: 88%;
+    left: -8%;
+    bottom: -20%;
+  }
+
+  /* The wrapper's 30rem floor was taller than the phone scene it holds, padding
+     the section with 36px of dead space above and below; the stage sets its own
+     height. */
+  .lb-chirp__wrap {
+    min-height: 0;
+  }
+
+  .lb-chirp__grid {
+    gap: 1.75rem;
+  }
+
+  .lb-chirp {
+    padding-block: 3.5rem;
+  }
+
+  .lb-chirp__stage {
+    width: 122%;
+    margin: -7% -11%;
+  }
+}

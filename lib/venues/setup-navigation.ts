@@ -4,6 +4,7 @@ export const SETUP_STEP_KEYS = [
   "wages",
   "cogs",
   "fixed",
+  "income",
 ] as const;
 
 export type SetupStepKey = (typeof SETUP_STEP_KEYS)[number];
