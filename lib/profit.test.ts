@@ -6,6 +6,7 @@ import {
   buildPeriodView,
   dailyLedger,
   forecastActuals,
+  isAvailableReportingPeriod,
   periodHeadlineProfit,
   profit,
   weekDateLabel,
@@ -159,6 +160,15 @@ describe("legacy screen model on the Group 0 engine", () => {
 });
 
 describe("dashboard period presentation", () => {
+  it("only exposes reporting periods backed by selected-venue records", () => {
+    expect(isAvailableReportingPeriod("yesterday")).toBe(true);
+    expect(isAvailableReportingPeriod("this-week")).toBe(true);
+    expect(isAvailableReportingPeriod("last-week")).toBe(false);
+    expect(isAvailableReportingPeriod("next-week")).toBe(false);
+    expect(isAvailableReportingPeriod("month")).toBe(false);
+    expect(isAvailableReportingPeriod("custom")).toBe(false);
+  });
+
   it("shows the saved week dates instead of the retired demo dates", () => {
     const view = buildPeriodView(
       "this-week",

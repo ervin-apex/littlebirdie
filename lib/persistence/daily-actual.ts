@@ -18,6 +18,15 @@ export function isoDateAtIndex(weekStart: string, dayIndex: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+export function dayIndexForDate(
+  weekStart: string,
+  serviceDate: string,
+): number | null {
+  const index = Array.from({ length: 7 }, (_, dayIndex) =>
+    isoDateAtIndex(weekStart, dayIndex)).indexOf(serviceDate);
+  return index >= 0 ? index : null;
+}
+
 export function eligibleDailyDates(
   weekStart: string,
   currentDate: string,

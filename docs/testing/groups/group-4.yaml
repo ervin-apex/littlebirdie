@@ -1,10 +1,10 @@
 group: 4
 name: Reporting screens wired to real records
-status: queued
-queue_position: after_group_3
+status: launch_integrity_uat_accepted
+queue_position: historical_queries_deferred_after_paid_launch
 depends_on: [0, 1, 3]
 base_url: http://localhost:3000
-uat_spec: null
+uat_spec: docs/testing/test-cases/GROUP_4A_LAUNCH_INTEGRITY_TEST_PROCEDURES_2026-08-03.md
 result_workbook: docs/testing/results/GROUP_4_TEST_RESULTS.xlsx
 requirements_sources:
   - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-4---reporting-screens-wired-to-real-records
@@ -17,9 +17,15 @@ scope:
   - Dashboard, What Happened, What If, and Full Numbers over stored records
 out_of_scope:
   - P&L extraction
-deferred_manual: []
+latest_run: G4A-UAT-2026-08-03-B
+latest_verdict: 6_pass_0_fail_0_blocked
+blocked_uat: []
+open_defects: []
+resolved_defects:
+  - G4A-05-DESKTOP-VERTICAL-CONTAINMENT
+  - G4A-05-DESKTOP-POPOVER-CONTAINMENT
+  - G4A-05-MOBILE-HORIZONTAL-OVERFLOW
 acceptance_policy:
   product_functionality_may_accept_with_approved_deferrals: false
   production_signoff_requires_deferred_checks: true
-notes: Create and approve a UAT specification before execution.
-
+notes: Group 4A prevents seeded Last Week and Month/Custom records, plus current-plan-as-Next-Week, from being presented as real results. Run G4A-UAT-2026-08-03-B is accepted at 6 PASS, 0 FAIL, 0 BLOCKED after dedicated included/excluded-week fixtures, missing-revenue evidence at every required viewport, responsive containment repairs, Terra browser retests, and independent Sol review. Full stored historical queries and Month/Custom trends remain deferred after the paid-launch scope.

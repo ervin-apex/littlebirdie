@@ -347,6 +347,8 @@ The allocated amount is an estimate, not actual labour. If every forecast weight
 **Depends on:** Groups 0, 1, and 3; Group 2 is not required  
 **Why after real data:** Rebuilding dashboard states before the period model and actual-data rules are stable would duplicate loading, empty, correction, and history logic.
 
+**Launch-integrity status, 3 August:** The current manual-launch queue now moves to paid-launch Group 5 before the complete historical-reporting pass. Group 4A prevents the seeded Last Week and Month/Custom builders, and the current-plan-as-Next-Week state, from being opened as though they were selected-venue records. Those controls remain visible but unavailable. Yesterday is selectable only when its real date belongs to the loaded saved week; a missing revenue revision shows a daily-entry prompt rather than a plan-only profit. Unit, TypeScript, and production-build checks pass. Responsive browser evidence remains, and full stored Last Week plus Month/Custom queries remain deferred rather than represented by demo data.
+
 **Scott evidence**
 
 Scott said most users would look for about 15 seconds, asking "How much money did I make? Am I in budget?" ([14 July meeting](../meetings/07-14-2026.txt#L39)). He defined What Happened as the analysis breaking down what happened and What If as applying to any selected screen or period ([20 July meeting](../meetings/07-20-2026.txt#L95)).

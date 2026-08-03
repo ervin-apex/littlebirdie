@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  dayIndexForDate,
   eligibleDailyDates,
   isIsoDate,
   isoDateAtIndex,
@@ -36,6 +37,13 @@ describe("daily actual input contract", () => {
       "2026-07-29",
     ]);
     expect(isoDateAtIndex("2026-07-27", 6)).toBe("2026-08-02");
+  });
+
+  it("does not relabel dates outside the saved week", () => {
+    expect(dayIndexForDate("2026-08-03", "2026-08-03")).toBe(0);
+    expect(dayIndexForDate("2026-08-03", "2026-08-09")).toBe(6);
+    expect(dayIndexForDate("2026-08-03", "2026-08-02")).toBeNull();
+    expect(dayIndexForDate("2026-08-03", "2026-08-10")).toBeNull();
   });
 
   it("prompts only for missing past days, never today or future days", () => {

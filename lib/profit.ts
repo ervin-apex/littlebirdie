@@ -859,14 +859,31 @@ export const DEMO_HISTORY_RANGE: HistoryRange = {
   to: "2026-06-30",
 };
 
-export const PERIODS: { key: PeriodKey; label: string }[] = [
-  { key: "yesterday", label: "Yesterday" },
-  { key: "last-week", label: "Last week" },
-  { key: "this-week", label: "This week" },
-  { key: "next-week", label: "Next week" },
-  { key: "month", label: "Month" },
-  { key: "custom", label: "Custom" },
+export type ReportingPeriodOption = {
+  key: PeriodKey;
+  label: string;
+  available: boolean;
+};
+
+/**
+ * Only periods backed by records for the selected venue are selectable during
+ * the manual launch. The other labels stay visible so the roadmap remains
+ * understandable, but they must never open the retired seeded/demo builders.
+ */
+export const PERIODS: ReportingPeriodOption[] = [
+  { key: "yesterday", label: "Yesterday", available: true },
+  { key: "last-week", label: "Last week", available: false },
+  { key: "this-week", label: "This week", available: true },
+  { key: "next-week", label: "Next week", available: false },
+  { key: "month", label: "Month", available: false },
+  { key: "custom", label: "Custom", available: false },
 ];
+
+export function isAvailableReportingPeriod(
+  value: string | null | undefined,
+): value is PeriodKey {
+  return PERIODS.some((period) => period.key === value && period.available);
+}
 
 // A believable completed prior week — the predicted plan; actuals are seeded for
 // all seven days so it reads as a finished week (came in a touch under).

@@ -41,6 +41,7 @@ import {
   dailyLedger,
   emptyComponentProvenance,
   forecastActuals,
+  isAvailableReportingPeriod,
   money,
   mergeComponentProvenance,
   periodHeadlineProfit,
@@ -59,6 +60,7 @@ import {
 } from "@/lib/profit";
 import { loadVenueState } from "@/lib/persistence/venue-state";
 import {
+  dayIndexForDate,
   isoDateAtIndex,
   missingPastDailyRevenueDates,
 } from "@/lib/persistence/daily-actual";
@@ -127,7 +129,7 @@ function screenFromParam(value: string | null): Screen {
 }
 
 function periodFromParam(value: string | null): PeriodKey {
-  return PERIODS.some((period) => period.key === value) ? (value as PeriodKey) : "this-week";
+  return isAvailableReportingPeriod(value) ? value : "this-week";
 }
 
 function chapterFromParam(value: string | null): Chapter {
@@ -259,9 +261,40 @@ function DashboardInner() {
     setCustomDraft(initialRange);
   }, [initialPeriod, initialRange.from, initialRange.to]);
 
+  const weekDates = useMemo(
+    () => weekStart
+      ? Array.from({ length: 7 }, (_, index) => isoDateAtIndex(weekStart, index))
+      : [],
+    [weekStart],
+  );
+  const yesterdayDate = currentDate ? isoDateAtIndex(currentDate, -1) : "";
+  const yesterdayIndex = yesterdayDate
+    ? dayIndexForDate(weekStart, yesterdayDate) ?? -1
+    : -1;
+  const availablePeriodKeys = useMemo(
+    () => new Set<PeriodKey>(
+      PERIODS
+        .filter((period) => period.available)
+        .filter((period) => period.key !== "yesterday" || yesterdayIndex >= 0)
+        .map((period) => period.key),
+    ),
+    [yesterdayIndex],
+  );
+  const effectivePeriodKey = availablePeriodKeys.has(periodKey)
+    ? periodKey
+    : "this-week";
+
+  useEffect(() => {
+    if (!ready || effectivePeriodKey === periodKey) return;
+    setPeriodKey(effectivePeriodKey);
+    setChapter("revenue");
+    setScreen("dashboard");
+    router.replace(`/app?period=${effectivePeriodKey}`, { scroll: false });
+  }, [effectivePeriodKey, periodKey, ready, router]);
+
   const view = useMemo(
-    () => buildPeriodView(periodKey, week, actuals, weekStart, customRange),
-    [periodKey, week, actuals, weekStart, customRange],
+    () => buildPeriodView(effectivePeriodKey, week, actuals, weekStart, customRange),
+    [effectivePeriodKey, week, actuals, weekStart, customRange],
   );
   const dailyRows = useMemo(
     () => dailyLedger(view.week, view.actuals),
@@ -274,15 +307,13 @@ function DashboardInner() {
   );
   const dailyCheckInTasks = useMemo<DailyCheckInTask[]>(() => {
     if (!weekStart || !currentDate) return [];
-    const dates = Array.from({ length: 7 }, (_, index) =>
-      isoDateAtIndex(weekStart, index));
     const missing = missingPastDailyRevenueDates(
       weekStart,
       currentDate,
       actuals.actuals,
     )
       .map((date) => {
-        const dayIndex = dates.indexOf(date);
+        const dayIndex = weekDates.indexOf(date);
         return {
           date,
           dayIndex,
@@ -292,9 +323,9 @@ function DashboardInner() {
       })
       .filter((task) => task.dayIndex >= 0 && !actuals.actuals[task.dayIndex]);
     return missing.map((task) => ({ ...task, missingCount: missing.length }));
-  }, [actuals, currentDate, dailyRows, weekStart]);
+  }, [actuals, currentDate, dailyRows, weekDates, weekStart]);
   const dailyCheckInTask =
-    periodKey === "this-week" ? dailyCheckInTasks.at(-1) ?? null : null;
+    effectivePeriodKey === "this-week" ? dailyCheckInTasks.at(-1) ?? null : null;
   const checkInDatesByDay = useMemo(
     () =>
       Object.fromEntries(
@@ -326,7 +357,7 @@ function DashboardInner() {
     }
     const lastCompleted = [...ledger].reverse().find((row) => row.actual)?.index ?? null;
     setSelectedDay(view.scope === "day" ? view.dayIndex : lastCompleted);
-  }, [periodKey, view.dayIndex, view.scope, ledger, dayParam]);
+  }, [effectivePeriodKey, view.dayIndex, view.scope, ledger, dayParam]);
 
   const navigateScreen = (
     next: Screen,
@@ -338,9 +369,9 @@ function DashboardInner() {
   ) => {
     setScreen(next);
     if (options.day !== undefined) setSelectedDay(options.day);
-    const query = new URLSearchParams({ period: periodKey });
+    const query = new URLSearchParams({ period: effectivePeriodKey });
     if (chapter !== "revenue") query.set("chapter", chapter);
-    if (periodKey === "custom") {
+    if (effectivePeriodKey === "custom") {
       query.set("from-date", customRange.from);
       query.set("to-date", customRange.to);
     }
@@ -357,6 +388,7 @@ function DashboardInner() {
   };
 
   const selectPeriod = (key: PeriodKey) => {
+    if (!availablePeriodKeys.has(key)) return;
     if (key === "custom") {
       setPeriodKey("custom");
       setCustomRange(customDraft);
@@ -380,9 +412,9 @@ function DashboardInner() {
 
   const selectChapter = (nextChapter: Chapter) => {
     setChapter(nextChapter);
-    const query = new URLSearchParams({ period: periodKey });
+    const query = new URLSearchParams({ period: effectivePeriodKey });
     if (nextChapter !== "revenue") query.set("chapter", nextChapter);
-    if (periodKey === "custom") {
+    if (effectivePeriodKey === "custom") {
       query.set("from-date", customRange.from);
       query.set("to-date", customRange.to);
     }
@@ -407,11 +439,20 @@ function DashboardInner() {
   if (!ready) return <DashboardSkeleton />;
   if (loadError) return <DashboardLoadError message={loadError} />;
 
-  const isFuture = periodKey === "next-week";
+  const isFuture = effectivePeriodKey === "next-week";
   const isHistory = view.scope === "history";
   const selectedPeriodDay = view.scope === "day"
     ? ledger[view.dayIndex ?? 0]
     : null;
+  const incompleteDayTask = effectivePeriodKey === "yesterday"
+    && selectedPeriodDay
+    && !selectedPeriodDay.actual
+    && yesterdayIndex >= 0
+      ? {
+          date: yesterdayDate,
+          dayName: fullDayName(selectedPeriodDay.label),
+        }
+      : null;
   const periodProfit = periodHeadlineProfit({
     scope: view.scope,
     isFuture,
@@ -544,7 +585,8 @@ function DashboardInner() {
           <DashboardView
             viewTitle={view.title}
             dateLabel={view.dateLabel}
-            periodKey={periodKey}
+            periodKey={effectivePeriodKey}
+            availablePeriodKeys={availablePeriodKeys}
             chapter={chapter}
             chapterContent={chapterContent}
             ledger={ledger}
@@ -567,6 +609,7 @@ function DashboardInner() {
             onOpenDay={openSelectedDay}
             onFullNumbers={() => openChild("full-numbers", { scope: view.scope === "day" ? "day" : "period", day: selectedDay })}
             dailyCheckInTask={dailyCheckInTask}
+            incompleteDayTask={incompleteDayTask}
             checkInDatesByDay={checkInDatesByDay}
             onCheckInDay={(date) =>
               router.push(`/app/check-in?date=${encodeURIComponent(date)}`)}
@@ -602,6 +645,7 @@ function DashboardView({
   viewTitle,
   dateLabel,
   periodKey,
+  availablePeriodKeys,
   chapter,
   chapterContent,
   ledger,
@@ -624,12 +668,14 @@ function DashboardView({
   onOpenDay,
   onFullNumbers,
   dailyCheckInTask,
+  incompleteDayTask,
   checkInDatesByDay,
   onCheckInDay,
 }: {
   viewTitle: string;
   dateLabel: string;
   periodKey: PeriodKey;
+  availablePeriodKeys: ReadonlySet<PeriodKey>;
   chapter: Chapter;
   chapterContent: ReturnType<typeof getChapterContent>;
   ledger: LedgerRow[];
@@ -652,6 +698,7 @@ function DashboardView({
   onOpenDay: () => void;
   onFullNumbers: () => void;
   dailyCheckInTask: DailyCheckInTask | null;
+  incompleteDayTask: Pick<DailyCheckInTask, "date" | "dayName"> | null;
   checkInDatesByDay: Record<number, string>;
   onCheckInDay: (date: string) => void;
 }) {
@@ -673,7 +720,10 @@ function DashboardView({
   };
 
   return (
-    <div className={`dashboard-view ${chapterContent.tone}`} data-day-preview-open={dayPreviewOpen ? "true" : "false"}>
+    <div
+      className={`dashboard-view ${incompleteDayTask ? "tone-neutral" : chapterContent.tone}`}
+      data-day-preview-open={dayPreviewOpen ? "true" : "false"}
+    >
       <section className="scoreboard-heading" aria-labelledby="scoreboard-title">
         <div>
           <p className="scoreboard-date">{dateLabel}</p>
@@ -684,6 +734,7 @@ function DashboardView({
         </div>
         <PeriodNavigation
           periodKey={periodKey}
+          availablePeriodKeys={availablePeriodKeys}
           onPeriod={(key) => {
             setDayPreviewOpen(false);
             onPeriod(key);
@@ -723,18 +774,37 @@ function DashboardView({
 
       <aside className="dashboard-answer" aria-live="polite">
         <motion.div
-          key={`${periodKey}-${chapter}`}
+          key={`${periodKey}-${chapter}-${incompleteDayTask ? "waiting" : "ready"}`}
           className="dashboard-profit-copy"
           initial={reduceMotion ? false : { opacity: 0, transform: "translateY(4px)" }}
           animate={{ opacity: 1, transform: "translateY(0px)" }}
           transition={{ duration: reduceMotion ? 0 : 0.16, ease: [0.23, 1, 0.32, 1] }}
         >
-          <p>{chapterContent.label}</p>
-          <strong className="tnum">{signedProfit(chapterContent.value)}</strong>
-          <span>{answerSupport}</span>
+          {incompleteDayTask ? (
+            <>
+              <p>Yesterday&rsquo;s result</p>
+              <strong className="dashboard-waiting-title">Waiting for revenue</strong>
+              <span>Add the sales total and Birdee will show how the day went.</span>
+            </>
+          ) : (
+            <>
+              <p>{chapterContent.label}</p>
+              <strong className="tnum">{signedProfit(chapterContent.value)}</strong>
+              <span>{answerSupport}</span>
+            </>
+          )}
         </motion.div>
         <div className="dashboard-profit-actions" aria-label="Explore this result">
-          {!isFuture && (
+          {incompleteDayTask ? (
+            <ProductButton
+              href={`/app/check-in?date=${encodeURIComponent(incompleteDayTask.date)}`}
+              variant="secondary"
+              className="result-action dashboard-primary-action"
+              trailingIcon={<ArrowRight weight="bold" />}
+            >
+              Add {incompleteDayTask.dayName}&rsquo;s revenue
+            </ProductButton>
+          ) : !isFuture && (
             <ProductButton
               variant="secondary"
               className="result-action dashboard-primary-action"
@@ -744,19 +814,21 @@ function DashboardView({
               What happened
             </ProductButton>
           )}
-          <ProductButton
-            variant="secondary"
-            className="result-action dashboard-secondary-action"
-            onClick={onWhatIf}
-            leadingIcon={<Flask size={20} weight="bold" />}
-          >
-            What if
-          </ProductButton>
+          {!incompleteDayTask && (
+            <ProductButton
+              variant="secondary"
+              className="result-action dashboard-secondary-action"
+              onClick={onWhatIf}
+              leadingIcon={<Flask size={20} weight="bold" />}
+            >
+              What if
+            </ProductButton>
+          )}
         </div>
         <div className="dashboard-birdee-stage">
           <span className="dashboard-chirp" aria-hidden="true"><i /><i /></span>
           <BirdeeMascot
-            state={chapterContent.value >= 0 ? "profit" : "loss"}
+            state={incompleteDayTask ? "neutral" : chapterContent.value >= 0 ? "profit" : "loss"}
             size={210}
             className="dashboard-birdee"
           />
@@ -831,7 +903,7 @@ function DashboardView({
         </section>
       )}
 
-      {!isWeek && (
+      {!isWeek && !incompleteDayTask && (
         <div className="view-footer-action">
           <ProductButton
             variant="tertiary"
@@ -968,14 +1040,19 @@ function YesterdayComparison({ row }: { row: LedgerRow }) {
 
 function PeriodNavigation({
   periodKey,
+  availablePeriodKeys,
   onPeriod,
 }: {
   periodKey: PeriodKey;
+  availablePeriodKeys: ReadonlySet<PeriodKey>;
   onPeriod: (key: PeriodKey) => void;
 }) {
-  const activeIndex = PERIODS.findIndex((period) => period.key === periodKey);
-  const previous = PERIODS[Math.max(0, activeIndex - 1)]?.key ?? PERIODS[0].key;
-  const next = PERIODS[Math.min(PERIODS.length - 1, activeIndex + 1)]?.key ?? PERIODS[PERIODS.length - 1].key;
+  const availablePeriods = PERIODS.filter((period) => availablePeriodKeys.has(period.key));
+  const activeIndex = availablePeriods.findIndex((period) => period.key === periodKey);
+  const previous = availablePeriods[Math.max(0, activeIndex - 1)]?.key
+    ?? availablePeriods[0].key;
+  const next = availablePeriods[Math.min(availablePeriods.length - 1, activeIndex + 1)]?.key
+    ?? availablePeriods[availablePeriods.length - 1].key;
   return (
     <div className="period-nav" aria-label="Choose reporting period">
       <button className="period-arrow" type="button" aria-label="Previous period" disabled={activeIndex <= 0} onClick={() => onPeriod(previous)}><CaretLeft weight="bold" /></button>
@@ -985,13 +1062,16 @@ function PeriodNavigation({
           type="button"
           className={periodKey === period.key ? "period-button is-active" : "period-button"}
           aria-pressed={periodKey === period.key}
-          aria-haspopup={period.key === "custom" ? "dialog" : undefined}
+          aria-label={availablePeriodKeys.has(period.key) ? period.label : `${period.label} — available after launch`}
+          aria-haspopup={period.key === "custom" && availablePeriodKeys.has(period.key) ? "dialog" : undefined}
+          disabled={!availablePeriodKeys.has(period.key)}
+          title={availablePeriodKeys.has(period.key) ? undefined : "Available after launch"}
           onClick={() => onPeriod(period.key)}
         >
           {period.label}
         </button>
       ))}
-      <button className="period-arrow" type="button" aria-label="Next period" disabled={activeIndex >= PERIODS.length - 1} onClick={() => onPeriod(next)}><CaretRight weight="bold" /></button>
+      <button className="period-arrow" type="button" aria-label="Next period" disabled={activeIndex >= availablePeriods.length - 1} onClick={() => onPeriod(next)}><CaretRight weight="bold" /></button>
     </div>
   );
 }
