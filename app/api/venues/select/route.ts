@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { venueNeedsInitialSetup } from "@/lib/venues/setup-navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -27,15 +28,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/account?error=venue", request.url), 303);
   }
 
-  const { data: plan } = await supabase
-    .from("weekly_plans")
-    .select("id")
-    .eq("venue_id", venue.id)
-    .eq("status", "locked")
-    .limit(1)
-    .maybeSingle();
+  const { data: canStartInitialSetup } = await supabase.rpc(
+    "can_start_initial_setup",
+    { p_venue_id: venue.id },
+  );
 
-  const next = plan ? "/app?period=this-week" : "/setup?from=venue-switch";
+  const next = venueNeedsInitialSetup(canStartInitialSetup)
+    ? "/setup?from=venue-switch"
+    : "/app?period=this-week";
   const response = NextResponse.redirect(new URL(next, request.url), 303);
   response.cookies.set(VENUE_COOKIE, venue.id, {
     httpOnly: true,
@@ -91,15 +91,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: plan } = await supabase
-    .from("weekly_plans")
-    .select("id")
-    .eq("venue_id", venue.id)
-    .eq("status", "locked")
-    .limit(1)
-    .maybeSingle();
+  const { data: canStartInitialSetup } = await supabase.rpc(
+    "can_start_initial_setup",
+    { p_venue_id: venue.id },
+  );
 
-  const next = plan ? "/app?period=this-week" : "/setup?from=venue-switch";
+  const next = venueNeedsInitialSetup(canStartInitialSetup)
+    ? "/setup?from=venue-switch"
+    : "/app?period=this-week";
   const response = isFormSubmission
     ? NextResponse.redirect(new URL(next, request.url), 303)
     : NextResponse.json({ next });

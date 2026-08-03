@@ -5,6 +5,7 @@ import {
   resumeSetupStepIndex,
   setupExitPath,
   setupStepsRemaining,
+  venueNeedsInitialSetup,
   type SetupStepKey,
 } from "./setup-navigation";
 
@@ -98,5 +99,13 @@ describe("isResumableDraft", () => {
 
   it("ignores an unparseable draft timestamp rather than outranking the plan", () => {
     expect(isResumableDraft("not-a-date", plan)).toBe(false);
+  });
+});
+
+describe("venueNeedsInitialSetup", () => {
+  it("opens setup only when the protected eligibility check explicitly allows it", () => {
+    expect(venueNeedsInitialSetup(true)).toBe(true);
+    expect(venueNeedsInitialSetup(false)).toBe(false);
+    expect(venueNeedsInitialSetup(null)).toBe(false);
   });
 });

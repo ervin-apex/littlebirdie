@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { venueNeedsInitialSetup } from "@/lib/venues/setup-navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -128,15 +129,12 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Choose a venue first." }, { status: 409 });
   }
 
-  const { data: plan } = await supabase
-    .from("weekly_plans")
-    .select("id")
-    .eq("venue_id", venueId)
-    .eq("status", "locked")
-    .limit(1)
-    .maybeSingle();
+  const { data: canStartInitialSetup } = await supabase.rpc(
+    "can_start_initial_setup",
+    { p_venue_id: venueId },
+  );
 
-  if (plan) {
+  if (!venueNeedsInitialSetup(canStartInitialSetup)) {
     return NextResponse.json(
       { error: "This venue is already set up. Change its name from venue settings." },
       { status: 409 },

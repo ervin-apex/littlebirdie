@@ -1,5 +1,8 @@
 import type { createClient } from "@/lib/supabase/server";
-import { isResumableDraft } from "@/lib/venues/setup-navigation";
+import {
+  isResumableDraft,
+  venueNeedsInitialSetup,
+} from "@/lib/venues/setup-navigation";
 import { resolveSelectedVenueId } from "./selection";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -65,6 +68,7 @@ export async function loadVenueNavigation(
     { data: businessRows },
     { data: planRows },
     { data: setupDraftRows },
+    setupEligibility,
   ] = await Promise.all([
     supabase
       .from("businesses")
@@ -79,6 +83,12 @@ export async function loadVenueNavigation(
       .from("venue_setup_drafts")
       .select("venue_id, completed_steps, total_steps, next_step, updated_at")
       .in("venue_id", venueIds),
+    Promise.all(venueIds.map(async (venueId) => {
+      const { data } = await supabase.rpc("can_start_initial_setup", {
+        p_venue_id: venueId,
+      });
+      return [venueId, venueNeedsInitialSetup(data)] as const;
+    })),
   ]);
 
   const businessById = new Map(
@@ -89,6 +99,11 @@ export async function loadVenueNavigation(
   );
   const plans = (planRows ?? []) as PlanRow[];
   const venuesWithPlan = new Set(plans.map((plan) => plan.venue_id));
+  const venuesNeedingInitialSetup = new Set(
+    setupEligibility
+      .filter(([, needsSetup]) => needsSetup)
+      .map(([venueId]) => venueId),
+  );
   const latestPlanAtByVenueId = new Map<string, string>();
   for (const plan of plans) {
     const known = latestPlanAtByVenueId.get(plan.venue_id);
@@ -107,7 +122,8 @@ export async function loadVenueNavigation(
       .map((draft) => [draft.venue_id, draft]),
   );
   const items = venues.map((venue) => {
-    const hasPlan = venuesWithPlan.has(venue.id);
+    const hasPlan = venuesWithPlan.has(venue.id)
+      || !venuesNeedingInitialSetup.has(venue.id);
     const setupDraft = setupDraftByVenueId.get(venue.id);
     return {
       id: venue.id,

@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { venueNeedsInitialSetup } from "@/lib/venues/setup-navigation";
 
 export async function switchVenue(formData: FormData) {
   const venueId = String(formData.get("venueId") ?? "");
@@ -27,15 +28,14 @@ export async function switchVenue(formData: FormData) {
     maxAge: 60 * 60 * 24 * 365,
   });
 
-  const { data: plan } = await supabase
-    .from("weekly_plans")
-    .select("id")
-    .eq("venue_id", venue.id)
-    .eq("status", "locked")
-    .limit(1)
-    .maybeSingle();
+  const { data: canStartInitialSetup } = await supabase.rpc(
+    "can_start_initial_setup",
+    { p_venue_id: venue.id },
+  );
 
-  redirect(plan ? "/app?period=this-week" : "/setup?from=venue-switch");
+  redirect(venueNeedsInitialSetup(canStartInitialSetup)
+    ? "/setup?from=venue-switch"
+    : "/app?period=this-week");
 }
 
 export async function createVenue(formData: FormData) {

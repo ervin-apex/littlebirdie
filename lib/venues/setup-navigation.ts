@@ -49,6 +49,13 @@ export function setupStepsRemaining(completedSteps: number, totalSteps: number) 
   return Math.max(0, totalSteps - completedSteps);
 }
 
+/** Billing RLS deliberately hides an existing locked plan after access ends.
+ *  The setup eligibility RPC is therefore the authoritative answer for whether
+ *  a venue is genuinely new, instead of treating an invisible plan as absent. */
+export function venueNeedsInitialSetup(canStartInitialSetup: unknown) {
+  return canStartInitialSetup === true;
+}
+
 /** A setup draft is unfinished work, so it may only be resumed while it is newer
  *  than the venue's locked plan. A draft left behind by an abandoned pass must
  *  never outrank a plan saved since, or Setup would show numbers that contradict
