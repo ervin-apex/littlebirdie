@@ -54,3 +54,10 @@ export function assertSubscriptionBinding(input: SubscriptionBindingInput) {
     throw new Error("subscription_existing_id_mismatch");
   }
 }
+
+export function isStripeCancellationScheduled(
+  cancelAtPeriodEnd: boolean,
+  cancelAt: number | null | undefined,
+) {
+  return cancelAtPeriodEnd || cancelAt != null;
+}

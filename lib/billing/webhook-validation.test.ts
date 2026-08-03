@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { assertSubscriptionBinding, type ExistingSubscriptionBinding } from "./webhook-validation";
+import {
+  assertSubscriptionBinding,
+  isStripeCancellationScheduled,
+  type ExistingSubscriptionBinding,
+} from "./webhook-validation";
 
 const existing: ExistingSubscriptionBinding = {
   stripeCustomerId: "cus_expected",
@@ -54,5 +58,15 @@ describe("assertSubscriptionBinding", () => {
         dataState: "deleted",
       },
     }))).not.toThrow();
+  });
+});
+
+describe("isStripeCancellationScheduled", () => {
+  it.each([
+    [true, null, true],
+    [false, 1_786_322_400, true],
+    [false, null, false],
+  ])("normalizes period-end and scheduled timestamp cancellation", (atPeriodEnd, cancelAt, expected) => {
+    expect(isStripeCancellationScheduled(atPeriodEnd, cancelAt)).toBe(expected);
   });
 });

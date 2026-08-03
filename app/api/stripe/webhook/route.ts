@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getBillingConfig } from "@/lib/billing/config";
 import { deriveBillingEntitlement, normalizeStripeSubscriptionStatus } from "@/lib/billing/entitlement";
-import { assertSubscriptionBinding } from "@/lib/billing/webhook-validation";
+import {
+  assertSubscriptionBinding,
+  isStripeCancellationScheduled,
+} from "@/lib/billing/webhook-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/server";
 
@@ -91,7 +94,10 @@ async function applySubscription(
     p_paid_through: paidThrough,
     p_current_period_start: isoFromUnix(item.current_period_start),
     p_current_period_end: isoFromUnix(item.current_period_end),
-    p_cancel_at_period_end: subscription.cancel_at_period_end,
+    p_cancel_at_period_end: isStripeCancellationScheduled(
+      subscription.cancel_at_period_end,
+      subscription.cancel_at,
+    ),
     p_payment_failed_at: options.paymentFailed
       ? isoFromUnix(event.created)
       : options.paidInvoice
