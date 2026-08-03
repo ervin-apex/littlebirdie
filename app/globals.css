@@ -532,13 +532,18 @@ h3 {
 }
 
 .venue-switcher__list form {
+  width: 100%;
+  min-width: 0;
   margin: 0;
 }
 
 .venue-switcher__option {
   display: flex;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 58px;
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
@@ -552,6 +557,11 @@ h3 {
   text-align: left;
   text-decoration: none;
   transition: background-color var(--lb-duration-state) var(--lb-ease-out);
+}
+
+.venue-switcher__option > span {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .venue-switcher__option:hover,
@@ -569,6 +579,9 @@ h3 {
 .venue-switcher__option strong,
 .venue-switcher__option small {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .venue-switcher__option strong {
