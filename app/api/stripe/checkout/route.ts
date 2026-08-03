@@ -67,6 +67,7 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
+    adaptive_pricing: { enabled: false },
     customer: customerId,
     client_reference_id: context.businessId,
     line_items: [{ price: config.stripePriceId, quantity: 1 }],
