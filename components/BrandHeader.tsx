@@ -175,10 +175,6 @@ function VenueSwitcher({
                   href={`${assetPath("/api/venues/select")}?venueId=${encodeURIComponent(venue.id)}`}
                   className={`venue-switcher__option${active ? " is-current" : ""}`}
                   role="menuitem"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    window.location.assign(event.currentTarget.href);
-                  }}
                 >
                   <span>
                     <strong>{venue.name}</strong>
