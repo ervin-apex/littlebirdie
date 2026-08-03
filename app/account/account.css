@@ -86,6 +86,7 @@
 .account-billing-section,
 .account-venue-section {
   display: grid;
+  min-width: 0;
   gap: 10px;
 }
 
@@ -100,6 +101,10 @@
 
 .account-billing {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   grid-template-columns: auto minmax(240px, 1fr) minmax(150px, auto) auto;
   align-items: center;
   gap: 18px;
@@ -107,6 +112,13 @@
   border-radius: 16px;
   padding: 16px 18px;
   background: color-mix(in oklch, var(--lb-yellow-soft) 32%, var(--lb-white));
+}
+
+.account-billing > *,
+.account-billing__plan,
+.account-billing__status,
+.account-billing .billing-redirect {
+  min-width: 0;
 }
 
 .account-billing__icon {
@@ -136,9 +148,20 @@
 .account-billing__status span[data-state="active"] { color: var(--lb-success); }
 .account-billing__status span[data-state="locked_recovery"] { color: #9b4b31; }
 .account-billing__status small { margin-top: 3px; }
-.account-billing .billing-redirect { display: grid; justify-items: end; }
+.account-billing .billing-redirect {
+  display: grid;
+  max-width: 100%;
+  justify-items: end;
+}
+.account-billing .billing-redirect .product-button { max-width: 100%; }
 .account-billing .billing-redirect__error { max-width: 240px; text-align: right; }
-.account-billing__coverage { margin: 7px 2px 0; }
+.account-billing__coverage {
+  min-width: 0;
+  max-width: 100%;
+  margin: 7px 2px 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 .account-section-heading h2 {
   margin-bottom: 2px;
