@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { applyPrivateApiCacheHeaders } from "@/lib/http/private-api-cache";
 import { getSupabaseConfig } from "./config";
 
 export async function updateSession(request: NextRequest) {
@@ -31,5 +32,10 @@ export async function updateSession(request: NextRequest) {
 
   // getClaims validates the JWT and refreshes it when required.
   await supabase.auth.getClaims();
+
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    applyPrivateApiCacheHeaders(response.headers);
+  }
+
   return response;
 }
