@@ -13,14 +13,17 @@ type BillingStatusResponse = {
 export function PaymentConfirmation({
   businessName,
   needsSetup,
+  previewConfirmed = false,
 }: {
   businessName: string;
   needsSetup: boolean;
+  previewConfirmed?: boolean;
 }) {
   const router = useRouter();
-  const [state, setState] = useState<State>("checking");
+  const [state, setState] = useState<State>(previewConfirmed ? "confirmed" : "checking");
 
   useEffect(() => {
+    if (previewConfirmed) return;
     let cancelled = false;
     let attempts = 0;
     async function check() {
@@ -45,7 +48,7 @@ export function PaymentConfirmation({
     }
     void check();
     return () => { cancelled = true; };
-  }, []);
+  }, [previewConfirmed]);
 
   if (state !== "confirmed") {
     return (

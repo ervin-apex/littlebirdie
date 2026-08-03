@@ -4,7 +4,8 @@ import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { redirect } from "next/navigation";
 import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
-import { loadBillingBusinessContext } from "@/lib/billing/server";
+import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
+import { BillingWave } from "./BillingWave";
 import "./billing.css";
 
 export const dynamic = "force-dynamic";
@@ -12,18 +13,20 @@ export const dynamic = "force-dynamic";
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string }>;
+  searchParams: Promise<{ checkout?: string; preview?: string }>;
 }) {
   const context = await loadBillingBusinessContext();
   if (!context) redirect("/auth/login");
-  if (context.entitlement.canUseProduct) redirect("/app");
-  if (context.entitlement.accessState === "locked_recovery") redirect("/billing/locked");
-  const { checkout } = await searchParams;
+  const { checkout, preview } = await searchParams;
+  const reviewMode = !billingEnforcementEnabled() && preview === "offer";
+  if (!reviewMode && context.entitlement.canUseProduct) redirect("/app");
+  if (!reviewMode && context.entitlement.accessState === "locked_recovery") redirect("/billing/locked");
 
   return (
-    <div className="billing-page">
+    <div className="billing-page billing-page--offer">
+      <BillingWave />
       <header className="billing-header">
-        <Link href="/" className="billing-brand">
+        <Link href="/app" className="billing-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={assetPath(BRAND_LOGO_PATH)} alt="" />
           <span>Little <strong>Birdee</strong></span>
@@ -31,8 +34,8 @@ export default async function BillingPage({
         <span className="billing-header__business">{context.businessName}</span>
       </header>
 
-      <main className="billing-offer">
-        <section className="billing-offer__copy">
+      <main className="billing-layout">
+        <section className="billing-content billing-offer__copy">
           <p className="billing-eyebrow">Setup complete</p>
           <h1>Your Birdee is ready.</h1>
           <p className="billing-lede">
@@ -62,19 +65,20 @@ export default async function BillingPage({
           <p className="billing-stripe-note">Secure checkout by Stripe · No free trial</p>
         </section>
 
-        <aside className="billing-offer__stage" aria-label="Your Little Birdee membership">
+        <aside className="billing-stage billing-offer__stage" aria-label="Your Little Birdee membership">
           <div className="billing-membership-card">
             <span>One weekly membership</span>
             <strong>{context.businessName}</strong>
           </div>
           <Image
-            src={assetPath("/brand/birdee-reference-business-v1.png")}
-            width={520}
-            height={460}
-            alt="Birdee holding the business numbers"
+            src={assetPath("/brand/birdee-billing-offer-v1.png")}
+            width={1348}
+            height={1167}
+            alt="Birdee holding the key to the business membership"
             className="billing-offer__birdee"
             priority
           />
+          {reviewMode && <span className="billing-review-chip">UI review · Offer</span>}
         </aside>
       </main>
     </div>
