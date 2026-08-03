@@ -170,24 +170,30 @@ function VenueSwitcher({
             {venues.map((venue) => {
               const active = venue.id === selectedVenue.id;
               return (
-                <a
+                <form
                   key={venue.id}
-                  href={`${assetPath("/api/venues/select")}?venueId=${encodeURIComponent(venue.id)}`}
-                  className={`venue-switcher__option${active ? " is-current" : ""}`}
-                  role="menuitem"
+                  action={assetPath("/api/venues/select")}
+                  method="post"
                 >
-                  <span>
-                    <strong>{venue.name}</strong>
-                    <small>
-                      {active
-                        ? "Current venue"
-                        : venue.hasPlan
-                          ? venue.businessName
-                          : "Setup required"}
-                    </small>
-                  </span>
-                  {active && <CheckCircle weight="fill" aria-hidden />}
-                </a>
+                  <input type="hidden" name="venueId" value={venue.id} />
+                  <button
+                    type="submit"
+                    className={`venue-switcher__option${active ? " is-current" : ""}`}
+                    role="menuitem"
+                  >
+                    <span>
+                      <strong>{venue.name}</strong>
+                      <small>
+                        {active
+                          ? "Current venue"
+                          : venue.hasPlan
+                            ? venue.businessName
+                            : "Setup required"}
+                      </small>
+                    </span>
+                    {active && <CheckCircle weight="fill" aria-hidden />}
+                  </button>
+                </form>
               );
             })}
           </div>
