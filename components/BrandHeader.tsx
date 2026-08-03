@@ -180,6 +180,11 @@ function VenueSwitcher({
                     type="submit"
                     className={`venue-switcher__option${active ? " is-current" : ""}`}
                     role="menuitem"
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.currentTarget.form?.requestSubmit(event.currentTarget);
+                    }}
                   >
                     <span>
                       <strong>{venue.name}</strong>
