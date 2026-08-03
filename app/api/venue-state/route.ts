@@ -18,6 +18,7 @@ import {
   type SetupStepKey,
 } from "@/lib/venues/setup-navigation";
 import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
+import { canOpenVenueFinancialRecords } from "@/lib/billing/venue-access";
 
 export const dynamic = "force-dynamic";
 
@@ -154,12 +155,41 @@ function withVenueCookie(
   return response;
 }
 
+async function venueBillingGate({
+  supabase,
+  venueId,
+}: {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  venueId: string;
+}) {
+  if (!billingEnforcementEnabled()) return null;
+
+  const [billing, { data: canStartInitialSetup, error: setupError }] = await Promise.all([
+    loadBillingBusinessContext(),
+    supabase.rpc("can_start_initial_setup", { p_venue_id: venueId }),
+  ]);
+  if (setupError || !canOpenVenueFinancialRecords({
+    enforcementEnabled: true,
+    canUseProduct: billing?.entitlement.canUseProduct ?? false,
+    canStartInitialSetup: canStartInitialSetup === true,
+  })) {
+    return NextResponse.json(
+      { error: "Your Little Birdee subscription needs attention." },
+      { status: 402 },
+    );
+  }
+
+  return null;
+}
+
 export async function GET() {
   const selection = await selectedVenue();
   if ("error" in selection) {
     return NextResponse.json({ error: selection.error }, { status: selection.status });
   }
   const { supabase, venue, shouldSetCookie } = selection;
+  const billingResponse = await venueBillingGate({ supabase, venueId: venue.id });
+  if (billingResponse) return billingResponse;
 
   const [
     { data: planRow, error: planError },
@@ -207,16 +237,6 @@ export async function GET() {
       currentDate,
       setupDraft,
     }), venue.id, shouldSetCookie);
-  }
-
-  if (billingEnforcementEnabled()) {
-    const billing = await loadBillingBusinessContext();
-    if (!billing?.entitlement.canUseProduct) {
-      return NextResponse.json(
-        { error: "Your Little Birdee subscription needs attention." },
-        { status: 402 },
-      );
-    }
   }
 
   const { data: dayRows, error: dayError } = await supabase
@@ -365,6 +385,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: selection.error }, { status: selection.status });
   }
   const { supabase, user, venue, shouldSetCookie } = selection;
+  const billingResponse = await venueBillingGate({ supabase, venueId: venue.id });
+  if (billingResponse) return billingResponse;
   const body = await request.json().catch(() => null);
   if (!validDraftProgress(body)) {
     return NextResponse.json(
@@ -434,6 +456,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: selection.error }, { status: selection.status });
   }
   const { supabase, venue, shouldSetCookie } = selection;
+  const billingResponse = await venueBillingGate({ supabase, venueId: venue.id });
+  if (billingResponse) return billingResponse;
   const body = await request.json().catch(() => null) as { week?: unknown } | null;
   if (!validWeek(body?.week)) {
     return NextResponse.json({ error: "Check the weekly values and try again." }, { status: 400 });
@@ -446,25 +470,6 @@ export async function PUT(request: Request) {
       { error: "Confirm that this venue has no recurring other income." },
       { status: 400 },
     );
-  }
-
-  if (billingEnforcementEnabled()) {
-    const [{ data: existingPlan }, billing] = await Promise.all([
-      supabase
-        .from("weekly_plans")
-        .select("id")
-        .eq("venue_id", venue.id)
-        .eq("status", "locked")
-        .limit(1)
-        .maybeSingle(),
-      loadBillingBusinessContext(),
-    ]);
-    if (existingPlan && !billing?.entitlement.canUseProduct) {
-      return NextResponse.json(
-        { error: "Your Little Birdee subscription needs attention." },
-        { status: 402 },
-      );
-    }
   }
 
   const payload = weekToPlanPayload(
