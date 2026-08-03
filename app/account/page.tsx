@@ -5,6 +5,7 @@ import {
   CalendarBlank,
   CheckCircle,
   Clock,
+  CreditCard,
   Key,
   Storefront,
   WarningCircle,
@@ -12,9 +13,11 @@ import {
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { ProductButton } from "@/components/ProductButton";
 import { assetPath } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
+import { formatPaidThrough, loadBillingBusinessContext } from "@/lib/billing/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
 import { setupStepsRemaining } from "@/lib/venues/setup-navigation";
 import { switchVenue } from "./actions";
@@ -89,6 +92,15 @@ export default async function AccountPage({
       selectedVenue.setupTotalSteps,
     )
     : 0;
+  const billingContext = await loadBillingBusinessContext();
+  const billing = billingContext?.projection;
+  const billingEntitlement = billingContext?.entitlement;
+  const billingStatus = billingEntitlement?.canUseProduct
+    ? billing?.cancelAtPeriodEnd ? "Ending" : "Active"
+    : billingEntitlement?.accessState === "locked_recovery"
+      ? "Payment needed"
+      : "Not active";
+  const billingDate = formatPaidThrough(billing?.paidThrough ?? null);
 
   return (
     <AppShell
@@ -159,6 +171,37 @@ export default async function AccountPage({
               </div>
             </dl>
           </div>
+        </section>
+
+        <section className="account-billing-section" aria-labelledby="billing-heading">
+          <h2 id="billing-heading">Billing</h2>
+          <div className="account-billing">
+            <div className="account-billing__icon" aria-hidden>
+              <CreditCard weight="duotone" />
+            </div>
+            <div className="account-billing__plan">
+              <strong>Little Birdee weekly</strong>
+              <span>$12 / week</span>
+              <small>GST included · Covers your whole business</small>
+            </div>
+            <div className="account-billing__status">
+              <span data-state={billingEntitlement?.accessState ?? "pending"}>{billingStatus}</span>
+              {billingDate && (
+                <small>{billing?.cancelAtPeriodEnd ? "Access until" : "Paid through"} {billingDate}</small>
+              )}
+            </div>
+            {billingContext?.canManage && (
+              <BillingRedirectButton
+                endpoint={billing?.stripeCustomerId ? "/api/stripe/portal" : "/api/stripe/checkout"}
+                variant="secondary"
+              >
+                {billing?.stripeCustomerId ? "Manage billing" : "Start subscription"}
+              </BillingRedirectButton>
+            )}
+          </div>
+          <p className="account-billing__coverage">
+            Every current and future venue in {billingContext?.businessName ?? "your business"} is included.
+          </p>
         </section>
 
         <section className="account-venue-section" aria-labelledby="venue-list-heading">

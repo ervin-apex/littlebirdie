@@ -379,7 +379,19 @@ export default function SetupPage() {
           nextStep: step.key,
         });
         await saveVenueWeek(week);
-        router.push("/app?period=this-week");
+        const billingResponse = await fetch("/api/billing/status", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const billing = await billingResponse.json().catch(() => null) as {
+          enforcementEnabled?: boolean;
+          entitlement?: { canUseProduct?: boolean };
+        } | null;
+        router.push(
+          billing?.enforcementEnabled && !billing.entitlement?.canUseProduct
+            ? "/billing"
+            : "/app?period=this-week",
+        );
       } catch (error) {
         setSaveError(
           error instanceof Error ? error.message : "Birdee could not save these numbers.",

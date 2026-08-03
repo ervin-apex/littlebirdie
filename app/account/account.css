@@ -83,18 +83,62 @@
 }
 
 .account-identity-section,
+.account-billing-section,
 .account-venue-section {
   display: grid;
   gap: 10px;
 }
 
 .account-identity-section > h2,
+.account-billing-section > h2,
 .account-section-heading h2 {
   margin: 0;
   color: var(--lb-ink);
   font-size: 19px;
   letter-spacing: -0.02em;
 }
+
+.account-billing {
+  display: grid;
+  grid-template-columns: auto minmax(240px, 1fr) minmax(150px, auto) auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--lb-line);
+  border-radius: 16px;
+  padding: 16px 18px;
+  background: color-mix(in oklch, var(--lb-yellow-soft) 32%, var(--lb-white));
+}
+
+.account-billing__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lb-yellow-soft);
+  color: var(--lb-ink);
+}
+
+.account-billing__icon svg { width: 23px; height: 23px; }
+.account-billing__plan strong,
+.account-billing__plan span,
+.account-billing__plan small,
+.account-billing__status span,
+.account-billing__status small { display: block; }
+.account-billing__plan strong { font-family: var(--font-display); font-size: 17px; }
+.account-billing__plan span { margin-top: 2px; font-size: 15px; font-weight: 850; }
+.account-billing__plan small,
+.account-billing__status small,
+.account-billing__coverage { color: var(--lb-muted); font-size: 12px; }
+.account-billing__plan small { margin-top: 2px; }
+.account-billing__status { text-align: right; }
+.account-billing__status span { font-size: 12px; font-weight: 900; }
+.account-billing__status span[data-state="active"] { color: var(--lb-success); }
+.account-billing__status span[data-state="locked_recovery"] { color: #9b4b31; }
+.account-billing__status small { margin-top: 3px; }
+.account-billing .billing-redirect { display: grid; justify-items: end; }
+.account-billing .billing-redirect__error { max-width: 240px; text-align: right; }
+.account-billing__coverage { margin: 7px 2px 0; }
 
 .account-section-heading h2 {
   margin-bottom: 2px;
@@ -419,6 +463,20 @@
 }
 
 @media (max-width: 950px) {
+  .account-billing {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .account-billing__status {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .account-billing .billing-redirect {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+
   .account-heading h1 {
     font-size: 40px;
   }
@@ -485,6 +543,31 @@
     width: 52px;
     height: 52px;
     font-size: 21px;
+  }
+
+  .account-billing {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .account-billing__status {
+    grid-column: 2;
+  }
+
+  .account-billing .billing-redirect {
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .account-billing .billing-redirect .product-button {
+    width: 100%;
+  }
+
+  .account-billing .billing-redirect__error {
+    max-width: none;
+    text-align: left;
   }
 
   .account-identity__details {

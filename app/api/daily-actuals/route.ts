@@ -5,6 +5,7 @@ import {
   revenueToCents,
 } from "@/lib/persistence/daily-actual";
 import { createClient } from "@/lib/supabase/server";
+import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,15 @@ export async function POST(request: Request) {
       { error: "Sign in to update this venue." },
       { status: 401 },
     );
+  }
+  if (billingEnforcementEnabled()) {
+    const billing = await loadBillingBusinessContext();
+    if (!billing?.entitlement.canUseProduct) {
+      return NextResponse.json(
+        { error: "Your Little Birdee subscription needs attention." },
+        { status: 402 },
+      );
+    }
   }
 
   const body = await request.json().catch(() => null) as {

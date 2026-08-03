@@ -4,6 +4,7 @@ import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
 import { createClient } from "@/lib/supabase/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
+import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
 import "./app-shell.css";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,13 @@ export default async function ProductLayout({ children }: { children: React.Reac
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims) redirect("/auth/login");
+
+  if (billingEnforcementEnabled()) {
+    const billing = await loadBillingBusinessContext();
+    if (!billing?.entitlement.canUseProduct) {
+      redirect(billing?.entitlement.accessState === "locked_recovery" ? "/billing/locked" : "/billing");
+    }
+  }
 
   const userId = String(data.claims.sub ?? "");
   const [{ data: profile }, cookieStore] = await Promise.all([

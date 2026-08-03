@@ -17,6 +17,7 @@ import {
   isResumableDraft,
   type SetupStepKey,
 } from "@/lib/venues/setup-navigation";
+import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
 
 export const dynamic = "force-dynamic";
 
@@ -206,6 +207,16 @@ export async function GET() {
       currentDate,
       setupDraft,
     }), venue.id, shouldSetCookie);
+  }
+
+  if (billingEnforcementEnabled()) {
+    const billing = await loadBillingBusinessContext();
+    if (!billing?.entitlement.canUseProduct) {
+      return NextResponse.json(
+        { error: "Your Little Birdee subscription needs attention." },
+        { status: 402 },
+      );
+    }
   }
 
   const { data: dayRows, error: dayError } = await supabase
@@ -435,6 +446,25 @@ export async function PUT(request: Request) {
       { error: "Confirm that this venue has no recurring other income." },
       { status: 400 },
     );
+  }
+
+  if (billingEnforcementEnabled()) {
+    const [{ data: existingPlan }, billing] = await Promise.all([
+      supabase
+        .from("weekly_plans")
+        .select("id")
+        .eq("venue_id", venue.id)
+        .eq("status", "locked")
+        .limit(1)
+        .maybeSingle(),
+      loadBillingBusinessContext(),
+    ]);
+    if (existingPlan && !billing?.entitlement.canUseProduct) {
+      return NextResponse.json(
+        { error: "Your Little Birdee subscription needs attention." },
+        { status: 402 },
+      );
+    }
   }
 
   const payload = weekToPlanPayload(
