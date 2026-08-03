@@ -3,8 +3,8 @@ name: Privacy, compliance, billing, and account controls
 status: queued_parallel
 queue_position: alongside_groups_3_and_4
 depends_on: [1]
-base_url: http://localhost:3000
-uat_spec: null
+base_url: https://littlebirdie-gray.vercel.app
+uat_spec: docs/testing/test-cases/GROUP_5_BILLING_USER_ACCEPTANCE_TEST_PROCEDURES_2026-08-03.md
 result_workbook: docs/testing/results/GROUP_5_TEST_RESULTS.xlsx
 requirements_sources:
   - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-5---privacy-compliance-billing-and-account-controls
@@ -21,5 +21,4 @@ deferred_manual: []
 acceptance_policy:
   product_functionality_may_accept_with_approved_deferrals: false
   production_signoff_requires_deferred_checks: true
-notes: Create and approve a UAT specification before execution.
-
+notes: Billing sandbox UAT specification approved for execution on 3 August 2026; external legal, Scott-owned-sandbox, and live-payment gates remain recorded.

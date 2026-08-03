@@ -71,7 +71,7 @@ export function PaymentConfirmation({
     <section className="billing-state__copy">
       <p className="billing-eyebrow">Payment confirmed</p>
       <h1>You’re in.</h1>
-      <p className="billing-state__meta">Birdee has opened {businessName}.</p>
+      <p className="billing-state__meta">Birdee has opened <span className="billing-dynamic-name">{businessName}</span>.</p>
       <ul className="billing-state__steps">
         {["Payment received", "Business opened", "Ready"].map((step) => (
           <li key={step}><CheckCircle weight="fill" aria-hidden />{step}</li>
@@ -80,7 +80,7 @@ export function PaymentConfirmation({
       <ProductButton href={needsSetup ? "/setup" : "/app"} variant="primary">
         {needsSetup ? "Set up my numbers" : "Open my numbers"}
       </ProductButton>
-      <p className="billing-stripe-note">$12 weekly · GST included · {businessName}</p>
+      <p className="billing-stripe-note">$12 weekly · GST included · <span className="billing-dynamic-name">{businessName}</span></p>
     </section>
   );
 }

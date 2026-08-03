@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getBillingConfig } from "@/lib/billing/config";
 import { deriveBillingEntitlement, normalizeStripeSubscriptionStatus } from "@/lib/billing/entitlement";
+import { assertSubscriptionBinding } from "@/lib/billing/webhook-validation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/server";
 
@@ -27,17 +28,44 @@ async function applySubscription(
   options: { paidInvoice?: boolean; paymentFailed?: boolean } = {},
 ) {
   const admin = createAdminClient();
+  const stripe = getStripe();
+  const config = getBillingConfig();
   const businessId = subscription.metadata.little_birdee_business_id;
   if (!businessId) throw new Error("subscription_missing_business_metadata");
 
   const item = subscription.items.data[0];
   if (!item) throw new Error("subscription_missing_price_item");
+  const customerId = stripeId(subscription.customer);
+  const customer = await stripe.customers.retrieve(customerId);
+  const customerBusinessId = customer.deleted
+    ? null
+    : customer.metadata.little_birdee_business_id ?? null;
 
   const { data: existing } = await admin
     .from("business_subscriptions")
-    .select("paid_through, stripe_customer_id, data_state, payment_failed_at")
+    .select("paid_through, stripe_customer_id, stripe_subscription_id, stripe_price_id, status, access_state, data_state, payment_failed_at")
     .eq("business_id", businessId)
     .maybeSingle();
+
+  assertSubscriptionBinding({
+    businessId,
+    customerBusinessId,
+    subscriptionBusinessId: subscription.metadata.little_birdee_business_id ?? null,
+    customerId,
+    subscriptionId: subscription.id,
+    priceId: item.price.id,
+    expectedPriceId: config.stripePriceId,
+    itemCount: subscription.items.data.length,
+    quantity: item.quantity,
+    existing: existing ? {
+      stripeCustomerId: existing.stripe_customer_id,
+      stripeSubscriptionId: existing.stripe_subscription_id,
+      stripePriceId: existing.stripe_price_id,
+      status: existing.status,
+      accessState: existing.access_state,
+      dataState: existing.data_state,
+    } : null,
+  });
 
   const paidThrough = options.paidInvoice
     ? isoFromUnix(item.current_period_end)
@@ -49,13 +77,13 @@ async function applySubscription(
   const entitlement = deriveBillingEntitlement({
     status,
     paidThrough,
-    stripeCustomerId: stripeId(subscription.customer),
+    stripeCustomerId: customerId,
     dataState,
   });
 
   const { error } = await admin.rpc("apply_business_subscription_event", {
     p_business_id: businessId,
-    p_stripe_customer_id: stripeId(subscription.customer),
+    p_stripe_customer_id: customerId,
     p_stripe_subscription_id: subscription.id,
     p_stripe_price_id: item.price.id,
     p_status: status,
@@ -76,7 +104,19 @@ async function applySubscription(
   });
   if (error) throw error;
 
-  if (entitlement.shouldDeleteOperationalData) {
+  const { data: applied, error: appliedError } = await admin
+    .from("business_subscriptions")
+    .select("last_stripe_event_id, access_state, data_state")
+    .eq("business_id", businessId)
+    .single();
+  if (appliedError) throw appliedError;
+
+  if (
+    applied.last_stripe_event_id === event.id
+    && applied.access_state === "ended"
+    && applied.data_state !== "deleted"
+    && entitlement.shouldDeleteOperationalData
+  ) {
     const { error: deletionError } = await admin.rpc("delete_business_operational_data", {
       p_business_id: businessId,
       p_reason: `stripe_${status}`,
@@ -102,9 +142,11 @@ async function processEvent(event: Stripe.Event) {
     }
     case "customer.subscription.created":
     case "customer.subscription.updated":
-    case "customer.subscription.deleted":
-      await applySubscription(event.data.object, event);
+    case "customer.subscription.deleted": {
+      const subscription = await stripe.subscriptions.retrieve(event.data.object.id);
+      await applySubscription(subscription, event);
       return;
+    }
     case "invoice.paid":
     case "invoice.payment_failed": {
       const subscriptionId = subscriptionIdFromInvoice(event.data.object);

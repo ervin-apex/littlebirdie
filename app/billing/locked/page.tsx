@@ -40,7 +40,7 @@ export default async function BillingLockedPage({
               Your last payment didn’t go through. Update it to reopen your numbers.
             </p>
             <p className="billing-recovery__notice">
-              {context.businessName}
+              <span className="billing-dynamic-name">{context.businessName}</span>
               {context.projection?.paidThrough
                 ? ` · Access ended ${formatPaidThrough(context.projection.paidThrough)}`
                 : ""}
