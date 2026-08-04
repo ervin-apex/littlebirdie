@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CheckCircle, ShieldCheck, Storefront } from "@phosphor-icons/react/dist/ssr";
 import { redirect } from "next/navigation";
 import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
@@ -18,12 +18,14 @@ export default async function BillingPage({
   const context = await loadBillingBusinessContext();
   if (!context) redirect("/auth/login");
   const { checkout, preview } = await searchParams;
-  const reviewMode = !billingEnforcementEnabled() && preview === "offer";
+  const billingPreviewEnabled = !billingEnforcementEnabled();
+  const reviewMode = billingPreviewEnabled && (preview === "offer" || preview === "cancelled");
+  const checkoutCancelled = checkout === "cancelled" || (billingPreviewEnabled && preview === "cancelled");
   if (!reviewMode && context.entitlement.canUseProduct) redirect("/app");
   if (!reviewMode && context.entitlement.accessState === "locked_recovery") redirect("/billing/locked");
 
   return (
-    <div className="billing-page billing-page--offer">
+    <div className={`billing-page billing-page--offer${checkoutCancelled ? " billing-page--checkout-cancelled" : ""}`}>
       <BillingWave />
       <header className="billing-header">
         <Link href="/app" className="billing-brand">
@@ -31,29 +33,51 @@ export default async function BillingPage({
           <img src={assetPath(BRAND_LOGO_PATH)} alt="" />
           <span>Little <strong>Birdee</strong></span>
         </Link>
-        <span className="billing-header__business">{context.businessName}</span>
+        <Link
+          href="/account"
+          className="billing-header__business"
+          aria-label={`Open account for ${context.businessName}`}
+        >
+          <Storefront weight="bold" aria-hidden />
+          <span>{context.businessName}</span>
+          <CaretDown weight="bold" aria-hidden />
+        </Link>
       </header>
 
       <main className="billing-layout">
         <section className="billing-content billing-offer__copy">
-          <p className="billing-eyebrow">Setup complete</p>
-          <h1>Your Birdee is ready.</h1>
+          <p className="billing-eyebrow">{checkoutCancelled ? "Checkout paused" : "Setup complete"}</p>
+          <h1>{checkoutCancelled ? "Nothing was charged." : "Your Birdee is ready."}</h1>
           <p className="billing-lede">
-            Keep every venue on track with one simple weekly subscription.
+            {checkoutCancelled
+              ? "Your setup is still here. Start your Little Birdee whenever you are ready."
+              : "Keep every venue on track with one simple weekly subscription."}
           </p>
-          <div className="billing-price"><strong>$12</strong><span>per week</span></div>
+          {checkoutCancelled && (
+            <div className="billing-cancelled" role="status">
+              <ShieldCheck weight="fill" aria-hidden />
+              <div>
+                <strong>Your numbers are safe.</strong>
+                <span>Checkout closed before payment, so your setup has not changed.</span>
+              </div>
+            </div>
+          )}
+          <div className="billing-price-card">
+            <div className="billing-price"><strong>$12</strong><span>per week</span></div>
+            <div className="billing-price-card__gst">
+              <CheckCircle weight="fill" aria-hidden />
+              <span>GST included</span>
+            </div>
+          </div>
           <ul className="billing-inclusions">
-            {["GST included", "Your whole business", "Every venue", "Cancel anytime"].map((item) => (
+            {["Your whole business", "Every venue", "Cancel anytime"].map((item) => (
               <li key={item}><CheckCircle weight="fill" aria-hidden />{item}</li>
             ))}
           </ul>
-          {checkout === "cancelled" && (
-            <p className="billing-cancelled">No charge was made. You can continue whenever you are ready.</p>
-          )}
           <div className="billing-action-row">
             {context.canManage ? (
               <BillingRedirectButton endpoint="/api/stripe/checkout">
-                Start my Little Birdee
+                {checkoutCancelled ? "Return to secure checkout" : "Start my Little Birdee"}
               </BillingRedirectButton>
             ) : (
               <p>Ask a business owner or admin to activate Little Birdee.</p>
@@ -65,20 +89,38 @@ export default async function BillingPage({
           <p className="billing-stripe-note">Secure checkout by Stripe · No free trial</p>
         </section>
 
-        <aside className="billing-stage billing-offer__stage" aria-label="Your Little Birdee membership">
-          <div className="billing-membership-card">
-            <span>One weekly membership</span>
-            <strong>{context.businessName}</strong>
+        <aside
+          className="billing-stage billing-offer__stage"
+          aria-label={`One weekly membership for ${context.businessName}. Every venue. One simple plan.`}
+        >
+          <div className="billing-offer-art">
+            <Image
+              src={assetPath("/brand/birdee-billing-membership-v2.png")}
+              width={997}
+              height={1578}
+              alt=""
+              className="billing-offer-art__image billing-offer-art__image--desktop"
+              priority
+            />
+            <Image
+              src={assetPath("/brand/birdee-billing-membership-compact-v3.png")}
+              width={1536}
+              height={1024}
+              alt=""
+              className="billing-offer-art__image billing-offer-art__image--compact"
+              priority
+            />
+            <div className="billing-offer-art__copy billing-offer-art__copy--desktop" aria-hidden="true">
+              <span>One weekly membership</span>
+              <strong>{context.businessName}</strong>
+              <p>Every venue. One simple plan.</p>
+            </div>
+            <div className="billing-offer-art__copy billing-offer-art__copy--compact" aria-hidden="true">
+              <span>One weekly membership</span>
+              <strong>{context.businessName}</strong>
+              <p>Every venue. One simple plan.</p>
+            </div>
           </div>
-          <Image
-            src={assetPath("/brand/birdee-billing-offer-v1.png")}
-            width={1348}
-            height={1167}
-            alt="Birdee holding the key to the business membership"
-            className="billing-offer__birdee"
-            priority
-          />
-          {reviewMode && <span className="billing-review-chip">UI review · Offer</span>}
         </aside>
       </main>
     </div>

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CaretDown, CreditCard, ShieldCheck, Storefront } from "@phosphor-icons/react/dist/ssr";
 import { redirect } from "next/navigation";
 import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
@@ -30,43 +31,65 @@ export default async function BillingLockedPage({
           <img src={assetPath(BRAND_LOGO_PATH)} alt="" />
           <span>Little <strong>Birdee</strong></span>
         </Link>
-        <span className="billing-header__business">{context.businessName}</span>
+        <Link
+          href="/account"
+          className="billing-header__business"
+          aria-label={`Open account for ${context.businessName}`}
+        >
+          <Storefront weight="bold" aria-hidden />
+          <span>{context.businessName}</span>
+          <CaretDown weight="bold" aria-hidden />
+        </Link>
       </header>
       <main className="billing-layout billing-recovery">
-          <section className="billing-content billing-state__copy">
+          <section className="billing-content billing-state__copy billing-recovery__copy">
             <p className="billing-eyebrow">Payment needs attention</p>
-            <h1>Let’s get Birdee flying again.</h1>
+            <h1>Let&rsquo;s get Birdee flying again.</h1>
             <p className="billing-state__meta">
-              Your last payment didn’t go through. Update it to reopen your numbers.
+              Your last payment didn&rsquo;t go through. Update it to reopen your numbers.
             </p>
-            <p className="billing-recovery__notice">
-              <span className="billing-dynamic-name">{context.businessName}</span>
-              {context.projection?.paidThrough
-                ? ` · Access ended ${formatPaidThrough(context.projection.paidThrough)}`
-                : ""}
-              <br />Your business is locked while Stripe retries the payment.
-            </p>
-            <div className="billing-action-row">
+
+            <div className="billing-recovery__status" role="status">
+              <div className="billing-recovery__status-header">
+                <span className="billing-recovery__status-icon" aria-hidden>
+                  <CreditCard weight="fill" />
+                </span>
+                <strong className="billing-dynamic-name">{context.businessName}</strong>
+                <span className="billing-recovery__badge">Access paused</span>
+              </div>
+              <div className="billing-recovery__status-copy">
+                <strong>Your numbers are safe.</strong>
+                <span>Update your payment method and Stripe will retry the payment.</span>
+                {context.projection?.paidThrough && (
+                  <small>Paid access ended {formatPaidThrough(context.projection.paidThrough)}.</small>
+                )}
+              </div>
+            </div>
+
+            <div className="billing-action-row billing-recovery__actions">
               <BillingRedirectButton endpoint="/api/stripe/portal">Fix my payment</BillingRedirectButton>
               <form action="/auth/logout" method="post">
                 <button className="billing-quiet-link" type="submit">Log out</button>
               </form>
             </div>
-            <p className="billing-stripe-note">Need help? Contact Little Birdee.</p>
+            <p className="billing-recovery__reassurance">
+              <ShieldCheck weight="fill" aria-hidden />
+              Nothing will be deleted while you fix this.
+            </p>
           </section>
-          <aside className="billing-stage billing-state__stage">
+          <aside className="billing-stage billing-state__stage billing-recovery__stage">
             <div className="billing-stage__message">
               <span>Nothing is lost</span>
-              <strong>We can fix this.</strong>
+              <strong>Your numbers are safe.</strong>
             </div>
             <Image
-              src={assetPath("/brand/birdee-billing-recovery-v1.png")}
-              width={1254}
-              height={1254}
-              alt="Birdee ready with a repair kit"
+              src={assetPath("/brand/birdee-billing-recovery-v2.png")}
+              width={1536}
+              height={1024}
+              alt=""
+              className="billing-recovery__illustration"
               priority
             />
-            {reviewMode && <span className="billing-review-chip">UI review · Recovery</span>}
           </aside>
       </main>
     </div>

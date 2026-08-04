@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { CaretDown, Storefront } from "@phosphor-icons/react/dist/ssr";
 import { redirect } from "next/navigation";
 import { PaymentConfirmation } from "./PaymentConfirmation";
 import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
@@ -17,7 +17,10 @@ export default async function BillingConfirmPage({
   const context = await loadBillingBusinessContext();
   if (!context) redirect("/auth/login");
   const { preview } = await searchParams;
-  const reviewMode = !billingEnforcementEnabled() && preview === "confirmed";
+  const previewState = !billingEnforcementEnabled()
+    && (preview === "checking" || preview === "delayed" || preview === "confirmed")
+    ? preview
+    : null;
 
   return (
     <div className="billing-page billing-page--confirmed">
@@ -28,30 +31,22 @@ export default async function BillingConfirmPage({
           <img src={assetPath(BRAND_LOGO_PATH)} alt="" />
           <span>Little <strong>Birdee</strong></span>
         </Link>
-        <span className="billing-header__business">{context.businessName}</span>
+        <Link
+          href="/account"
+          className="billing-header__business"
+          aria-label={`Open account for ${context.businessName}`}
+        >
+          <Storefront weight="bold" aria-hidden />
+          <span>{context.businessName}</span>
+          <CaretDown weight="bold" aria-hidden />
+        </Link>
       </header>
       <main className="billing-layout billing-confirm">
-        <div className="billing-content">
-          <PaymentConfirmation
-            businessName={context.businessName}
-            needsSetup={context.projection?.dataState === "deleted"}
-            previewConfirmed={reviewMode}
-          />
-        </div>
-        <aside className="billing-stage billing-state__stage">
-          <div className="billing-stage__message">
-            <span>Payment confirmed</span>
-            <strong>All sorted.</strong>
-          </div>
-          <Image
-            src={assetPath("/brand/birdee-billing-confirmed-v1.png")}
-            width={1254}
-            height={1254}
-            alt="Birdee celebrating a confirmed payment"
-            priority
-          />
-          {reviewMode && <span className="billing-review-chip">UI review · Confirmed</span>}
-        </aside>
+        <PaymentConfirmation
+          businessName={context.businessName}
+          needsSetup={context.projection?.dataState === "deleted"}
+          previewState={previewState}
+        />
       </main>
     </div>
   );
