@@ -2,7 +2,12 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { deriveBillingEntitlement } from "./entitlement";
-import type { BillingProjection, StripeSubscriptionStatus } from "./types";
+import type {
+  BillingProjection,
+  ComplimentaryGrantProjection,
+  ComplimentaryGrantType,
+  StripeSubscriptionStatus,
+} from "./types";
 
 const VENUE_COOKIE = "little-birdee-venue";
 
@@ -23,6 +28,16 @@ type SubscriptionRow = {
   ended_at: string | null;
 };
 
+type ComplimentaryGrantRow = {
+  id: string;
+  business_id: string;
+  grant_type: ComplimentaryGrantType;
+  starts_at: string;
+  expires_at: string | null;
+  retention_until: string | null;
+  revoked_at: string | null;
+};
+
 export type BillingBusinessContext = {
   userId: string;
   userEmail: string | null;
@@ -31,6 +46,7 @@ export type BillingBusinessContext = {
   role: string;
   canManage: boolean;
   projection: BillingProjection | null;
+  complimentaryGrant: ComplimentaryGrantProjection | null;
   entitlement: ReturnType<typeof deriveBillingEntitlement>;
 };
 
@@ -50,6 +66,18 @@ function mapProjection(row: SubscriptionRow): BillingProjection {
     paymentFailedAt: row.payment_failed_at,
     canceledAt: row.canceled_at,
     endedAt: row.ended_at,
+  };
+}
+
+function mapComplimentaryGrant(row: ComplimentaryGrantRow): ComplimentaryGrantProjection {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    grantType: row.grant_type,
+    startsAt: row.starts_at,
+    expiresAt: row.expires_at,
+    retentionUntil: row.retention_until,
+    revokedAt: row.revoked_at,
   };
 }
 export async function loadBillingBusinessContext(): Promise<BillingBusinessContext | null> {
@@ -90,13 +118,25 @@ export async function loadBillingBusinessContext(): Promise<BillingBusinessConte
 
   businessId = membership.business_id;
   businessName = membership.businesses?.trading_name?.trim() || businessName;
-  const { data: subscriptionRow } = await supabase
-    .from("business_subscriptions")
-    .select("business_id, stripe_customer_id, stripe_subscription_id, stripe_price_id, status, access_state, data_state, paid_through, current_period_start, current_period_end, cancel_at_period_end, payment_failed_at, canceled_at, ended_at")
-    .eq("business_id", businessId)
-    .maybeSingle();
+  const [{ data: subscriptionRow }, { data: grantRow }] = await Promise.all([
+    supabase
+      .from("business_subscriptions")
+      .select("business_id, stripe_customer_id, stripe_subscription_id, stripe_price_id, status, access_state, data_state, paid_through, current_period_start, current_period_end, cancel_at_period_end, payment_failed_at, canceled_at, ended_at")
+      .eq("business_id", businessId)
+      .maybeSingle(),
+    supabase
+      .from("business_access_grants")
+      .select("id, business_id, grant_type, starts_at, expires_at, retention_until, revoked_at")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
   const projection = subscriptionRow
     ? mapProjection(subscriptionRow as SubscriptionRow)
+    : null;
+  const complimentaryGrant = grantRow
+    ? mapComplimentaryGrant(grantRow as ComplimentaryGrantRow)
     : null;
 
   return {
@@ -107,7 +147,8 @@ export async function loadBillingBusinessContext(): Promise<BillingBusinessConte
     role: membership.role,
     canManage: membership.role === "owner" || membership.role === "admin",
     projection,
-    entitlement: deriveBillingEntitlement(projection),
+    complimentaryGrant,
+    entitlement: deriveBillingEntitlement(projection, complimentaryGrant),
   };
 }
 
@@ -124,3 +165,5 @@ export function formatPaidThrough(value: string | null) {
     timeZone: "Australia/Sydney",
   }).format(new Date(value));
 }
+
+export const formatAccessDate = formatPaidThrough;

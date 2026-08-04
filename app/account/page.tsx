@@ -6,6 +6,7 @@ import {
   CheckCircle,
   Clock,
   CreditCard,
+  Gift,
   Key,
   Storefront,
   WarningCircle,
@@ -17,7 +18,7 @@ import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { ProductButton } from "@/components/ProductButton";
 import { assetPath } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
-import { formatPaidThrough, loadBillingBusinessContext } from "@/lib/billing/server";
+import { formatAccessDate, formatPaidThrough, loadBillingBusinessContext } from "@/lib/billing/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
 import { setupStepsRemaining } from "@/lib/venues/setup-navigation";
 import { switchVenue } from "./actions";
@@ -94,13 +95,42 @@ export default async function AccountPage({
     : 0;
   const billingContext = await loadBillingBusinessContext();
   const billing = billingContext?.projection;
+  const complimentaryGrant = billingContext?.complimentaryGrant;
   const billingEntitlement = billingContext?.entitlement;
-  const billingStatus = billingEntitlement?.canUseProduct
-    ? billing?.cancelAtPeriodEnd ? "Ending" : "Active"
+  const hasComplimentaryAccess = billingEntitlement?.accessSource === "complimentary";
+  const billingStatus = hasComplimentaryAccess
+    ? "Complimentary"
+    : billingEntitlement?.canUseProduct
+      ? billing?.cancelAtPeriodEnd ? "Ending" : "Active"
     : billingEntitlement?.accessState === "locked_recovery"
       ? "Payment needed"
+      : billingEntitlement?.accessState === "locked_conversion"
+        ? "Beta ended"
       : "Not active";
   const billingDate = formatPaidThrough(billing?.paidThrough ?? null);
+  const grantExpiryDate = formatAccessDate(complimentaryGrant?.expiresAt ?? null);
+  const retentionDate = formatAccessDate(complimentaryGrant?.retentionUntil ?? null);
+  const planName = hasComplimentaryAccess
+    ? complimentaryGrant?.grantType === "permanent"
+      ? "Little Birdee complimentary"
+      : "Little Birdee beta access"
+    : "Little Birdee weekly";
+  const planPrice = hasComplimentaryAccess
+    ? complimentaryGrant?.grantType === "permanent"
+      ? "All access, no expiry"
+      : "One month complimentary"
+    : "$12 / week";
+  const planMeta = hasComplimentaryAccess
+    ? "Covers your whole business · Every venue"
+    : "GST included · Covers your whole business";
+  const canShowBillingAction = billingContext?.canManage && !hasComplimentaryAccess;
+  const shouldOpenBillingPortal = Boolean(
+    billing?.stripeCustomerId
+    && (
+      billingEntitlement?.accessState === "active"
+      || billingEntitlement?.accessState === "locked_recovery"
+    ),
+  );
 
   return (
     <AppShell
@@ -177,30 +207,38 @@ export default async function AccountPage({
           <h2 id="billing-heading">Billing</h2>
           <div className="account-billing">
             <div className="account-billing__icon" aria-hidden>
-              <CreditCard weight="duotone" />
+              {hasComplimentaryAccess ? <Gift weight="duotone" /> : <CreditCard weight="duotone" />}
             </div>
             <div className="account-billing__plan">
-              <strong>Little Birdee weekly</strong>
-              <span>$12 / week</span>
-              <small>GST included · Covers your whole business</small>
+              <strong>{planName}</strong>
+              <span>{planPrice}</span>
+              <small>{planMeta}</small>
             </div>
             <div className="account-billing__status">
               <span data-state={billingEntitlement?.accessState ?? "pending"}>{billingStatus}</span>
-              {billingDate && (
+              {hasComplimentaryAccess && complimentaryGrant?.grantType === "permanent" ? (
+                <small>Provided by Little Birdee</small>
+              ) : hasComplimentaryAccess && grantExpiryDate ? (
+                <small>Access through {grantExpiryDate}</small>
+              ) : billingEntitlement?.accessState === "locked_conversion" && retentionDate ? (
+                <small>Numbers kept until {retentionDate}</small>
+              ) : billingDate ? (
                 <small>{billing?.cancelAtPeriodEnd ? "Access until" : "Paid through"} {billingDate}</small>
-              )}
+              ) : null}
             </div>
-            {billingContext?.canManage && (
+            {canShowBillingAction && (
               <BillingRedirectButton
-                endpoint={billing?.stripeCustomerId ? "/api/stripe/portal" : "/api/stripe/checkout"}
+                endpoint={shouldOpenBillingPortal ? "/api/stripe/portal" : "/api/stripe/checkout"}
                 variant="secondary"
               >
-                {billing?.stripeCustomerId ? "Manage billing" : "Start subscription"}
+                {shouldOpenBillingPortal ? "Manage billing" : "Start subscription"}
               </BillingRedirectButton>
             )}
           </div>
           <p className="account-billing__coverage">
-            Every current and future venue in {billingContext?.businessName ?? "your business"} is included.
+            {billingEntitlement?.accessState === "locked_conversion"
+              ? "Subscribe during the 30-day conversion window to reopen every venue with its numbers unchanged."
+              : `Every current and future venue in ${billingContext?.businessName ?? "your business"} is included.`}
           </p>
         </section>
 

@@ -147,6 +147,7 @@
 .account-billing__status span { font-size: 12px; font-weight: 900; }
 .account-billing__status span[data-state="active"] { color: var(--lb-success); }
 .account-billing__status span[data-state="locked_recovery"] { color: #9b4b31; }
+.account-billing__status span[data-state="locked_conversion"] { color: #9b4b31; }
 .account-billing__status small { margin-top: 3px; }
 .account-billing .billing-redirect {
   display: grid;

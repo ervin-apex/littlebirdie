@@ -145,6 +145,23 @@
   gap: 12px;
 }
 
+.auth-gateway .auth-field-pair {
+  grid-template-columns: 1fr;
+}
+
+.auth-gateway .auth-form {
+  gap: 13px;
+}
+
+.auth-gateway .auth-form input,
+.auth-gateway .auth-google-button {
+  min-height: 50px;
+}
+
+.auth-gateway .auth-links {
+  margin-top: 18px;
+}
+
 .auth-form label {
   display: grid;
   gap: 6px;
@@ -200,6 +217,13 @@
   margin-top: 16px;
   color: var(--lb-muted);
   font-size: 13px;
+}
+
+.auth-links > span {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 5px;
 }
 
 .auth-links a,
@@ -283,6 +307,18 @@
   .auth-card {
     border-radius: 18px;
     padding: 24px 20px;
+  }
+
+  .auth-gateway .auth-card-heading {
+    margin-bottom: 15px;
+  }
+
+  .auth-gateway .auth-card-heading p {
+    font-size: 14px;
+  }
+
+  .auth-gateway .auth-divider {
+    margin-block: 10px;
   }
 
   .auth-links > a,

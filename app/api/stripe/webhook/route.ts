@@ -44,11 +44,20 @@ async function applySubscription(
     ? null
     : customer.metadata.little_birdee_business_id ?? null;
 
-  const { data: existing } = await admin
-    .from("business_subscriptions")
-    .select("paid_through, stripe_customer_id, stripe_subscription_id, stripe_price_id, status, access_state, data_state, payment_failed_at")
-    .eq("business_id", businessId)
-    .maybeSingle();
+  const [{ data: existing }, { data: grantRow }] = await Promise.all([
+    admin
+      .from("business_subscriptions")
+      .select("paid_through, stripe_customer_id, stripe_subscription_id, stripe_price_id, status, access_state, data_state, payment_failed_at")
+      .eq("business_id", businessId)
+      .maybeSingle(),
+    admin
+      .from("business_access_grants")
+      .select("grant_type, starts_at, expires_at, retention_until, revoked_at")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   assertSubscriptionBinding({
     businessId,
@@ -82,7 +91,13 @@ async function applySubscription(
     paidThrough,
     stripeCustomerId: customerId,
     dataState,
-  });
+  }, grantRow ? {
+    grantType: grantRow.grant_type,
+    startsAt: grantRow.starts_at,
+    expiresAt: grantRow.expires_at,
+    retentionUntil: grantRow.retention_until,
+    revokedAt: grantRow.revoked_at,
+  } : null);
 
   const { error } = await admin.rpc("apply_business_subscription_event", {
     p_business_id: businessId,

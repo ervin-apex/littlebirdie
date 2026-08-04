@@ -79,7 +79,7 @@ export function LoginForm({
       <div className="auth-links">
         <Link href="/auth/forgot-password">Forgot password?</Link>
         <span>
-          New here?{" "}
+          New here? {" "}
           {onSwitchToSignup ? (
             <button type="button" className="auth-inline-switch" onClick={onSwitchToSignup}>
               Create an account

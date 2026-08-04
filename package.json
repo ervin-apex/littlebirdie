@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "access:grant": "node --env-file=.env.local scripts/manage-complimentary-access.mjs grant",
+    "access:revoke": "node --env-file=.env.local scripts/manage-complimentary-access.mjs revoke"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

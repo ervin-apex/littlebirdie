@@ -17,9 +17,24 @@ export type BillingAccessState =
   | "pending"
   | "active"
   | "locked_recovery"
+  | "locked_conversion"
   | "ended";
 
 export type BillingDataState = "present" | "deletion_pending" | "deleted";
+
+export type ComplimentaryGrantType = "permanent" | "beta";
+
+export type ComplimentaryGrantProjection = {
+  id: string;
+  businessId: string;
+  grantType: ComplimentaryGrantType;
+  startsAt: string;
+  expiresAt: string | null;
+  retentionUntil: string | null;
+  revokedAt: string | null;
+};
+
+export type BillingAccessSource = "stripe" | "complimentary" | null;
 
 export type BillingProjection = {
   businessId: string;

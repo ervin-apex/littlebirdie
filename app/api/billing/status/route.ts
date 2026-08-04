@@ -20,6 +20,13 @@ export async function GET() {
       currentPeriodEnd: context.projection.currentPeriodEnd,
       cancelAtPeriodEnd: context.projection.cancelAtPeriodEnd,
     } : null,
+    complimentaryAccess: context.complimentaryGrant ? {
+      type: context.complimentaryGrant.grantType,
+      startsAt: context.complimentaryGrant.startsAt,
+      expiresAt: context.complimentaryGrant.expiresAt,
+      retentionUntil: context.complimentaryGrant.retentionUntil,
+      revokedAt: context.complimentaryGrant.revokedAt,
+    } : null,
     entitlement: context.entitlement,
   });
 }

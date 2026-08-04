@@ -4,7 +4,7 @@ import { CaretDown, CheckCircle, ShieldCheck, Storefront } from "@phosphor-icons
 import { redirect } from "next/navigation";
 import { BillingRedirectButton } from "@/components/BillingRedirectButton";
 import { assetPath, BRAND_LOGO_PATH } from "@/lib/site";
-import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
+import { billingEnforcementEnabled, formatAccessDate, loadBillingBusinessContext } from "@/lib/billing/server";
 import { BillingWave } from "./BillingWave";
 import "./billing.css";
 
@@ -19,8 +19,12 @@ export default async function BillingPage({
   if (!context) redirect("/auth/login");
   const { checkout, preview } = await searchParams;
   const billingPreviewEnabled = !billingEnforcementEnabled();
-  const reviewMode = billingPreviewEnabled && (preview === "offer" || preview === "cancelled");
+  const reviewMode = billingPreviewEnabled
+    && (preview === "offer" || preview === "cancelled" || preview === "conversion");
   const checkoutCancelled = checkout === "cancelled" || (billingPreviewEnabled && preview === "cancelled");
+  const conversionLocked = context.entitlement.accessState === "locked_conversion"
+    || (billingPreviewEnabled && preview === "conversion");
+  const retentionDate = formatAccessDate(context.complimentaryGrant?.retentionUntil ?? null);
   if (!reviewMode && context.entitlement.canUseProduct) redirect("/app");
   if (!reviewMode && context.entitlement.accessState === "locked_recovery") redirect("/billing/locked");
 
@@ -46,19 +50,31 @@ export default async function BillingPage({
 
       <main className="billing-layout">
         <section className="billing-content billing-offer__copy">
-          <p className="billing-eyebrow">{checkoutCancelled ? "Checkout paused" : "Setup complete"}</p>
-          <h1>{checkoutCancelled ? "Nothing was charged." : "Your Birdee is ready."}</h1>
+          <p className="billing-eyebrow">
+            {checkoutCancelled ? "Checkout paused" : conversionLocked ? "Beta month complete" : "Setup complete"}
+          </p>
+          <h1>
+            {checkoutCancelled ? "Nothing was charged." : conversionLocked ? "Keep Birdee flying." : "Your Birdee is ready."}
+          </h1>
           <p className="billing-lede">
             {checkoutCancelled
               ? "Your setup is still here. Start your Little Birdee whenever you are ready."
+              : conversionLocked
+                ? "Subscribe to reopen every venue with the numbers you already entered."
               : "Keep every venue on track with one simple weekly subscription."}
           </p>
-          {checkoutCancelled && (
+          {(checkoutCancelled || conversionLocked) && (
             <div className="billing-cancelled" role="status">
               <ShieldCheck weight="fill" aria-hidden />
               <div>
                 <strong>Your numbers are safe.</strong>
-                <span>Checkout closed before payment, so your setup has not changed.</span>
+                <span>
+                  {checkoutCancelled
+                    ? "Checkout closed before payment, so your setup has not changed."
+                    : retentionDate
+                      ? `Subscribe by ${retentionDate} to restore access without losing your work.`
+                      : "Subscribe during the conversion window to restore access without losing your work."}
+                </span>
               </div>
             </div>
           )}
@@ -77,7 +93,11 @@ export default async function BillingPage({
           <div className="billing-action-row">
             {context.canManage ? (
               <BillingRedirectButton endpoint="/api/stripe/checkout">
-                {checkoutCancelled ? "Return to secure checkout" : "Start my Little Birdee"}
+                {checkoutCancelled
+                  ? "Return to secure checkout"
+                  : conversionLocked
+                    ? "Continue for $12 a week"
+                    : "Start my Little Birdee"}
               </BillingRedirectButton>
             ) : (
               <p>Ask a business owner or admin to activate Little Birdee.</p>
