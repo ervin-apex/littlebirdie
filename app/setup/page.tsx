@@ -198,13 +198,19 @@ export default function SetupPage() {
         setRequiresFirstPlan(!state.hasPlan);
         setHasVenueRecord(true);
         setSavedCompletedSteps(
-          setupDraft?.completedSteps ?? legacyCompletedSteps,
+          isWeeklyPlanEdit
+            ? 0
+            : setupDraft?.completedSteps ?? legacyCompletedSteps,
         );
-        setStepIndex(resumeSetupStepIndex(
-          steps.map((item) => item.key),
-          setupDraft?.nextStep ??
-            (legacyCompletedSteps > 0 ? "revenue" : undefined),
-        ));
+        setStepIndex(
+          isWeeklyPlanEdit
+            ? 0
+            : resumeSetupStepIndex(
+                steps.map((item) => item.key),
+                setupDraft?.nextStep ??
+                  (legacyCompletedSteps > 0 ? "revenue" : undefined),
+              ),
+        );
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -219,7 +225,7 @@ export default function SetupPage() {
     return () => {
       active = false;
     };
-  }, [isNewVenueFlow, steps]);
+  }, [isNewVenueFlow, isWeeklyPlanEdit, steps]);
 
   useEffect(() => {
     if (!helpOpen) return;

@@ -60,6 +60,14 @@ import {
 } from "@/lib/profit";
 import { loadVenueState } from "@/lib/persistence/venue-state";
 import {
+  dashboardAttentionPrompt,
+  dashboardPromptStorageKey,
+  formatLongDate,
+  formatWeekRange,
+  type DashboardAttentionPrompt,
+  type DashboardAttentionTask,
+} from "@/lib/dashboard/attention";
+import {
   dayIndexForDate,
   isoDateAtIndex,
   missingPastDailyRevenueDates,
@@ -80,12 +88,7 @@ type Driver = "revenue" | "cogs" | "wages" | "fixed";
 type DriverMode = "dollar" | "percent";
 type Adjustment = { value: number; mode: DriverMode };
 type Adjustments = Record<Driver, Adjustment>;
-type DailyCheckInTask = {
-  date: string;
-  dayIndex: number;
-  dayName: string;
-  missingCount: number;
-};
+type DailyCheckInTask = DashboardAttentionTask;
 
 const CHAPTERS: { key: Chapter; label: string }[] = [
   { key: "revenue", label: "Revenue" },
@@ -193,6 +196,7 @@ function DashboardInner() {
   const [screen, setScreen] = useState<Screen>(() => screenFromParam(requestedScreen));
   const [week, setWeek] = useState<Week>(DEFAULTS);
   const [weekStart, setWeekStart] = useState("2026-06-22");
+  const [venueId, setVenueId] = useState("");
   const [actuals, setActuals] = useState<WeekActuals>(() => forecastActuals());
   const [currentDate, setCurrentDate] = useState("");
   const [ready, setReady] = useState(false);
@@ -214,6 +218,7 @@ function DashboardInner() {
         }
         setWeek(state.week);
         setWeekStart(state.weekStart ?? "2026-06-22");
+        setVenueId(state.venueId);
         setActuals(state.actuals ?? forecastActuals());
         setCurrentDate(state.currentDate);
         setReady(true);
@@ -611,6 +616,9 @@ function DashboardInner() {
             dailyCheckInTask={dailyCheckInTask}
             incompleteDayTask={incompleteDayTask}
             checkInDatesByDay={checkInDatesByDay}
+            venueId={venueId}
+            weekStart={weekStart}
+            currentDate={currentDate}
             onCheckInDay={(date) =>
               router.push(`/app/check-in?date=${encodeURIComponent(date)}`)}
           />
@@ -670,6 +678,9 @@ function DashboardView({
   dailyCheckInTask,
   incompleteDayTask,
   checkInDatesByDay,
+  venueId,
+  weekStart,
+  currentDate,
   onCheckInDay,
 }: {
   viewTitle: string;
@@ -700,14 +711,67 @@ function DashboardView({
   dailyCheckInTask: DailyCheckInTask | null;
   incompleteDayTask: Pick<DailyCheckInTask, "date" | "dayName"> | null;
   checkInDatesByDay: Record<number, string>;
+  venueId: string;
+  weekStart: string;
+  currentDate: string;
   onCheckInDay: (date: string) => void;
 }) {
   const reduceMotion = useReducedMotion();
   const [dayPreviewOpen, setDayPreviewOpen] = useState(false);
+  const [attentionPrompt, setAttentionPrompt] = useState<DashboardAttentionPrompt | null>(null);
   const yesterdayRow = periodKey === "yesterday" && selectedRow?.actual && selectedRow.variance
     ? selectedRow
     : null;
   const answerSupport = chapterContent.support;
+
+  useEffect(() => {
+    if (!venueId || !weekStart || !currentDate || periodKey !== "this-week") {
+      setAttentionPrompt(null);
+      return;
+    }
+
+    const nextPrompt = dashboardAttentionPrompt({
+      venueId,
+      weekStart,
+      currentDate,
+      periodKey,
+      dailyTask: dailyCheckInTask,
+    });
+
+    if (!nextPrompt) {
+      setAttentionPrompt(null);
+      return;
+    }
+
+    const foreverKey = dashboardPromptStorageKey("hidden", nextPrompt.signature);
+    const sessionKey = dashboardPromptStorageKey("later", nextPrompt.signature);
+    if (
+      window.localStorage.getItem(foreverKey) === "true" ||
+      window.sessionStorage.getItem(sessionKey) === "true"
+    ) {
+      setAttentionPrompt(null);
+      return;
+    }
+    setAttentionPrompt(nextPrompt);
+  }, [currentDate, dailyCheckInTask, periodKey, venueId, weekStart]);
+
+  useEffect(() => {
+    if (!attentionPrompt) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [attentionPrompt]);
+
+  const dismissAttentionPrompt = (forever: boolean) => {
+    if (!attentionPrompt) return;
+    const scope = forever ? "hidden" : "later";
+    const key = dashboardPromptStorageKey(scope, attentionPrompt.signature);
+    const storage = forever ? window.localStorage : window.sessionStorage;
+    storage.setItem(key, "true");
+    setAttentionPrompt(null);
+  };
 
   const selectDay = (index: number) => {
     onSelectDay(index);
@@ -938,7 +1002,162 @@ function DashboardView({
         />,
         document.body,
       )}
+
+      {attentionPrompt && typeof document !== "undefined" && createPortal(
+        <DashboardAttentionOverlay
+          prompt={attentionPrompt}
+          onRemindLater={() => dismissAttentionPrompt(false)}
+          onHide={() => dismissAttentionPrompt(true)}
+          onDailyCheckIn={(date) => {
+            setAttentionPrompt(null);
+            onCheckInDay(date);
+          }}
+        />,
+        document.body,
+      )}
     </div>
+  );
+}
+
+function DashboardAttentionOverlay({
+  prompt,
+  onRemindLater,
+  onHide,
+  onDailyCheckIn,
+}: {
+  prompt: DashboardAttentionPrompt;
+  onRemindLater: () => void;
+  onHide: () => void;
+  onDailyCheckIn: (date: string) => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  const weekly = prompt.kind === "weekly";
+  const date = weekly ? prompt.targetWeekStart : prompt.task.date;
+  const title = weekly
+    ? "New week, fresh numbers."
+    : `How did ${prompt.task.dayName} go?`;
+  const support = weekly
+    ? `I\u2019ve brought last week\u2019s budget across. Give it a quick check so I can track ${formatWeekRange(prompt.targetWeekStart)}.`
+    : "Add the revenue and I\u2019ll work out the rest from your weekly budget.";
+  const dateLabel = weekly
+    ? formatWeekRange(prompt.targetWeekStart)
+    : formatLongDate(date);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(
+          ".dashboard-attention-prompt .dashboard-attention-actions a, .dashboard-attention-prompt .dashboard-attention-actions button",
+        )
+        ?.focus();
+    });
+    const handleDialogKeys = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onRemindLater();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector<HTMLElement>(".dashboard-attention-prompt");
+      const focusable = dialog
+        ? [...dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")]
+        : [];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", handleDialogKeys);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleDialogKeys);
+    };
+  }, [onRemindLater]);
+
+  return (
+    <motion.div
+      className="dashboard-attention-layer"
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.18 }}
+    >
+      <button
+        type="button"
+        className="dashboard-attention-scrim"
+        aria-label="Remind me later"
+        onClick={onRemindLater}
+      />
+      <motion.section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dashboard-attention-title"
+        aria-describedby="dashboard-attention-support"
+        className={`dashboard-attention-prompt is-${prompt.kind}`}
+        initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.23, 1, 0.32, 1] }}
+      >
+        <span className="dashboard-attention-handle" aria-hidden />
+        <div className="dashboard-attention-visual" aria-hidden="true">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={assetPath(weekly
+              ? "/brand/birdee-weekly-planning-v1.webp"
+              : "/brand/birdee-daily-curious-v1.webp")}
+            alt=""
+          />
+        </div>
+        <div className="dashboard-attention-content">
+          <p className="dashboard-attention-eyebrow">
+            {weekly ? "A new week" : "Daily check-in"}
+          </p>
+          <h2 id="dashboard-attention-title">{title}</h2>
+          <p id="dashboard-attention-support" className="dashboard-attention-support">
+            {support}
+          </p>
+          <span className="dashboard-attention-date">
+            <CalendarBlank weight="duotone" aria-hidden />
+            {dateLabel}
+          </span>
+          <div className="dashboard-attention-actions">
+            {weekly ? (
+              <ProductButton
+                href="/app/plan"
+                variant="primary"
+                trailingIcon={<ArrowRight weight="bold" />}
+              >
+                Review Weekly Budget
+              </ProductButton>
+            ) : (
+              <button
+                type="button"
+                className="dashboard-attention-primary"
+                onClick={() => onDailyCheckIn(prompt.task.date)}
+              >
+                Add {prompt.task.dayName}&rsquo;s revenue
+                <ArrowRight weight="bold" aria-hidden />
+              </button>
+            )}
+            <button type="button" className="dashboard-attention-later" onClick={onRemindLater}>
+              Remind me later
+            </button>
+          </div>
+          <div className="dashboard-attention-foot">
+            <span>
+              <ShieldCheck weight="duotone" aria-hidden />
+              {weekly ? "Last week stays saved." : "Your weekly budget stays unchanged."}
+            </span>
+            <button type="button" onClick={onHide}>Don&rsquo;t show this again</button>
+          </div>
+        </div>
+      </motion.section>
+    </motion.div>
   );
 }
 
