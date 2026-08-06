@@ -5,6 +5,7 @@
 /out
 /build
 /.vercel
+/.billing-uat-fixtures
 *.log
 npm-install.log
 *.tsbuildinfo

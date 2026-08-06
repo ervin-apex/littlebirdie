@@ -12,9 +12,11 @@ export type AuthGatewayMode = "signup" | "login";
 export function AuthGateway({
   initialMode,
   loginMessage,
+  next,
 }: {
   initialMode: AuthGatewayMode;
   loginMessage?: string;
+  next?: string;
 }) {
   const [mode, setMode] = useState<AuthGatewayMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -159,6 +161,7 @@ export function AuthGateway({
                 <LoginForm
                   email={email}
                   initialMessage={visibleLoginMessage}
+                  next={next}
                   onEmailChange={setEmail}
                   onSwitchToSignup={() => selectMode("signup")}
                 />

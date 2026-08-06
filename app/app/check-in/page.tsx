@@ -86,7 +86,8 @@ export default function DailyCheckInPage() {
 
   useEffect(() => {
     let active = true;
-    loadVenueState()
+    const requestedDate = new URLSearchParams(window.location.search).get("date") ?? undefined;
+    loadVenueState(requestedDate)
       .then((loaded) => {
         if (!active) return;
         if (!loaded.hasPlan || !loaded.week || !loaded.weekStart) {
@@ -95,7 +96,6 @@ export default function DailyCheckInPage() {
         }
         const dates = eligibleDailyDates(loaded.weekStart, loaded.currentDate);
         const priorDates = dates.filter((date) => date < loaded.currentDate);
-        const requestedDate = new URLSearchParams(window.location.search).get("date");
         const initialDate =
           (requestedDate && dates.includes(requestedDate) ? requestedDate : null)
           ?? priorDates.at(-1)
@@ -190,7 +190,7 @@ export default function DailyCheckInPage() {
       const dayIndex = dates.indexOf(selectedDate);
       router.push(
         dayIndex >= 0
-          ? `/app?period=this-week&view=day-verdict&day=${dayIndex}&scope=day`
+          ? `/app?period=this-week&view=day-verdict&day=${dayIndex}&scope=day&service-date=${selectedDate}`
           : "/app?period=this-week",
       );
     } catch (caught) {
@@ -217,7 +217,9 @@ export default function DailyCheckInPage() {
     <div className="daily-update-page">
       <header className="daily-update-heading">
         <ProductButton
-          href="/app?period=this-week"
+          href={selectedDate
+            ? `/app?period=this-week&service-date=${encodeURIComponent(selectedDate)}`
+            : "/app?period=this-week"}
           variant="tertiary"
           size="compact"
           leadingIcon={<ArrowLeft weight="bold" />}

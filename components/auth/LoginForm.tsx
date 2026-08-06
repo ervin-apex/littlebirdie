@@ -10,11 +10,13 @@ import { createClient } from "@/lib/supabase/client";
 export function LoginForm({
   email,
   initialMessage,
+  next,
   onEmailChange,
   onSwitchToSignup,
 }: {
   email?: string;
   initialMessage?: string;
+  next?: string;
   onEmailChange?: (email: string) => void;
   onSwitchToSignup?: () => void;
 } = {}) {
@@ -38,7 +40,11 @@ export function LoginForm({
       return;
     }
 
-    window.location.assign("/auth/finish-setup");
+    const finish = new URL("/auth/finish-setup", window.location.origin);
+    if (next?.startsWith("/") && !next.startsWith("//")) {
+      finish.searchParams.set("next", next);
+    }
+    window.location.assign(`${finish.pathname}${finish.search}`);
   }
 
   return (
@@ -47,7 +53,12 @@ export function LoginForm({
         <h2>Welcome back</h2>
         <p>Log in and Birdee will take you straight to your numbers.</p>
       </div>
-      <GoogleAuthButton next="/auth/finish-setup" onError={setMessage} />
+      <GoogleAuthButton
+        next={next
+          ? `/auth/finish-setup?next=${encodeURIComponent(next)}`
+          : "/auth/finish-setup"}
+        onError={setMessage}
+      />
       <div className="auth-divider"><span>or use email</span></div>
       <form className="auth-form" onSubmit={submit}>
         <label>

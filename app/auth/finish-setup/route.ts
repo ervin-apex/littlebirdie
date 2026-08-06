@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
 
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const requestedNext = url.searchParams.get("next");
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : null;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -35,7 +40,7 @@ export async function GET(request: Request) {
   }
 
   const response = NextResponse.redirect(
-    new URL(venue.hasPlan ? "/app?period=this-week" : "/setup", request.url),
+    new URL(next ?? (venue.hasPlan ? "/app?period=this-week" : "/setup"), request.url),
   );
   response.cookies.set("little-birdee-venue", venue.id, {
     httpOnly: true,

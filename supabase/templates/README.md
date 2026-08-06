@@ -18,7 +18,7 @@ edited. Once SMTP is connected, publish each subject and HTML body from
 
 The logo is loaded from the stable production alias:
 
-`https://littlebirdie-gray.vercel.app/brand/birdee-mark.png`
+`https://littlebirdie-gray.vercel.app/brand/birdee-face-square.png`
 
 ## Template variables
 

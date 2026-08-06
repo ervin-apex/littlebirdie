@@ -10,8 +10,12 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "chirps:preview": "node --no-warnings --experimental-strip-types scripts/send-chirp-preview.mjs",
+    "auth-emails:build": "node scripts/build-auth-email-templates.mjs",
+    "auth-emails:validate": "node scripts/validate-auth-email-templates.mjs",
     "access:grant": "node --env-file=.env.local scripts/manage-complimentary-access.mjs grant",
-    "access:revoke": "node --env-file=.env.local scripts/manage-complimentary-access.mjs revoke"
+    "access:revoke": "node --env-file=.env.local scripts/manage-complimentary-access.mjs revoke",
+    "billing:uat-fixture": "node --env-file=.env.local scripts/manage-billing-recovery-fixture.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -22,7 +26,9 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "recharts": "^3.8.1",
+    "resend": "6.18.1",
     "stripe": "22.4.0",
+    "svix": "1.99.1",
     "three": "^0.185.1"
   },
   "devDependencies": {

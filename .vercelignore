@@ -1,0 +1,8 @@
+# Local design, test, and audit material is not needed by the runtime bundle.
+/outputs/
+/docs/
+/design/
+/supabase/
+/scripts/
+**/*.test.ts
+**/*.test.tsx

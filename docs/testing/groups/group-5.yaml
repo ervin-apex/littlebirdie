@@ -1,11 +1,12 @@
 group: 5
 name: Privacy, compliance, billing, and account controls
-status: queued_parallel
+status: partially_verified_deferred_lifecycle_uat
 queue_position: alongside_groups_3_and_4
 depends_on: [1]
 base_url: https://littlebirdie-gray.vercel.app
 uat_spec: docs/testing/test-cases/GROUP_5_BILLING_USER_ACCEPTANCE_TEST_PROCEDURES_2026-08-03.md
-result_workbook: docs/testing/results/GROUP_5_TEST_RESULTS.xlsx
+result_workbook: docs/testing/results/GROUP_5_TEST_RESULTS_2026-08-04.xlsx
+previous_result_workbook: docs/testing/results/GROUP_5_TEST_RESULTS.xlsx
 requirements_sources:
   - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-5---privacy-compliance-billing-and-account-controls
 design_sources:
@@ -18,7 +19,15 @@ scope:
 out_of_scope:
   - P&L-file retention until Group 2
 deferred_manual: []
+deferred_provider_uat:
+  - tests: [G5-B12, G5-B13, G5-B14, G5-B15]
+    status: implementation_ready_not_run
+    handoff: docs/testing/evidence/group-5/GROUP_5_B12_B15_LIFECYCLE_UAT_HANDOFF_2026-08-04.md
+    helper: scripts/manage-billing-recovery-fixture.mjs
+    blockers:
+      - Local Stripe sandbox and Supabase service-role variables are not present in .env.local
+      - No disposable owner business without an existing Stripe binding has been nominated
 acceptance_policy:
   product_functionality_may_accept_with_approved_deferrals: false
   production_signoff_requires_deferred_checks: true
-notes: Billing sandbox UAT specification approved for execution on 3 August 2026; external legal, Scott-owned-sandbox, and live-payment gates remain recorded.
+notes: Billing sandbox UAT began on 3 August 2026. B12-B15 lifecycle automation and terminal venue-deletion corrections are implemented, but real failed-payment/lock/recovery execution is formally deferred under the 4 August handoff. External legal, Scott-owned-sandbox, and live-payment gates remain recorded.

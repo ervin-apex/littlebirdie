@@ -247,27 +247,27 @@ otp_expiry = 3600
 # reviewed alongside the product. Hosted Supabase projects require custom SMTP
 # before these templates can be published.
 [auth.email.template.confirmation]
-subject = "One quick tap and Birdee's yours"
+subject = "Confirm your Little Birdee account"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.invite]
-subject = "A Little Birdee is waiting for you"
+subject = "You're invited to Little Birdee"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Yr Little Birdee sign-in link"
+subject = "Your Little Birdee sign-in link"
 content_path = "./supabase/templates/magic-link.html"
 
 [auth.email.template.email_change]
-subject = "Confirm yr new Little Birdee email"
+subject = "Confirm your new Little Birdee email"
 content_path = "./supabase/templates/email-change.html"
 
 [auth.email.template.recovery]
-subject = "Let's get you back into Little Birdee"
+subject = "Reset your Little Birdee password"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.reauthentication]
-subject = "{{ .Token }} is yr Little Birdee code"
+subject = "{{ .Token }} is your Little Birdee code"
 content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize notification email template

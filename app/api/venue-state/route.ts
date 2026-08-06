@@ -182,7 +182,18 @@ async function venueBillingGate({
   return null;
 }
 
-export async function GET() {
+function validServiceDate(value: string | null) {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+}
+
+function mondayForServiceDate(value: string) {
+  const date = new Date(`${value}T00:00:00Z`);
+  const isoDay = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() - (isoDay - 1));
+  return date.toISOString().slice(0, 10);
+}
+
+export async function GET(request: Request) {
   const selection = await selectedVenue();
   if ("error" in selection) {
     return NextResponse.json({ error: selection.error }, { status: selection.status });
@@ -191,21 +202,28 @@ export async function GET() {
   const billingResponse = await venueBillingGate({ supabase, venueId: venue.id });
   if (billingResponse) return billingResponse;
 
+  const requestedServiceDate = validServiceDate(
+    new URL(request.url).searchParams.get("service-date"),
+  );
+  let planQuery = supabase
+    .from("weekly_plans")
+    .select(`
+      id, business_id, venue_id, week_start, version, gst_registration,
+      revenue_entry_basis, cogs_rate_basis_points, weekly_labour_cents,
+      weekly_other_operating_costs_cents, weekly_recurring_operating_income_cents,
+      loaded_hourly_labour_cost_cents, updated_at
+    `)
+    .eq("venue_id", venue.id)
+    .eq("status", "locked");
+  planQuery = requestedServiceDate
+    ? planQuery.eq("week_start", mondayForServiceDate(requestedServiceDate))
+    : planQuery.order("week_start", { ascending: false });
+
   const [
     { data: planRow, error: planError },
     { data: draftRow, error: draftError },
   ] = await Promise.all([
-    supabase
-      .from("weekly_plans")
-      .select(`
-        id, business_id, venue_id, week_start, version, gst_registration,
-        revenue_entry_basis, cogs_rate_basis_points, weekly_labour_cents,
-        weekly_other_operating_costs_cents, weekly_recurring_operating_income_cents,
-        loaded_hourly_labour_cost_cents, updated_at
-      `)
-      .eq("venue_id", venue.id)
-      .eq("status", "locked")
-      .order("week_start", { ascending: false })
+    planQuery
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle(),

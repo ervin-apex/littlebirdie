@@ -1,24 +1,44 @@
 group: 6
 name: Scheduled Chirps
-status: queued
+status: implemented_provider_activation_and_uat_pending
 queue_position: after_manual_reporting_loop
 depends_on: [0, 1, 3, 4]
-base_url: http://localhost:3000
-uat_spec: null
+base_url: https://littlebirdie-gray.vercel.app
+implementation_plan: docs/testing/groups/GROUP_6_SCHEDULED_EMAIL_CHIRPS_IMPLEMENTATION_PLAN_2026-08-04.md
+uat_spec: docs/testing/groups/GROUP_6_UAT_TEST_PROCEDURES_2026-08-04.md
 result_workbook: docs/testing/results/GROUP_6_TEST_RESULTS.xlsx
 requirements_sources:
   - docs/audits/SCOTT_REQUIREMENTS_IMPLEMENTATION_AUDIT_2026-07-27.md#group-6---scheduled-chirps
 design_sources:
   - docs/SCOTT_PRODUCT_UX_CONTRACT.md
 scope:
-  - Scheduled Chirp generation and delivery
+  - Daily scheduled email Chirp generation and delivery
+  - Per-operator, per-venue time and timezone preference
   - Honest source/certainty language
   - Manual-mode Chirp behavior
+  - Exact venue/date deep links
+  - Delivery, retry, bounce, suppression and unsubscribe handling
 out_of_scope:
   - Deputy connector implementation
+  - Browser and phone push notifications
+  - Weekly and monthly Chirp cadence
+  - Combined multi-venue digest
 deferred_manual: []
 acceptance_policy:
   product_functionality_may_accept_with_approved_deferrals: false
   production_signoff_requires_deferred_checks: true
-notes: Create and approve a UAT specification before execution.
-
+product_decisions_confirmed:
+  - One daily email per operator per venue
+  - Privacy-first subject lines without financial amounts
+  - One-time non-blocking dashboard activation prompt
+  - Missing revenue sends a one-number nudge
+  - Saved revenue sends estimated EBITDA with assumption disclosure
+product_decisions_pending:
+  - Production sender and monitored reply-to address
+provider_prerequisites:
+  - Little Birdee-owned administrative identity
+  - Purchased domain and DNS access
+  - Resend account and verified sending subdomain
+  - Vercel email, webhook and cron secrets
+  - Supabase Vault cron secret
+notes: The agreed Friday scope is daily email at a time each operator picks. The schema and application flow are implemented, while automated scheduling remains disabled. Use Supabase Cron for minute-level scheduling because Vercel Hobby daily cron does not provide the required precision. Complete provider activation, UAT, and the Little Birdee-owned Resend handover before production sign-off.

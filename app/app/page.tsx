@@ -31,6 +31,7 @@ import {
 } from "@phosphor-icons/react";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
 import { ProductButton } from "@/components/ProductButton";
+import { ChirpActivationPrompt } from "@/components/ChirpActivationPrompt";
 import { assetPath, withoutBasePath } from "@/lib/site";
 import {
   DEFAULTS,
@@ -184,6 +185,7 @@ function DashboardInner() {
   const requestedScreen = screenParam ?? initialScreen;
   const chapterParam = chapterFromParam(params.get("chapter"));
   const dayParam = dayFromParam(params.get("day"));
+  const requestedServiceDate = params.get("service-date") ?? undefined;
   const navigationTrail = trailFromParam(params.get("trail"));
   const numbersScope = params.get("scope") === "day" ? "day" : "period";
   const initialRange: HistoryRange = {
@@ -209,7 +211,7 @@ function DashboardInner() {
 
   useEffect(() => {
     let active = true;
-    loadVenueState()
+    loadVenueState(requestedServiceDate)
       .then((state) => {
         if (!active) return;
         if (!state.week) {
@@ -233,7 +235,7 @@ function DashboardInner() {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [requestedServiceDate, router]);
 
   useEffect(() => {
     setPeriodKey(initialPeriod);
@@ -1015,6 +1017,9 @@ function DashboardView({
         />,
         document.body,
       )}
+      <ChirpActivationPrompt
+        active={periodKey === "this-week" && attentionPrompt === null}
+      />
     </div>
   );
 }

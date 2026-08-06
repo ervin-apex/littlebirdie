@@ -7570,3 +7570,60 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
     transform: rotate(-5deg);
   }
 }
+/* One-time daily email Chirp invitation. */
+.chirp-activation-prompt {
+  position: fixed;
+  z-index: 120;
+  right: clamp(16px, 3vw, 42px);
+  bottom: clamp(16px, 3vw, 34px);
+  display: grid;
+  width: min(440px, calc(100vw - 32px));
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px 14px;
+  border: 1px solid #d89a18;
+  border-radius: 18px;
+  padding: 18px;
+  background: #fffdf8;
+  box-shadow: 0 18px 60px rgb(12 33 71 / 20%);
+  animation: chirp-prompt-in 260ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.chirp-activation-close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lb-muted);
+  cursor: pointer;
+}
+.chirp-activation-close:hover { background: var(--lb-yellow-soft); }
+.chirp-activation-close svg { width: 17px; height: 17px; }
+.chirp-activation-icon { display: grid; width: 50px; height: 50px; place-items: center; border-radius: 50%; background: var(--lb-yellow); color: var(--lb-ink); }
+.chirp-activation-icon svg { width: 27px; height: 27px; }
+.chirp-activation-prompt p { margin: 0 0 3px; color: #a96800; font-size: 10px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+.chirp-activation-prompt h2 { margin: 0; padding-right: 14px; color: var(--lb-ink); font-size: 18px; line-height: 1.15; letter-spacing: -.02em; }
+.chirp-activation-prompt div > span { display: block; margin-top: 5px; color: var(--lb-muted); font-size: 12px; line-height: 1.45; }
+.chirp-activation-prompt > a { grid-column: 2; justify-self: start; border-radius: 10px; padding: 10px 13px; background: var(--lb-yellow); color: var(--lb-ink); font-size: 12px; font-weight: 900; text-decoration: none; box-shadow: 0 2px 0 #cb8300; }
+.chirp-activation-later { grid-column: 3; border: 0; padding: 8px; background: transparent; color: var(--lb-muted); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+
+@keyframes chirp-prompt-in {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 560px) {
+  .chirp-activation-prompt { left: 12px; right: 12px; bottom: 12px; width: auto; grid-template-columns: auto minmax(0, 1fr); padding: 16px; }
+  .chirp-activation-prompt > a { grid-column: 1 / -1; width: 100%; box-sizing: border-box; text-align: center; }
+  .chirp-activation-later { grid-column: 1 / -1; justify-self: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chirp-activation-prompt { animation: none; }
+}

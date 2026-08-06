@@ -84,10 +84,141 @@
 
 .account-identity-section,
 .account-billing-section,
+.account-chirp-section,
 .account-venue-section {
   display: grid;
   min-width: 0;
   gap: 10px;
+}
+
+.account-chirp-section {
+  display: grid;
+  gap: 10px;
+}
+
+.account-chirp {
+  display: grid;
+  grid-template-columns: auto minmax(260px, 1fr) minmax(150px, auto) auto auto;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--lb-line);
+  border-radius: 16px;
+  padding: 17px 18px;
+  background: color-mix(in oklch, var(--lb-yellow-soft) 42%, var(--lb-white));
+}
+
+.account-chirp__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lb-yellow);
+  color: var(--lb-ink);
+}
+
+.account-chirp__icon svg { width: 23px; height: 23px; }
+.account-chirp__copy strong { font-family: var(--font-display); font-size: 17px; }
+.account-chirp__copy p { margin: 3px 0 6px; color: var(--lb-muted); font-size: 13px; line-height: 1.45; }
+.account-chirp__copy span { display: flex; align-items: center; gap: 5px; color: var(--lb-muted); font-size: 12px; overflow-wrap: anywhere; }
+.account-chirp__copy span svg { width: 15px; height: 15px; }
+.account-chirp__last { display: block; margin-top: 5px; color: var(--lb-muted); font-size: 11px; }
+
+.account-chirp__time { display: grid; gap: 5px; }
+.account-chirp__time > span { display: flex; align-items: center; gap: 5px; color: var(--lb-muted); font-size: 11px; font-weight: 850; }
+.account-chirp__time input { min-height: 40px; border: 1px solid var(--lb-line-strong); border-radius: 10px; padding: 7px 10px; background: #fff; color: var(--lb-ink); font: inherit; font-weight: 800; }
+.account-chirp__time input:focus-visible { outline: 3px solid color-mix(in oklch, var(--lb-yellow) 45%, transparent); outline-offset: 1px; }
+.account-chirp__time small { color: var(--lb-muted); font-size: 10px; }
+
+.account-chirp__switch {
+  display: inline-flex;
+  min-height: 40px;
+  width: max-content;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--lb-line);
+  border-radius: 999px;
+  padding: 4px 10px 4px 5px;
+  background: color-mix(in oklch, var(--lb-white) 88%, transparent);
+  cursor: pointer;
+  transition:
+    border-color var(--lb-duration-state) ease,
+    background-color var(--lb-duration-state) ease,
+    box-shadow var(--lb-duration-state) ease;
+}
+.account-chirp__switch input { position: absolute; opacity: 0; pointer-events: none; }
+.account-chirp__switch > span {
+  position: relative;
+  display: block;
+  width: 50px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in oklch, var(--lb-muted) 42%, var(--lb-line));
+  border-radius: 999px;
+  background: #d8dde5;
+  box-shadow: inset 0 1px 2px rgb(12 33 71 / 12%);
+  transition:
+    border-color var(--lb-duration-state) ease,
+    background-color var(--lb-duration-state) ease;
+}
+.account-chirp__switch > span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--lb-white);
+  box-shadow: 0 2px 5px rgb(12 33 71 / 28%);
+  transition: transform 180ms var(--lb-ease-out);
+}
+.account-chirp__switch input:checked + span {
+  border-color: color-mix(in oklch, var(--lb-positive) 82%, var(--lb-ink));
+  background: var(--lb-positive);
+}
+.account-chirp__switch input:checked + span::after { transform: translateX(22px); }
+.account-chirp__switch input:focus-visible + span {
+  outline: 3px solid color-mix(in oklch, var(--lb-yellow) 52%, transparent);
+  outline-offset: 2px;
+}
+.account-chirp__switch:has(input:checked) {
+  border-color: color-mix(in oklch, var(--lb-positive) 42%, var(--lb-line));
+  background: var(--lb-positive-soft);
+  box-shadow: 0 1px 0 color-mix(in oklch, var(--lb-positive) 16%, transparent);
+}
+.account-chirp__switch:has(input:disabled) { cursor: wait; opacity: .68; }
+.account-chirp__switch b {
+  min-width: 20px;
+  color: var(--lb-muted);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  transition: color var(--lb-duration-state) ease;
+}
+.account-chirp__switch input:checked ~ b { color: var(--lb-positive); }
+
+.account-chirp > button { min-height: 42px; border: 1px solid var(--lb-ink); border-radius: 11px; padding: 9px 14px; background: #fff; color: var(--lb-ink); font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; box-shadow: 0 2px 0 #c5cad4; }
+.account-chirp > button:hover:not(:disabled) { background: var(--lb-yellow-soft); }
+.account-chirp > button:disabled { opacity: .55; cursor: wait; }
+.account-chirp__message { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; margin: -4px 0 0; color: var(--lb-positive); font-size: 12px; font-weight: 750; }
+.account-chirp__message svg { width: 17px; height: 17px; }
+
+@media (max-width: 900px) {
+  .account-chirp { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .account-chirp__time { grid-column: 2; }
+  .account-chirp__switch { grid-column: 3; grid-row: 1; }
+  .account-chirp > button { grid-column: 3; grid-row: 2; }
+  .account-chirp__message { grid-column: 2 / -1; }
+}
+
+@media (max-width: 600px) {
+  .account-chirp { grid-template-columns: auto minmax(0, 1fr); align-items: start; padding: 15px; }
+  .account-chirp__time { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: center; }
+  .account-chirp__time small { grid-column: 1 / -1; }
+  .account-chirp__switch { grid-column: 1; grid-row: auto; }
+  .account-chirp > button { grid-column: 2; grid-row: auto; }
+  .account-chirp__message { grid-column: 1 / -1; }
 }
 
 .account-identity-section > h2,
@@ -146,6 +277,7 @@
 .account-billing__status { text-align: right; }
 .account-billing__status span { font-size: 12px; font-weight: 900; }
 .account-billing__status span[data-state="active"] { color: var(--lb-success); }
+.account-billing__status span[data-state="payment_warning"] { color: #9b4b31; }
 .account-billing__status span[data-state="locked_recovery"] { color: #9b4b31; }
 .account-billing__status span[data-state="locked_conversion"] { color: #9b4b31; }
 .account-billing__status small { margin-top: 3px; }
@@ -162,6 +294,40 @@
   margin: 7px 2px 0;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.account-billing-warning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 11px;
+  margin-top: 2px;
+  border: 1px solid #dfa53a;
+  border-radius: 14px;
+  padding: 13px 15px;
+  background: #fff3cf;
+  color: var(--lb-ink);
+}
+
+.account-billing-warning > svg {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: #a85b20;
+}
+
+.account-billing-warning strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.account-billing-warning p {
+  margin: 3px 0 0;
+  color: color-mix(in oklch, var(--lb-muted) 82%, var(--lb-ink));
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .account-section-heading h2 {

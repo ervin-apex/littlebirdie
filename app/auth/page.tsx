@@ -12,15 +12,18 @@ const loginErrors: Record<string, string> = {
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mode?: string; error?: string }>;
+  searchParams: Promise<{ mode?: string; error?: string; next?: string }>;
 }) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (data?.claims) redirect("/auth/finish-setup");
 
-  const { mode, error } = await searchParams;
+  const { mode, error, next: requestedNext } = await searchParams;
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : undefined;
   const initialMode: AuthGatewayMode = mode === "login" ? "login" : "signup";
   const loginMessage = error ? loginErrors[error] ?? "Sign-in could not be completed." : undefined;
 
-  return <AuthGateway initialMode={initialMode} loginMessage={loginMessage} />;
+  return <AuthGateway initialMode={initialMode} loginMessage={loginMessage} next={next} />;
 }

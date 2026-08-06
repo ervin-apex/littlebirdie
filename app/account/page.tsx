@@ -15,6 +15,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { BillingRedirectButton } from "@/components/BillingRedirectButton";
+import { ChirpPreferenceCard } from "@/components/ChirpPreferenceCard";
 import { ProductButton } from "@/components/ProductButton";
 import { assetPath } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
@@ -93,13 +94,34 @@ export default async function AccountPage({
       selectedVenue.setupTotalSteps,
     )
     : 0;
+  const { data: chirpPreference } = selectedVenue
+    ? await supabase
+      .from("chirp_preferences")
+      .select("enabled, delivery_time_local, time_zone")
+      .eq("venue_id", selectedVenue.id)
+      .eq("user_id", user.id)
+      .maybeSingle()
+    : { data: null };
+  const { data: lastChirpDelivery } = selectedVenue
+    ? await supabase
+      .from("chirp_deliveries")
+      .select("status, service_date")
+      .eq("venue_id", selectedVenue.id)
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    : { data: null };
   const billingContext = await loadBillingBusinessContext();
   const billing = billingContext?.projection;
   const complimentaryGrant = billingContext?.complimentaryGrant;
   const billingEntitlement = billingContext?.entitlement;
   const hasComplimentaryAccess = billingEntitlement?.accessSource === "complimentary";
+  const showPaymentWarning = Boolean(billingEntitlement?.showPaymentWarning);
   const billingStatus = hasComplimentaryAccess
     ? "Complimentary"
+    : showPaymentWarning
+      ? "Payment needed"
     : billingEntitlement?.canUseProduct
       ? billing?.cancelAtPeriodEnd ? "Ending" : "Active"
     : billingEntitlement?.accessState === "locked_recovery"
@@ -215,7 +237,13 @@ export default async function AccountPage({
               <small>{planMeta}</small>
             </div>
             <div className="account-billing__status">
-              <span data-state={billingEntitlement?.accessState ?? "pending"}>{billingStatus}</span>
+              <span
+                data-state={showPaymentWarning
+                  ? "payment_warning"
+                  : billingEntitlement?.accessState ?? "pending"}
+              >
+                {billingStatus}
+              </span>
               {hasComplimentaryAccess && complimentaryGrant?.grantType === "permanent" ? (
                 <small>Provided by Little Birdee</small>
               ) : hasComplimentaryAccess && grantExpiryDate ? (
@@ -240,7 +268,37 @@ export default async function AccountPage({
               ? "Subscribe during the 30-day conversion window to reopen every venue with its numbers unchanged."
               : `Every current and future venue in ${billingContext?.businessName ?? "your business"} is included.`}
           </p>
+          {showPaymentWarning && billingDate && (
+            <div className="account-billing-warning" role="status" aria-live="polite">
+              <WarningCircle weight="fill" aria-hidden />
+              <div>
+                <strong>Your latest payment didn’t go through.</strong>
+                <p>
+                  Your numbers stay open until {billingDate}. Use Manage billing to update
+                  your payment method before then.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
+
+        {selectedVenue && (
+          <section id="daily-chirps" className="account-chirp-section" aria-labelledby="chirp-heading">
+            <div className="account-section-heading">
+              <h2 id="chirp-heading">Daily Chirps</h2>
+              <p>This setting applies only to {selectedVenue.name} and your signed-in email.</p>
+            </div>
+            <ChirpPreferenceCard initial={{
+              venueName: selectedVenue.name,
+              enabled: chirpPreference?.enabled ?? false,
+              deliveryTimeLocal: chirpPreference?.delivery_time_local?.slice(0, 5) ?? "07:00",
+              timeZone: chirpPreference?.time_zone ?? "Australia/Sydney",
+              recipientEmail: user.email ?? "Your account email",
+              lastDeliveryStatus: lastChirpDelivery?.status ?? null,
+              lastServiceDate: lastChirpDelivery?.service_date ?? null,
+            }} />
+          </section>
+        )}
 
         <section className="account-venue-section" aria-labelledby="venue-list-heading">
           <div className="account-section-heading">

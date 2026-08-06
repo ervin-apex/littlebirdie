@@ -1,0 +1,24 @@
+.chirp-unsubscribe-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at 70% 10%, #fff0b6, transparent 35%), #f8f7f3;
+}
+
+.chirp-unsubscribe-card {
+  width: min(100%, 520px);
+  border: 1px solid var(--lb-line);
+  border-radius: 22px;
+  padding: clamp(28px, 7vw, 48px);
+  background: #fff;
+  box-shadow: 0 18px 50px rgb(12 33 71 / 10%);
+}
+
+.chirp-unsubscribe-bird { font-size: 42px; }
+.chirp-unsubscribe-eyebrow { margin: 18px 0 8px; color: #b86f00; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; }
+.chirp-unsubscribe-card h1 { margin: 0; color: var(--lb-ink); font-size: clamp(32px, 7vw, 48px); line-height: 1; letter-spacing: -.04em; }
+.chirp-unsubscribe-card > p:not(.chirp-unsubscribe-eyebrow) { margin: 18px 0 24px; color: var(--lb-muted); line-height: 1.6; }
+.chirp-unsubscribe-card form { margin-bottom: 16px; }
+.chirp-unsubscribe-card button { width: 100%; border: 1px solid var(--lb-ink); border-radius: 12px; padding: 14px 18px; background: var(--lb-yellow); color: var(--lb-ink); font: inherit; font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 #cb8300; }
+.chirp-unsubscribe-card a { color: var(--lb-ink); font-weight: 800; }

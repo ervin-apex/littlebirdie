@@ -8,7 +8,7 @@ export function GoogleAuthButton({
   next,
   onError,
 }: {
-  next: "/onboarding" | "/auth/finish-setup";
+  next: string;
   onError: (message: string | null) => void;
 }) {
   const [loading, setLoading] = useState(false);

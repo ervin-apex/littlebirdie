@@ -64,11 +64,21 @@ describe("billing entitlement", () => {
   it("locks recovery only after a failed renewal exhausts paid access", () => {
     expect(deriveBillingEntitlement(
       projection("past_due", "2026-08-04T00:00:00.000Z"), null, NOW,
-    )).toMatchObject({ canUseProduct: true, showPaymentWarning: true });
+    )).toMatchObject({
+      accessState: "active",
+      canUseProduct: true,
+      showPaymentWarning: true,
+      shouldDeleteOperationalData: false,
+    });
 
     expect(deriveBillingEntitlement(
       projection("past_due", "2026-08-02T00:00:00.000Z"), null, NOW,
-    )).toMatchObject({ accessState: "locked_recovery", canUseProduct: false });
+    )).toMatchObject({
+      accessState: "locked_recovery",
+      canUseProduct: false,
+      showPaymentWarning: false,
+      shouldDeleteOperationalData: false,
+    });
   });
 
   it("marks terminal unpaid data for deletion after paid access ends", () => {

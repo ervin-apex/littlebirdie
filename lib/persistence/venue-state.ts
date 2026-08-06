@@ -31,8 +31,11 @@ async function readError(response: Response) {
   return body?.error ?? "Little Birdee could not reach this venue's records.";
 }
 
-export async function loadVenueState(): Promise<VenueState> {
-  const response = await fetch("/api/venue-state", {
+export async function loadVenueState(serviceDate?: string): Promise<VenueState> {
+  const query = serviceDate
+    ? `?service-date=${encodeURIComponent(serviceDate)}`
+    : "";
+  const response = await fetch(`/api/venue-state${query}`, {
     cache: "no-store",
     credentials: "same-origin",
   });
