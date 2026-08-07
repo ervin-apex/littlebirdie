@@ -9,7 +9,7 @@ function required(name) {
 
 const apiKey = required("RESEND_API_KEY");
 const to = required("CHIRP_PREVIEW_TO");
-const appBaseUrl = (process.env.APP_BASE_URL?.trim() || "https://littlebirdie-gray.vercel.app")
+const appBaseUrl = (process.env.APP_BASE_URL?.trim() || "https://littlebirdeetoldme.com")
   .replace(/\/$/, "");
 const from = process.env.CHIRP_FROM_EMAIL?.trim() || "Little Birdee <onboarding@resend.dev>";
 const replyTo = process.env.CHIRP_REPLY_TO_EMAIL?.trim() || to;

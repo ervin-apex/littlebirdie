@@ -133,7 +133,7 @@ export function renderChirpEmail({
                   <td valign="middle">
                     <table role="presentation" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td valign="middle" style="padding-right:11px"><img src="${escapeHtml(logoUrl)}" width="42" height="42" alt="" style="display:block;width:42px;height:42px;object-fit:contain;border:0"></td>
+                        <td valign="middle" style="padding-right:11px"><img src="${escapeHtml(logoUrl)}" width="42" height="42" alt="Little Birdee" style="display:block;width:42px;height:42px;object-fit:contain;border:0"></td>
                         <td valign="middle" style="font-family:'Poppins','Trebuchet MS',Arial,sans-serif;color:#10203c;font-size:23px;font-weight:700;letter-spacing:-0.55px">Little <span style="color:#f59e0b">Birdee</span></td>
                       </tr>
                     </table>
