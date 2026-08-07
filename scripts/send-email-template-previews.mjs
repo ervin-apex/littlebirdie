@@ -65,7 +65,7 @@ const chirpEmails = chirpFixtures.map((content) => {
     from,
     to,
     replyTo,
-    subject: `[Preview][Chirp] ${content.subject}`,
+    subject: content.subject,
     html: rendered.html,
     text: rendered.text,
   };
@@ -96,7 +96,7 @@ const authEmails = await Promise.all(authTemplates.map(async ([filename, subject
     from,
     to,
     replyTo,
-    subject: `[Preview][Auth] ${subject}`,
+    subject,
     html,
   };
 }));

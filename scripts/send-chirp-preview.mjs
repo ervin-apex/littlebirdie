@@ -47,7 +47,7 @@ const { data, error } = await resend.emails.send({
   from,
   to,
   replyTo,
-  subject: `[Preview] ${content.subject}`,
+  subject: content.subject,
   html: rendered.html,
   text: rendered.text,
   headers: {
