@@ -8,6 +8,7 @@ type ScrubbedVideoProps = {
   duration: number;
   progress: number;
   src: string;
+  mobileSrc?: string;
   poster?: string;
   onError?: () => void;
 };
@@ -17,11 +18,15 @@ export function ScrubbedVideo({
   duration,
   progress,
   src,
+  mobileSrc,
   poster,
   onError,
 }: ScrubbedVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const desiredTimeRef = useRef(0);
+  const scheduleSeekRef = useRef<(() => void) | null>(null);
   const [canLoad, setCanLoad] = useState(false);
+  const [activeSrc, setActiveSrc] = useState<string>();
 
   useEffect(() => {
     const video = videoRef.current;
@@ -29,6 +34,11 @@ export function ScrubbedVideo({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          setActiveSrc(
+            mobileSrc && window.matchMedia("(max-width: 820px)").matches
+              ? mobileSrc
+              : src,
+          );
           setCanLoad(true);
           observer.disconnect();
         }
@@ -37,31 +47,53 @@ export function ScrubbedVideo({
     );
     observer.observe(video);
     return () => observer.disconnect();
-  }, []);
+  }, [mobileSrc, src]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !canLoad) return;
+    if (!video || !canLoad || !activeSrc) return;
 
+    let disposed = false;
     let frame = 0;
-    const seek = () => {
+
+    const flushLatestSeek = () => {
       frame = 0;
-      const available = Number.isFinite(video.duration)
-        ? Math.min(duration, video.duration)
-        : duration;
-      const target = clamp(progress) * Math.max(0, available - 0.04);
-      if (Math.abs(video.currentTime - target) > 0.025) video.currentTime = target;
+      if (disposed || video.readyState < 1 || video.seeking) return;
+
+      const target = desiredTimeRef.current;
+      if (Math.abs(video.currentTime - target) > 0.018) {
+        video.currentTime = target;
+      }
       video.pause();
     };
 
-    if (video.readyState >= 1) seek();
-    else video.addEventListener("loadedmetadata", seek, { once: true });
-    frame = window.requestAnimationFrame(seek);
+    const scheduleLatestSeek = () => {
+      if (!frame) frame = window.requestAnimationFrame(flushLatestSeek);
+    };
+
+    scheduleSeekRef.current = scheduleLatestSeek;
+    video.addEventListener("loadedmetadata", scheduleLatestSeek);
+    video.addEventListener("seeked", scheduleLatestSeek);
+    scheduleLatestSeek();
+
     return () => {
-      video.removeEventListener("loadedmetadata", seek);
+      disposed = true;
+      scheduleSeekRef.current = null;
+      video.removeEventListener("loadedmetadata", scheduleLatestSeek);
+      video.removeEventListener("seeked", scheduleLatestSeek);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [canLoad, duration, progress]);
+  }, [activeSrc, canLoad]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const available = video && Number.isFinite(video.duration)
+      ? Math.min(duration, video.duration)
+      : duration;
+
+    desiredTimeRef.current = clamp(progress) * Math.max(0, available - 0.04);
+    scheduleSeekRef.current?.();
+  }, [duration, progress]);
 
   return (
     <video
@@ -69,9 +101,9 @@ export function ScrubbedVideo({
       className={className}
       muted
       playsInline
-      preload="metadata"
+      preload="auto"
       poster={poster}
-      src={canLoad ? src : undefined}
+      src={canLoad ? activeSrc : undefined}
       tabIndex={-1}
       aria-hidden="true"
       onError={onError}

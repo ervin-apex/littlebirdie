@@ -37,6 +37,7 @@ export const LANDING_V2_MEDIA = {
   },
   machine: {
     master: "/media/landing-v2/machine/profit-machine-master-text-locked.mp4",
+    mobileMaster: "/media/landing-v2/machine/profit-machine-master-mobile-scrub.mp4",
     posters: [
       "/media/landing-v2/machine/act-01-poster.png",
       "/media/landing-v2/machine/act-02-poster-clean.png",

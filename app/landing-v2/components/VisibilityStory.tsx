@@ -73,57 +73,59 @@ export function VisibilityStory() {
             </h2>
           </div>
 
-          <picture className="lb2-visibility__road">
-            <source media="(max-width: 520px)" srcSet={LANDING_V2_MEDIA.visibility.roadMobile} />
-            <Image src={LANDING_V2_MEDIA.visibility.roadDesktop} alt="" fill sizes="100vw" />
-          </picture>
+          <div className="lb2-visibility__scene">
+            <picture className="lb2-visibility__road">
+              <source media="(max-width: 520px)" srcSet={LANDING_V2_MEDIA.visibility.roadMobile} />
+              <Image src={LANDING_V2_MEDIA.visibility.roadDesktop} alt="" fill sizes="100vw" />
+            </picture>
 
-          <div className="lb2-visibility__questions">
-            {QUESTIONS.map((question, index) => (
-              <div
-                key={question}
-                className={(act === 0 && index === 0) || (act === 1 && index === 3) ? "is-active" : ""}
-              >
-                <span>{question}</span><b>?</b>
-              </div>
-            ))}
-          </div>
+            <div className="lb2-visibility__questions">
+              {QUESTIONS.map((question, index) => (
+                <div
+                  key={question}
+                  className={(act === 0 && index === 0) || (act === 1 && index === 3) ? "is-active" : ""}
+                >
+                  <span>{question}</span><b>?</b>
+                </div>
+              ))}
+            </div>
 
-          <div className="lb2-visibility__calendar">
-            <Image src={LANDING_V2_MEDIA.visibility.calendar} alt="" fill sizes="180px" />
-            <span><b>10<sup>th</sup></b>next month</span>
-          </div>
+            <div className="lb2-visibility__calendar">
+              <Image src={LANDING_V2_MEDIA.visibility.calendar} alt="" fill sizes="180px" />
+              <span><b>10<sup>th</sup></b>next month</span>
+            </div>
 
-          <div className="lb2-visibility__birdee">
-            {videoFailed ? (
-              <Image
-                src={act === 2 ? LANDING_V2_MEDIA.visibility.whyNotPoster : LANDING_V2_MEDIA.visibility.searchingPoster}
-                alt=""
-                fill
-                sizes="(max-width: 700px) 58vw, 34vw"
-              />
-            ) : (
-              <>
-                <OneShotVideo
-                  active={act < 2}
-                  className="lb2-visibility__searching"
-                  playKey={act}
-                  playbackRate={1.45}
-                  poster={LANDING_V2_MEDIA.visibility.searchingPoster}
-                  src={LANDING_V2_MEDIA.visibility.searching}
-                  onError={() => setVideoFailed(true)}
+            <div className="lb2-visibility__birdee">
+              {videoFailed ? (
+                <Image
+                  src={act === 2 ? LANDING_V2_MEDIA.visibility.whyNotPoster : LANDING_V2_MEDIA.visibility.searchingPoster}
+                  alt=""
+                  fill
+                  sizes="(max-width: 700px) 58vw, 34vw"
                 />
-                <OneShotVideo
-                  active={act === 2}
-                  className="lb2-visibility__lowering"
-                  playKey={act}
-                  playbackRate={1.2}
-                  poster={LANDING_V2_MEDIA.visibility.whyNotPoster}
-                  src={LANDING_V2_MEDIA.visibility.lowering}
-                  onError={() => setVideoFailed(true)}
-                />
-              </>
-            )}
+              ) : (
+                <>
+                  <OneShotVideo
+                    active={act < 2}
+                    className="lb2-visibility__searching"
+                    playKey={act}
+                    playbackRate={1.45}
+                    poster={LANDING_V2_MEDIA.visibility.searchingPoster}
+                    src={LANDING_V2_MEDIA.visibility.searching}
+                    onError={() => setVideoFailed(true)}
+                  />
+                  <OneShotVideo
+                    active={act === 2}
+                    className="lb2-visibility__lowering"
+                    playKey={act}
+                    playbackRate={1.2}
+                    poster={LANDING_V2_MEDIA.visibility.whyNotPoster}
+                    src={LANDING_V2_MEDIA.visibility.lowering}
+                    onError={() => setVideoFailed(true)}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           <p className="lb2-visibility__answer" data-visible={act === 2}>

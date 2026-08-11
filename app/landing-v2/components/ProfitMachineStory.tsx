@@ -79,6 +79,7 @@ export function ProfitMachineStory() {
                 duration={LANDING_V2_MEDIA.machine.duration}
                 progress={mediaProgress}
                 src={LANDING_V2_MEDIA.machine.master}
+                mobileSrc={LANDING_V2_MEDIA.machine.mobileMaster}
                 onError={() => setVideoFailed(true)}
               />
             )}

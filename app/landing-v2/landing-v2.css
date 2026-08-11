@@ -2612,3 +2612,239 @@ html:has(.lb2-page) {
   .lb2-accountant__board-title { right: 13%; left: 13%; font-size: clamp(7.5px, 2.2vw, 10px); }
   .lb2-accountant__board-screen { right: 9.5%; left: 9.5%; }
 }
+
+/* Responsive scene anchors. These closing rules intentionally replace the
+   older per-element mobile offsets so each illustration remains one composed
+   scene across short, tall, narrow, and medium viewports. */
+.lb2-visibility__scene {
+  position: absolute;
+  inset: 0;
+}
+
+@media (max-width: 820px) {
+  .lb2-hero {
+    height: calc(100dvh - var(--lb2-nav-height));
+    min-height: calc(100svh - var(--lb2-nav-height));
+  }
+
+  .lb2-hero__inner {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .lb2-visibility__scene {
+    top: calc(var(--lb2-nav-height) + clamp(158px, 23svh, 220px));
+    right: 0;
+    bottom: 2svh;
+    left: 0;
+  }
+
+  .lb2-visibility__road {
+    top: 0;
+    right: -2%;
+    bottom: auto;
+    width: min(76vw, 580px);
+    height: 96%;
+    transform: none;
+  }
+
+  .lb2-visibility__calendar {
+    top: -3%;
+    right: 0;
+    width: min(40vw, 20svh, 195px);
+    transform: none;
+  }
+
+  .lb2-visibility__questions {
+    top: 48%;
+    right: 5%;
+    left: 45%;
+    transform: none;
+  }
+
+  .lb2-visibility__birdee,
+  .lb2-visibility__stage[data-act="2"] .lb2-visibility__birdee {
+    bottom: 0;
+    left: -1%;
+    width: min(70vw, 38svh, 330px);
+    transform: none;
+  }
+
+  .lb2-accountant__scene {
+    right: 2%;
+    bottom: 10%;
+    left: 2%;
+    display: grid;
+    height: 30%;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.85fr) minmax(0, 1.25fr);
+    align-items: center;
+  }
+
+  .lb2-accountant__receipt,
+  .lb2-accountant__bird,
+  .lb2-accountant__board {
+    position: relative;
+    inset: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100% !important;
+    align-self: center;
+  }
+
+  .lb2-accountant__receipt { grid-column: 1; }
+
+  .lb2-accountant__bird {
+    grid-column: 2;
+    justify-self: center;
+    animation: none;
+    transform: scale(1.4);
+  }
+
+  .lb2-accountant__board { grid-column: 3; }
+
+  .lb2-accountant__line {
+    top: 50%;
+    right: 5%;
+    left: 5%;
+  }
+
+  .lb2-accountant__line::before { right: 52%; }
+  .lb2-accountant__line::after { left: 52%; }
+}
+
+@media (min-width: 521px) and (max-width: 820px) {
+  .lb2-visibility__scene {
+    top: calc(var(--lb2-nav-height) + clamp(130px, 18svh, 180px));
+    bottom: 1svh;
+  }
+
+  .lb2-visibility__road {
+    right: -3%;
+    width: 88%;
+    height: 96%;
+  }
+
+  .lb2-visibility__calendar {
+    top: 1%;
+    width: min(29vw, 21svh, 215px);
+  }
+
+  .lb2-visibility__questions {
+    top: 44%;
+    right: 24%;
+    left: 35%;
+  }
+
+  .lb2-visibility__questions > div,
+  .lb2-visibility__questions > div.is-active {
+    font-size: clamp(28px, 4.2vw, 34px);
+  }
+
+  .lb2-visibility__questions > div b,
+  .lb2-visibility__stage[data-act="0"] .lb2-visibility__questions > div:first-child b {
+    font-size: clamp(62px, 9.5vw, 76px);
+  }
+
+  .lb2-visibility__birdee,
+  .lb2-visibility__stage[data-act="2"] .lb2-visibility__birdee {
+    left: -2%;
+    width: min(43vw, 32svh, 365px);
+  }
+
+  .lb2-accountant__receipt,
+  .lb2-accountant__board { transform: scale(1.15); }
+
+  .lb2-accountant__receipt span {
+    font-size: clamp(7px, 1.25vw, 9px);
+  }
+
+  .lb2-accountant__receipt strong {
+    font-size: clamp(18px, 3.4vw, 25px);
+  }
+
+  .lb2-accountant__receipt b {
+    font-size: clamp(10px, 1.8vw, 14px);
+  }
+
+  .lb2-accountant__bird { transform: scale(1.4); }
+
+  .lb2-accountant__scene {
+    right: 3%;
+    bottom: 9%;
+    left: 3%;
+    height: 34%;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 0.82fr) minmax(0, 1.23fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .lb2-visibility__questions {
+    top: 47%;
+    right: 17%;
+    left: 37%;
+  }
+
+  .lb2-visibility__questions > div,
+  .lb2-visibility__questions > div.is-active {
+    font-size: clamp(17px, 4.6vw, 20px);
+  }
+
+  .lb2-visibility__questions > div b,
+  .lb2-visibility__stage[data-act="0"] .lb2-visibility__questions > div:first-child b {
+    font-size: clamp(72px, 19vw, 86px);
+  }
+
+  .lb2-accountant__receipt {
+    width: 145% !important;
+    justify-self: center;
+    transform: none;
+  }
+  .lb2-accountant__bird { transform: scale(1.6); }
+  .lb2-accountant__board { transform: scale(1.28); }
+
+  .lb2-accountant__receipt > div { inset: 23% 25% 19%; }
+  .lb2-accountant__receipt span { font-size: clamp(7px, 1.8vw, 8.5px); }
+  .lb2-accountant__receipt strong { font-size: clamp(16px, 4.2vw, 18.5px); }
+  .lb2-accountant__receipt b { font-size: clamp(10px, 2.7vw, 13px); }
+  .lb2-accountant__board-screen[data-value="profit"] strong {
+    font-size: clamp(23px, 6.3vw, 27px);
+  }
+  .lb2-accountant__board-title {
+    right: 16%;
+    left: 16%;
+    font-size: clamp(6.2px, 1.55vw, 7.5px);
+  }
+  .lb2-accountant__board-screen small {
+    margin-top: 4px;
+    font-size: clamp(5.5px, 1.45vw, 6.5px);
+  }
+}
+
+@media (max-width: 380px) {
+  .lb2-visibility__scene {
+    top: calc(var(--lb2-nav-height) + clamp(150px, 22svh, 195px));
+    bottom: 1.5svh;
+  }
+
+  .lb2-visibility__road { width: 74vw; }
+  .lb2-visibility__calendar { width: min(39vw, 19svh); }
+
+  .lb2-visibility__birdee,
+  .lb2-visibility__stage[data-act="2"] .lb2-visibility__birdee {
+    width: min(78vw, 36svh);
+  }
+
+  .lb2-accountant__receipt { transform: none; }
+  .lb2-accountant__bird { transform: scale(1.65); }
+  .lb2-accountant__board { transform: scale(1.32); }
+
+  .lb2-accountant__scene {
+    bottom: 10%;
+    height: 28%;
+  }
+
+  .lb2-accountant__line { top: 50%; }
+  .lb2-accountant__line::before { right: 52%; }
+  .lb2-accountant__line::after { left: 52%; }
+}
