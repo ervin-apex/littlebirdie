@@ -5,15 +5,15 @@ import { LittleBirdee, type BirdeeState } from "@/components/LittleBirdee";
 import { assetPath } from "@/lib/site";
 
 const SRC: Record<BirdeeState, string> = {
-  profit: assetPath("/brand/birdee-reference-profit-v1.png"),
-  neutral: assetPath("/brand/birdee-reference-neutral-v1.png"),
-  loss: assetPath("/brand/birdee-reference-loss-v1.png"),
+  profit: assetPath("/brand/birdee-semantic-encouraging-v1.png"),
+  neutral: assetPath("/brand/birdee-semantic-attentive-v1.png"),
+  loss: assetPath("/brand/birdee-semantic-supportive-v1.png"),
 };
 
 const ALT: Record<BirdeeState, string> = {
-  profit: "Little Birdee, happy",
-  neutral: "Little Birdee",
-  loss: "Little Birdee, worried",
+  profit: "Little Birdee, encouraging",
+  neutral: "Little Birdee, attentive",
+  loss: "Little Birdee, supportive",
 };
 
 /**
@@ -37,9 +37,9 @@ export function BirdeeMascot({
   const [failed, setFailed] = useState(false);
   const cls = `${className ?? ""} ${float ? "birdee-float" : ""}`.trim();
   const src = variant === "concerned"
-    ? assetPath("/brand/birdee-reference-concerned-v1.png")
+    ? assetPath("/brand/birdee-semantic-supportive-v1.png")
     : SRC[state];
-  const alt = variant === "concerned" ? "Little Birdee, thinking" : ALT[state];
+  const alt = variant === "concerned" ? "Little Birdee, supportive" : ALT[state];
 
   if (failed) {
     return <LittleBirdee state={state} size={size} className={cls} />;

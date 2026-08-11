@@ -1,4 +1,4 @@
-import type { ChirpContent, ChirpKind } from "./types";
+import type { ChirpContent } from "./types";
 
 function escapeHtml(value: string) {
   return value
@@ -13,10 +13,16 @@ function assetUrl(actionUrl: string, path: string) {
   return new URL(path, actionUrl).toString();
 }
 
-function birdeeAsset(kind: ChirpKind) {
-  if (kind === "estimated_result") return "/brand/birdee-reference-profit-v1.png";
-  if (kind === "setup_needed") return "/brand/birdee-reference-business-v1.png";
-  return "/brand/birdee-reference-neutral-v1.png";
+function birdeeAsset(content: ChirpContent) {
+  if (content.kind === "estimated_result") {
+    return content.amountCents !== null && content.amountCents < 0
+      ? "/brand/birdee-semantic-supportive-v1.png"
+      : "/brand/birdee-semantic-encouraging-v1.png";
+  }
+  if (content.kind === "revenue_needed") {
+    return "/brand/birdee-semantic-one-number-v1.png";
+  }
+  return "/brand/birdee-semantic-attentive-v1.png";
 }
 
 function detailRow(line: string) {
@@ -63,7 +69,7 @@ export function renderChirpEmail({
     : "";
   const name = recipientName.trim() || "there";
   const logoUrl = assetUrl(actionUrl, "/brand/birdee-face-square.png");
-  const mascotUrl = assetUrl(actionUrl, birdeeAsset(content.kind));
+  const mascotUrl = assetUrl(actionUrl, birdeeAsset(content));
   const heroBackdropUrl = content.kind === "estimated_result"
     ? assetUrl(actionUrl, "/brand/chirp-profit-card-flight-path-v1.png")
     : null;

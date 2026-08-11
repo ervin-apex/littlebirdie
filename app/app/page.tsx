@@ -1647,7 +1647,7 @@ function WhatIfView({
           <div className="what-if-result-main">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={assetPath("/brand/birdee-what-if-calculator-v1.png")}
+              src={assetPath("/brand/birdee-semantic-curious-calculator-v1.png")}
               alt="Little Birdee checking a calculator"
               className="what-if-birdee"
             />
