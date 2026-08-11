@@ -92,13 +92,13 @@ type Adjustments = Record<Driver, Adjustment>;
 type DailyCheckInTask = DashboardAttentionTask;
 
 const CHAPTERS: { key: Chapter; label: string }[] = [
-  { key: "revenue", label: "Revenue" },
+  { key: "revenue", label: "Actual" },
   { key: "budget", label: "Budget" },
   { key: "week", label: "Week" },
 ];
 
 const DRIVER_LABELS: Record<Driver, string> = {
-  revenue: "Revenue",
+  revenue: "Actual",
   cogs: "COGS",
   wages: "Wages",
   fixed: "Fixed & variable",
@@ -849,7 +849,7 @@ function DashboardView({
           {incompleteDayTask ? (
             <>
               <p>Yesterday&rsquo;s result</p>
-              <strong className="dashboard-waiting-title">Waiting for revenue</strong>
+              <strong className="dashboard-waiting-title">Waiting for an actual</strong>
               <span>Add the sales total and Birdee will show how the day went.</span>
             </>
           ) : (
@@ -868,7 +868,7 @@ function DashboardView({
               className="result-action dashboard-primary-action"
               trailingIcon={<ArrowRight weight="bold" />}
             >
-              Add {incompleteDayTask.dayName}&rsquo;s revenue
+              Add {incompleteDayTask.dayName}&rsquo;s actual
             </ProductButton>
           ) : !isFuture && (
             <ProductButton
@@ -902,15 +902,15 @@ function DashboardView({
       </aside>
 
       {dailyCheckInTask && (
-        <section className="daily-check-in-task" aria-label="Daily revenue needed">
+        <section className="daily-check-in-task" aria-label="Daily actual needed">
           <span className="daily-check-in-task__icon" aria-hidden="true">
             <CalendarBlank weight="duotone" />
           </span>
           <div className="daily-check-in-task__copy">
-            <strong>{dailyCheckInTask.dayName} is waiting for revenue.</strong>
+            <strong>{dailyCheckInTask.dayName} is waiting for an actual.</strong>
             <span>
               {dailyCheckInTask.missingCount > 1
-                ? `${dailyCheckInTask.missingCount} past days still need a revenue figure.`
+                ? `${dailyCheckInTask.missingCount} past days still need an actual.`
                 : "Add it to finish Birdee's result for that day."}
             </span>
           </div>
@@ -920,7 +920,7 @@ function DashboardView({
             size="compact"
             trailingIcon={<ArrowRight weight="bold" />}
           >
-            Add {dailyCheckInTask.dayName}&rsquo;s revenue
+            Add {dailyCheckInTask.dayName}&rsquo;s actual
           </ProductButton>
         </section>
       )}
@@ -991,7 +991,7 @@ function DashboardView({
             leadingIcon={<Plus size={20} weight="bold" />}
             trailingIcon={<ArrowRight size={18} weight="bold" />}
           >
-            Add {dailyCheckInTask.dayName}&rsquo;s revenue
+            Add {dailyCheckInTask.dayName}&rsquo;s actual
           </ProductButton>
         </div>
       )}
@@ -1043,7 +1043,7 @@ function DashboardAttentionOverlay({
     : `How did ${prompt.task.dayName} go?`;
   const support = weekly
     ? `I\u2019ve brought last week\u2019s budget across. Give it a quick check so I can track ${formatWeekRange(prompt.targetWeekStart)}.`
-    : "Add the revenue and I\u2019ll work out the rest from your weekly budget.";
+    : "Add the actual and I\u2019ll work out the rest from your weekly budget.";
   const dateLabel = weekly
     ? formatWeekRange(prompt.targetWeekStart)
     : formatLongDate(date);
@@ -1145,7 +1145,7 @@ function DashboardAttentionOverlay({
                 className="dashboard-attention-primary"
                 onClick={() => onDailyCheckIn(prompt.task.date)}
               >
-                Add {prompt.task.dayName}&rsquo;s revenue
+                Add {prompt.task.dayName}&rsquo;s actual
                 <ArrowRight weight="bold" aria-hidden />
               </button>
             )}
@@ -1186,7 +1186,7 @@ function DayPreviewOverlay({ row, onClose, onOpen }: {
       : "behind budget";
   const dayName = fullDayName(row.label);
   const driverInsight = row.variance?.driver === "revenue"
-    ? "Revenue did most of the pulling."
+    ? "Actual sales did most of the pulling."
     : row.variance?.driver === "labour"
       ? "Wages made the biggest difference."
       : "Your daily costs made the biggest difference.";
@@ -1229,10 +1229,10 @@ function YesterdayComparison({ row }: { row: LedgerRow }) {
 
   const variance = row.variance.net;
   const driverText = row.variance.driver === "revenue"
-    ? `Revenue was ${money(Math.abs(row.variance.rev))} ${row.variance.rev < 0 ? "below" : "above"} budget.`
+    ? `Actual was ${money(Math.abs(row.variance.rev))} ${row.variance.rev < 0 ? "below" : "above"} budget.`
     : row.variance.driver === "labour"
       ? `Wages were ${money(Math.abs(row.variance.lab))} ${row.variance.lab > 0 ? "over" : "under"} budget.`
-      : "Revenue and wages were the biggest drivers.";
+      : "Actual and wages were the biggest drivers.";
 
   return (
     <section className="day-comparison" aria-labelledby="day-comparison-title">
@@ -1365,7 +1365,7 @@ function ResultExplanationView({
   const drivers = profitDrivers(actual, budget, week);
   const leadDriver = drivers[0];
   const leadDriverInsight = leadDriver?.key === "revenue"
-    ? "Revenue did most of the pulling."
+    ? "Actual sales did most of the pulling."
     : leadDriver?.key === "wages"
       ? "Wages moved profit the most."
       : leadDriver?.key === "cogs"
@@ -1426,7 +1426,7 @@ function ResultExplanationView({
             <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} variant={difference < 0 ? "concerned" : undefined} size={78} />
             <p>{leadDriverInsight}</p>
           </div>
-          <p className="bridge-note">Revenue impact includes GST and budgeted COGS.</p>
+          <p className="bridge-note">Actual impact includes GST and budgeted COGS.</p>
         </div>
       </section>
 
@@ -1468,7 +1468,7 @@ function profitDrivers(actual: DayCell, budget: DayCell, week: Week): ProfitDriv
   const candidates: ProfitDriver[] = [
     {
       key: "revenue",
-      label: "Revenue",
+      label: "Actual",
       detail: `${money(revenueDelta)} ${revenueDelta >= 0 ? "above" : "below"} budget`,
       impact: revenueImpact,
     },
@@ -1627,7 +1627,7 @@ function WhatIfView({
   };
 
   const driverHint: Record<Driver, string> = {
-    revenue: "See what a little more revenue could do.",
+    revenue: "See what a little more sales could do.",
     wages: "Try a roster change and see where profit lands.",
     cogs: "Test a different cost-of-goods rate.",
     fixed: "See how an overhead change affects this period.",
@@ -1840,10 +1840,10 @@ function FullNumbersView({
       : "Full-week outlook";
   const breakEvenStatus = `${money(breakEvenGap)} ${isShortOfBreakEven ? "short of" : "above"} break-even`;
   const breakEvenSupport = isShortOfBreakEven
-    ? "Your revenue plan is close, but it does not cover the current cost mix yet."
-    : "Your revenue plan clears the current cost mix."
+    ? "Your sales budget is close, but it does not cover the current cost mix yet."
+    : "Your sales budget clears the current cost mix."
   const breakEvenCallout = isShortOfBreakEven
-    ? `At this cost mix, you need another ${money(breakEvenGap)} in revenue to reach $0 profit.`
+    ? `At this cost mix, you need another ${money(breakEvenGap)} in sales to reach $0 profit.`
     : `At this cost mix, the plan clears break-even by ${money(breakEvenGap)}.`;
   const enteredRows = rows.filter((row) => row.actual).length;
   const currentRow = rows.find((row) => row.status === "today");
@@ -1952,10 +1952,10 @@ function FullNumbersView({
             <div
               className="break-even-comparison"
               role="img"
-              aria-label={`Revenue plan ${money(scopeBudget.rev)}. Break-even ${money(be.breakeven)}. ${breakEvenStatus}.`}
+              aria-label={`Sales budget ${money(scopeBudget.rev)}. Break-even ${money(be.breakeven)}. ${breakEvenStatus}.`}
             >
               <div className="break-even-comparison-labels">
-                <span>Revenue plan<strong className="tnum">{money(scopeBudget.rev)}</strong></span>
+                <span>Sales budget<strong className="tnum">{money(scopeBudget.rev)}</strong></span>
                 <span>Break-even<strong className="tnum">{money(be.breakeven)}</strong></span>
               </div>
               <div
@@ -1976,8 +1976,8 @@ function FullNumbersView({
             </div>
 
             <div className="break-even-cost-context">
-              <div><span>Wages</span><strong className="tnum">{wagesPct.toFixed(1)}%</strong><small>of net revenue</small></div>
-              <div><span>COGS rate</span><strong className="tnum">{week.cogs.toFixed(1)}%</strong><small>of revenue excluding GST</small></div>
+              <div><span>Wages</span><strong className="tnum">{wagesPct.toFixed(1)}%</strong><small>of net sales</small></div>
+              <div><span>COGS rate</span><strong className="tnum">{week.cogs.toFixed(1)}%</strong><small>of sales excluding GST</small></div>
             </div>
 
             <div className="break-even-callout">
@@ -2268,7 +2268,7 @@ function DayScore({
         aria-label={isCompleted
           ? `${fullDayName(row.label)}, ${signedProfit(difference ?? 0)} ${performanceLabel} budget`
           : onCheckIn
-            ? `Add ${fullDayName(row.label)} revenue`
+            ? `Add ${fullDayName(row.label)} actual`
             : `${fullDayName(row.label)}, ${performanceLabel}`}
       >
         <span className="day-name">{row.label}</span>
@@ -2285,7 +2285,7 @@ function DayScore({
             <small>{performanceLabel}</small>
           </>
         ) : (
-          <small>{onCheckIn ? "Add revenue" : performanceLabel}</small>
+          <small>{onCheckIn ? "Add actual" : performanceLabel}</small>
         )}
       </button>
 
@@ -2336,7 +2336,7 @@ function ReconciliationTable({
   const rows = [
     {
       key: "revenue",
-      label: "Revenue",
+      label: "Actual",
       actual: actual.rev,
       budget: budget.rev,
       variance: actual.rev - budget.rev,
@@ -2387,7 +2387,7 @@ function ReconciliationTable({
       variance: 0,
       positive: "lower",
       negative: "higher",
-      neutralLabel: "follows revenue",
+      neutralLabel: "follows actual",
       driver: false,
       evidence: actual.componentProvenance.gst,
     },
@@ -2643,7 +2643,7 @@ function adjustmentDraftError(
 
 function scenarioDriverResultCopy(driver: Driver, scenarioWeek: Week, unchanged: boolean) {
   const prefix = unchanged ? "Current" : "New";
-  if (driver === "revenue") return `${prefix} revenue ${money(scenarioWeek.rev)}`;
+  if (driver === "revenue") return `${prefix} actual ${money(scenarioWeek.rev)}`;
   if (driver === "wages") return `${prefix} wages ${money(scenarioWeek.lab)}`;
   if (driver === "fixed") return `${prefix} other costs ${money(scenarioWeek.fix)}`;
   return `${prefix} COGS rate ${formatAdjustmentInput(scenarioWeek.cogs)}%`;

@@ -34,7 +34,7 @@ export function aggregateEbitdaResults(
   const components: EbitdaComponents = {
     revenueExGst: sumValues(
       results.map((result) => result.components.revenueExGst),
-      "GST-exclusive revenue aggregated for the selected period",
+      "GST-exclusive sales aggregated for the selected period",
     ),
     recurringOperatingIncome: sumValues(
       results.map(

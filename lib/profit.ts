@@ -103,7 +103,7 @@ export const BLANK_WEEK: Week = {
 const forecastProvenance: Provenance = {
   source: "forecast",
   status: "forecast",
-  label: "Entered revenue budget; no live sync",
+  label: "Entered sales budget; no live sync",
 };
 const setupEstimateProvenance: Provenance = {
   source: "manual",
@@ -118,7 +118,7 @@ const rosterBudgetProvenance: Provenance = {
 const demoRevenueProvenance: Provenance = {
   source: "manual",
   status: "estimated",
-  label: "Demo revenue data; no live sync",
+  label: "Demo actual data; no live sync",
 };
 const demoLabourProvenance: Provenance = {
   source: "manual",
@@ -272,7 +272,7 @@ export function suggestions(w: Week): Suggestion[] {
   const defs: Pick<Suggestion, "key" | "action" | "reason" | "apply">[] = [
     {
       key: "rev",
-      action: "Lift revenue 3%",
+      action: "Lift sales 3%",
       reason: "A small lift clears your break-even line.",
       apply: { rev: Math.round((w.rev * 1.03) / 10) * 10 },
     },
@@ -285,7 +285,7 @@ export function suggestions(w: Week): Suggestion[] {
     {
       key: "lab",
       action: "Trim labour 2%",
-      reason: `Labour is ${labPct}% of revenue, running a touch high.`,
+      reason: `Labour is ${labPct}% of sales, running a touch high.`,
       apply: { lab: Math.round((w.lab * 0.98) / 10) * 10 },
     },
   ];
@@ -562,8 +562,8 @@ function cell(
         status: revenueProvenance.status,
         label:
           w.revenueEntryBasis === "gst-inclusive"
-            ? "Calculated from the GST-inclusive revenue entry"
-            : "No GST removed from the GST-exclusive revenue entry",
+            ? "Calculated from the GST-inclusive actual"
+            : "No GST removed from the GST-exclusive actual",
       },
       otherCosts: result.components.otherOperatingCosts.provenance,
       profit: {
@@ -1261,7 +1261,7 @@ export function historyTrends(h: HistoryWeek[]): TrendSummary {
 export type LeverKey = "rev" | "lab" | "cogs" | "fix";
 
 export const LEVER_META: Record<LeverKey, { label: string; cost: boolean }> = {
-  rev: { label: "Revenue", cost: false },
+  rev: { label: "Actual", cost: false },
   lab: { label: "Labour", cost: true },
   cogs: { label: "Cost of goods", cost: true },
   fix: { label: "Fixed costs", cost: true },

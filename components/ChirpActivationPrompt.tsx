@@ -63,7 +63,7 @@ export function ChirpActivationPrompt({ active }: { active: boolean }) {
         <p>Meet your morning Chirp</p>
         <h2 id="chirp-activation-title">Want Birdee to check in about {venueName}?</h2>
         <span>
-          Get yesterday’s estimated result by email—or a gentle nudge when revenue is still missing.
+          Get yesterday’s estimated result by email—or a gentle nudge when the actual is still missing.
         </span>
       </div>
       <Link href="/account#daily-chirps">Choose my time</Link>

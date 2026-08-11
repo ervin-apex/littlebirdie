@@ -82,7 +82,7 @@ export async function loadChirpSource(
     if (dayError) throw new Error("Birdee could not load the chirp's daily allocation.");
     if (day) {
       planDay = {
-        plannedRevenueCents: integer(day.planned_revenue_cents, "Planned revenue"),
+        plannedRevenueCents: integer(day.planned_revenue_cents, "Sales budget"),
         plannedLabourCents: integer(day.planned_labour_cents, "Planned labour"),
         plannedOtherOperatingCostsCents: integer(
           day.planned_other_operating_costs_cents,
@@ -132,7 +132,7 @@ export async function loadChirpSource(
       ? {
         enteredRevenueCents: actual.entered_revenue_cents == null
           ? null
-          : integer(actual.entered_revenue_cents, "Entered revenue"),
+          : integer(actual.entered_revenue_cents, "Entered actual"),
         labourCents: actual.labour_cents == null
           ? null
           : integer(actual.labour_cents, "Labour"),

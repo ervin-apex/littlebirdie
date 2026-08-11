@@ -40,7 +40,7 @@ export function legacyWeekToEbitdaInputs(
   conversion: LegacyWeekConversion,
 ): EbitdaInputs {
   const revenue = normalizeRevenue({
-    enteredAmountCents: dollarsToCents(week.rev, "Revenue"),
+    enteredAmountCents: dollarsToCents(week.rev, "Actual"),
     entryBasis: conversion.revenueEntryBasis,
     gstRegistration: conversion.gstRegistration,
     provenance: conversion.revenueProvenance,

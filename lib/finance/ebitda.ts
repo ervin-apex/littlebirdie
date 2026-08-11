@@ -15,7 +15,7 @@ import type {
 export function calculateEbitda(inputs: EbitdaInputs): EbitdaResult {
   assertNonNegativeMoneyCents(
     inputs.revenueExGst.amountCents,
-    "Revenue excluding GST",
+    "Actual excluding GST",
   );
   assertNonNegativeMoneyCents(inputs.labour.amountCents, "Labour");
   assertNonNegativeMoneyCents(
@@ -38,7 +38,7 @@ export function calculateEbitda(inputs: EbitdaInputs): EbitdaResult {
     amountCents: cogsAmountCents,
     provenance: derivedProvenance(
       [inputs.revenueExGst.provenance, inputs.cogsRate.provenance],
-      "COGS estimated from GST-exclusive revenue and the configured rate",
+      "COGS estimated from GST-exclusive sales and the configured rate",
     ),
   };
 

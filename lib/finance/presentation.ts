@@ -12,7 +12,7 @@ export function describeEbitdaResult(
     return {
       label: "Forecast EBITDA",
       explanation:
-        "This period uses forecast revenue and planned or estimated costs.",
+        "This period uses forecast sales and planned or estimated costs.",
     };
   }
 

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   const revenueCents = revenueToCents(body?.revenue);
   if (!isIsoDate(body?.serviceDate) || revenueCents == null) {
     return NextResponse.json(
-      { error: "Choose a valid day and enter revenue of zero or more." },
+      { error: "Choose a valid day and enter an actual amount of zero or more." },
       { status: 400 },
     );
   }
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
     const message = error?.message?.includes("Future revenue")
       ? "That day has not happened yet."
       : error?.message?.includes("No locked weekly plan")
-        ? "Set up a weekly plan before entering daily revenue."
-        : "Birdee could not save this day's revenue.";
+        ? "Set up a weekly budget before entering a daily actual."
+        : "Birdee could not save this day's actual.";
     return NextResponse.json({ error: message }, { status: 409 });
   }
 

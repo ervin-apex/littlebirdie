@@ -45,10 +45,10 @@ const MAX_DAILY_REVENUE = 10_000_000;
 function validateMoney(value: string) {
   const cleaned = value.replace(/[$,\s]/g, "");
   if (cleaned === "") {
-    return { value: null, error: "Enter a revenue amount." };
+    return { value: null, error: "Enter an actual amount." };
   }
   if (cleaned.startsWith("-")) {
-    return { value: null, error: "Revenue cannot be negative." };
+    return { value: null, error: "Actual cannot be negative." };
   }
   if (!/^\d+(?:\.\d*)?$/.test(cleaned)) {
     return { value: null, error: "Use numbers only." };
@@ -59,7 +59,7 @@ function validateMoney(value: string) {
   }
   const parsed = Number(cleaned);
   if (!Number.isFinite(parsed)) {
-    return { value: null, error: "Enter a valid revenue amount." };
+    return { value: null, error: "Enter a valid actual amount." };
   }
   if (parsed > MAX_DAILY_REVENUE) {
     return { value: null, error: "Enter $10,000,000 or less." };
@@ -197,7 +197,7 @@ export default function DailyCheckInPage() {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Birdee could not save this revenue.",
+          : "Birdee could not save this actual.",
       );
     } finally {
       setSaving(false);
@@ -287,7 +287,7 @@ export default function DailyCheckInPage() {
             <div className="daily-revenue-form__intro">
               <div>
                 <h2 id="daily-revenue-heading">
-                  {isToday ? "Today’s revenue" : `${dayName}’s revenue`}
+                  {isToday ? "Today’s actual" : `${dayName}’s actual`}
                 </h2>
                 <p>
                   {state.week.revenueEntryBasis === "gst-inclusive"
@@ -387,14 +387,14 @@ export default function DailyCheckInPage() {
             <div className="daily-birdee-guide__copy">
               <span><Storefront weight="duotone" aria-hidden /> {state.venueName}</span>
               <h2>I&rsquo;ll use your weekly plan for costs.</h2>
-              <p>One revenue number is all I need from you today.</p>
+              <p>One actual number is all I need from you today.</p>
             </div>
           </aside>
         </div>
 
         <div id="daily-revenue-context" className="daily-plan-context">
           <div>
-            <span>Revenue plan</span>
+            <span>Sales budget</span>
             <strong>{money(plannedRevenue)}</strong>
           </div>
           <div>

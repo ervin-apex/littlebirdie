@@ -10,7 +10,7 @@ import type { NormalizedRevenue, RevenueInput } from "./types";
 export function normalizeRevenue(input: RevenueInput): NormalizedRevenue {
   assertNonNegativeMoneyCents(
     input.enteredAmountCents,
-    "Entered revenue",
+    "Entered actual",
   );
 
   const gstRateBasisPoints =
@@ -22,7 +22,7 @@ export function normalizeRevenue(input: RevenueInput): NormalizedRevenue {
     input.entryBasis === "gst-inclusive"
   ) {
     throw new Error(
-      "A business that is not GST-registered cannot enter GST-inclusive revenue.",
+      "A business that is not GST-registered cannot enter a GST-inclusive actual.",
     );
   }
 

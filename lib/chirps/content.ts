@@ -58,7 +58,7 @@ export function buildChirpContent(source: ChirpSource): ChirpContent {
       dateLabel: day,
       eyebrow: "One quick setup step",
       heading: `Finish ${source.venueName}'s weekly budget.`,
-      intro: "Once that is saved, I can turn each day's revenue into an estimated EBITDA update.",
+      intro: "Once that is saved, I can turn each day's actual into an estimated EBITDA update.",
       amountCents: null,
       amountLabel: null,
       detailLines: [
@@ -75,16 +75,16 @@ export function buildChirpContent(source: ChirpSource): ChirpContent {
     return {
       kind: "revenue_needed",
       subject: "Birdee needs one number from you",
-      preheader: `Add ${day}'s revenue to see how ${source.venueName} went.`,
+      preheader: `Add ${day}'s actual to see how ${source.venueName} went.`,
       dateLabel: day,
       eyebrow: "Daily check-in",
       heading: `What did ${source.venueName} make?`,
-      intro: "Pop in one revenue number and Birdee will work out the rest from the weekly budget.",
+      intro: "Pop in one actual number and Birdee will work out the rest from the weekly budget.",
       amountCents: null,
       amountLabel: null,
-      detailLines: ["One revenue number is all Birdee needs at launch."],
+      detailLines: ["One actual number is all Birdee needs at launch."],
       assumptionNote: "Labour remains an estimate allocated from the weekly budget.",
-      ctaLabel: `Add ${weekday}’s revenue`,
+      ctaLabel: `Add ${weekday}’s actual`,
       destination: "check-in",
     };
   }
@@ -98,7 +98,7 @@ export function buildChirpContent(source: ChirpSource): ChirpContent {
     provenance: provenance(
       actual.revenueSource ?? "manual",
       actual.revenueStatus ?? "confirmed",
-      "Yesterday's entered revenue",
+      "Yesterday's entered actual",
     ),
   });
   const usesPlannedLabour = actual.labourCents === null;
@@ -131,7 +131,7 @@ export function buildChirpContent(source: ChirpSource): ChirpContent {
     enteredAmountCents: plan.plannedRevenueCents,
     entryBasis: plan.revenueEntryBasis,
     gstRegistration: plan.gstRegistration,
-    provenance: provenance("manual", "estimated", "Planned revenue"),
+    provenance: provenance("manual", "estimated", "Sales budget"),
   });
   const plannedResult = calculateEbitda({
     revenueExGst: plannedRevenue.revenueExGst,
@@ -168,7 +168,7 @@ export function buildChirpContent(source: ChirpSource): ChirpContent {
     amountCents: result.amountCents,
     amountLabel: `${signedMoney(result.amountCents)} EBITDA`,
     detailLines: [
-      `Revenue excluding GST: ${money(result.components.revenueExGst.amountCents)}`,
+      `Actual excluding GST: ${money(result.components.revenueExGst.amountCents)}`,
       `COGS: ${money(result.components.cogs.amountCents)}`,
       `Labour: ${money(result.components.labour.amountCents)}`,
       `Other operating costs: ${money(result.components.otherOperatingCosts.amountCents)}`,

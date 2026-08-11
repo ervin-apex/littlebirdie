@@ -50,7 +50,7 @@ export function ChirpPreferenceCard({ initial }: { initial: ChirpPreferenceView 
       <div className="account-chirp__copy">
         <strong>Daily email Chirp</strong>
         <p>
-          Birdee emails yesterday’s estimated result, or asks for revenue when it is missing.
+          Birdee emails yesterday’s estimated result, or asks for the actual when it is missing.
         </p>
         <span><EnvelopeSimple aria-hidden /> {initial.recipientEmail}</span>
         <small className="account-chirp__last">

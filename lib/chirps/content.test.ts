@@ -33,7 +33,7 @@ describe("buildChirpContent", () => {
     expect(content.subject).not.toContain("Newtown");
   });
 
-  it("asks for exactly one revenue number when yesterday is missing", () => {
+  it("asks for exactly one actual number when yesterday is missing", () => {
     const content = buildChirpContent(base);
     expect(content.kind).toBe("revenue_needed");
     expect(content.destination).toBe("check-in");
@@ -68,7 +68,7 @@ describe("buildChirpContent", () => {
     expect(content.assumptionNote).toContain("Labour and other costs");
   });
 
-  it("treats zero revenue as an entered actual, not a missing value", () => {
+  it("treats a zero actual as entered, not missing", () => {
     const content = buildChirpContent({
       ...base,
       actual: {

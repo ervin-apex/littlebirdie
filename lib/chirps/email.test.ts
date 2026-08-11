@@ -7,7 +7,7 @@ describe("renderChirpEmail", () => {
       content: {
         kind: "revenue_needed",
         subject: "Birdee needs one number from you",
-        preheader: "Add revenue",
+        preheader: "Add actual",
         dateLabel: "Monday, 3 August",
         eyebrow: "Daily check-in",
         heading: "How did <Venue> go?",
@@ -16,7 +16,7 @@ describe("renderChirpEmail", () => {
         amountLabel: null,
         detailLines: [],
         assumptionNote: null,
-        ctaLabel: "Add revenue",
+        ctaLabel: "Add actual",
         destination: "check-in",
       },
       actionUrl: "https://example.com/chirps/open?x=1&y=2",
@@ -26,8 +26,8 @@ describe("renderChirpEmail", () => {
     expect(email.html).toContain("How did &lt;Venue&gt; go?");
     expect(email.html).not.toContain("<Ervin>");
     expect(email.html).toContain("/brand/birdee-face-square.png");
-    expect(email.html).toContain("/brand/birdee-reference-neutral-v1.png");
-    expect(email.text).toContain("Add revenue: https://example.com/chirps/open");
+    expect(email.html).toContain("/brand/birdee-semantic-one-number-v1.png");
+    expect(email.text).toContain("Add actual: https://example.com/chirps/open");
   });
 
   it("renders a positive result as the dominant green score", () => {
@@ -39,10 +39,10 @@ describe("renderChirpEmail", () => {
         dateLabel: "Monday, 3 August",
         eyebrow: "Yesterday's result",
         heading: "Newtown made an estimated",
-        intro: "Monday's revenue has been combined with the saved cost assumptions.",
+        intro: "Monday's actual has been combined with the saved cost assumptions.",
         amountCents: 113600,
         amountLabel: "+$1,136 EBITDA",
-        detailLines: ["Revenue excluding GST: $3,200", "Labour: $920"],
+        detailLines: ["Actual excluding GST: $3,200", "Labour: $920"],
         assumptionNote: "Labour and other costs use the locked weekly budget.",
         ctaLabel: "See yesterday's numbers",
         destination: "day",
@@ -56,10 +56,10 @@ describe("renderChirpEmail", () => {
     expect(email.html).not.toContain(">+$1,136 EBITDA<");
     expect(email.html).toContain("Estimated EBITDA");
     expect(email.html).toContain("color:#287a53");
-    expect(email.html).toContain("/brand/birdee-reference-profit-v1.png");
+    expect(email.html).toContain("/brand/birdee-semantic-encouraging-v1.png");
     expect(email.html).toContain("/brand/chirp-profit-card-flight-path-v1.png");
     expect(email.html).toContain("What Birdee used");
-    expect(email.html).toContain("Revenue excluding GST");
+    expect(email.html).toContain("Actual excluding GST");
     expect(email.html).toContain(".hero-copy { display:table-cell !important;");
     expect(email.html).toContain(".hero-birdee { display:table-cell !important;");
     expect(email.html).not.toContain(".hero-copy { display:block !important;");
@@ -88,5 +88,6 @@ describe("renderChirpEmail", () => {
     });
 
     expect(email.html).toContain("color:#c94b43");
+    expect(email.html).toContain("/brand/birdee-semantic-supportive-v1.png");
   });
 });

@@ -61,7 +61,7 @@ export function applyEbitdaScenario(
     revenueExGst: applyAmountAdjustment(
       inputs.revenueExGst,
       adjustments.revenue,
-      "Revenue",
+      "Actual",
     ),
     cogsRate: {
       basisPoints: cogsRateBasisPoints,
