@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
+import {
+  billingEnforcementEnabled,
+  loadBillingBusinessContext,
+} from "@/lib/billing/server";
+import { resolveFinishSetupDestination } from "@/lib/auth/finish-setup-destination";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -22,25 +27,40 @@ export async function GET(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile?.onboarding_completed_at) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
-
   const cookieStore = await cookies();
-  const venueNavigation = await loadVenueNavigation(
-    supabase,
-    cookieStore.get("little-birdee-venue")?.value,
-  );
+  const [billing, venueNavigation] = await Promise.all([
+    loadBillingBusinessContext(),
+    loadVenueNavigation(
+      supabase,
+      cookieStore.get("little-birdee-venue")?.value,
+    ),
+  ]);
   const venue = venueNavigation.venues.find(
     (item) => item.id === venueNavigation.selectedVenueId,
   );
 
-  if (!venue) {
-    return NextResponse.redirect(new URL("/auth/login?error=setup", request.url));
+  const destination = resolveFinishSetupDestination({
+    billing: billing ? {
+      accessState: billing.entitlement.accessState,
+      canUseProduct: billing.entitlement.canUseProduct,
+      dataState: billing.projection?.dataState ?? null,
+    } : null,
+    billingEnforcementEnabled: billingEnforcementEnabled(),
+    hasCompletedOnboarding: Boolean(profile?.onboarding_completed_at),
+    hasPlan: venue?.hasPlan ?? null,
+    next,
+    venueNavigationError: Boolean(venueNavigation.error),
+  });
+  const normalVenueDestination = venue
+    ? next ?? (venue.hasPlan ? "/app?period=this-week" : "/setup")
+    : null;
+
+  if (!venue || destination !== normalVenueDestination) {
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   const response = NextResponse.redirect(
-    new URL(next ?? (venue.hasPlan ? "/app?period=this-week" : "/setup"), request.url),
+    new URL(destination, request.url),
   );
   response.cookies.set("little-birdee-venue", venue.id, {
     httpOnly: true,

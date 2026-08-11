@@ -20,12 +20,20 @@ export default async function SetupLayout({
   if (!user) redirect("/auth/login");
 
   const venueId = (await cookies()).get(VENUE_COOKIE)?.value;
-  if (!venueId) redirect("/account");
+  const billing = await loadBillingBusinessContext();
+  if (!venueId) {
+    if (billing?.entitlement.canUseProduct) return children;
+    redirect(
+      billing?.entitlement.accessState === "locked_recovery"
+        ? "/billing/locked"
+        : "/billing",
+    );
+  }
 
-  const [billing, { data: canStartInitialSetup }] = await Promise.all([
-    loadBillingBusinessContext(),
-    supabase.rpc("can_start_initial_setup", { p_venue_id: venueId }),
-  ]);
+  const { data: canStartInitialSetup } = await supabase.rpc(
+    "can_start_initial_setup",
+    { p_venue_id: venueId },
+  );
   const canUseSetup = canOpenVenueFinancialRecords({
     enforcementEnabled: true,
     canUseProduct: billing?.entitlement.canUseProduct ?? false,

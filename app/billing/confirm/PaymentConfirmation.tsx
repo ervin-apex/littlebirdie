@@ -129,7 +129,7 @@ export function PaymentConfirmation({
           {confirmed ? (
             <div className="billing-confirmation-complete">
               <ProductButton
-                href={needsSetup ? "/setup" : "/app"}
+                href="/auth/finish-setup"
                 variant="primary"
                 fullWidth
                 trailingIcon={<ArrowRight weight="bold" />}

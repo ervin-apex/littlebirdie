@@ -174,6 +174,18 @@ export default async function AccountPage({
             That venue is not available to this account.
           </p>
         )}
+        {error === "venues-unavailable" && (
+          <p className="account-message account-message--error" role="alert">
+            <WarningCircle weight="fill" aria-hidden />
+            Birdee could not load your venues. Please refresh and try again.
+          </p>
+        )}
+        {error === "business-unavailable" && (
+          <p className="account-message account-message--error" role="alert">
+            <WarningCircle weight="fill" aria-hidden />
+            Birdee could not find the business for this account. Please contact support.
+          </p>
+        )}
 
         {setup === "pending" && selectedVenue && !selectedVenue.hasPlan && (
           <section className="account-setup-paused" aria-labelledby="setup-paused-title">

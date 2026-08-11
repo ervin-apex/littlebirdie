@@ -45,6 +45,7 @@ export type VenueNavigationItem = {
 export type VenueNavigation = {
   venues: VenueNavigationItem[];
   selectedVenueId: string | null;
+  error: string | null;
 };
 
 export async function loadVenueNavigation(
@@ -57,8 +58,16 @@ export async function loadVenueNavigation(
     .eq("is_active", true)
     .order("created_at");
 
-  if (venueError || !venueRows?.length) {
-    return { venues: [], selectedVenueId: null };
+  if (venueError) {
+    return {
+      venues: [],
+      selectedVenueId: null,
+      error: venueError.message,
+    };
+  }
+
+  if (!venueRows?.length) {
+    return { venues: [], selectedVenueId: null, error: null };
   }
 
   const venues = venueRows as VenueRow[];
@@ -138,5 +147,5 @@ export async function loadVenueNavigation(
   });
   const selectedVenueId = resolveSelectedVenueId(items, requestedVenueId);
 
-  return { venues: items, selectedVenueId };
+  return { venues: items, selectedVenueId, error: null };
 }
