@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LANDING_V2_MEDIA } from "../media";
-import { CheckpointVideo } from "../motion/CheckpointVideo";
 import { usePrefersReducedMotion, useScrollStage } from "../motion/useScrollStage";
 import { accountantAct } from "../motion/timeline";
 
@@ -173,29 +172,7 @@ function AccountantBoardDetails({ actIndex }: { actIndex: number }) {
   );
 }
 
-function AccountantBird({
-  actIndex,
-  videoFailed,
-  onVideoError,
-}: {
-  actIndex: number;
-  videoFailed: boolean;
-  onVideoError: () => void;
-}) {
-  if (!videoFailed) {
-    return (
-      <CheckpointVideo
-        activeIndex={actIndex}
-        checkpoints={LANDING_V2_MEDIA.accountant.checkpointSegments}
-        className="lb2-accountant__bird-media"
-        delayMs={70}
-        poster={LANDING_V2_MEDIA.accountant.checkpointPoster}
-        source={LANDING_V2_MEDIA.accountant.checkpointMaster}
-        onError={onVideoError}
-      />
-    );
-  }
-
+function AccountantBird({ actIndex }: { actIndex: number }) {
   return (
     <Image
       src={ACTS[actIndex].pose}
@@ -210,7 +187,6 @@ export function AccountantStory() {
   const sectionRef = useRef<HTMLElement>(null);
   const progress = useScrollStage(sectionRef);
   const reduced = usePrefersReducedMotion();
-  const [videoFailed, setVideoFailed] = useState(false);
   const actIndex = accountantAct(progress);
 
   if (reduced) {
@@ -275,11 +251,7 @@ export function AccountantStory() {
             </div>
 
             <div className="lb2-accountant__bird">
-              <AccountantBird
-                actIndex={actIndex}
-                videoFailed={videoFailed}
-                onVideoError={() => setVideoFailed(true)}
-              />
+              <AccountantBird actIndex={actIndex} />
             </div>
 
             <div className="lb2-accountant__board">

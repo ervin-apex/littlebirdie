@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const SRC = "/media/landing-video-lab/daily-birdee-chirp-raw.mp4";
 
@@ -50,8 +50,32 @@ function stripPlateAndWatermark(ctx: CanvasRenderingContext2D, w: number, h: num
 export function ChirpBirdeeCanvas() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canLoad, setCanLoad] = useState(false);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (!("IntersectionObserver" in window)) {
+      setCanLoad(true);
+      return;
+    }
+
+    const loadObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setCanLoad(true);
+        loadObserver.disconnect();
+      },
+      { rootMargin: "30% 0px" },
+    );
+
+    loadObserver.observe(canvas);
+    return () => loadObserver.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!canLoad) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
@@ -128,7 +152,7 @@ export function ChirpBirdeeCanvas() {
       video.removeEventListener("seeked", drawFrame);
       video.removeEventListener("ended", drawFrame);
     };
-  }, []);
+  }, [canLoad]);
 
   return (
     <>
@@ -144,8 +168,8 @@ export function ChirpBirdeeCanvas() {
         className="lb-chirp__source"
         muted
         playsInline
-        preload="auto"
-        src={SRC}
+        preload={canLoad ? "auto" : "none"}
+        src={canLoad ? SRC : undefined}
         aria-hidden="true"
       />
     </>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { clamp } from "./useScrollStage";
+import { revealAfterFirstVideoFrame } from "./videoReadiness";
 
 type ScrubbedVideoProps = {
   className?: string;
@@ -27,6 +28,7 @@ export function ScrubbedVideo({
   const scheduleSeekRef = useRef<(() => void) | null>(null);
   const [canLoad, setCanLoad] = useState(false);
   const [activeSrc, setActiveSrc] = useState<string>();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -99,6 +101,7 @@ export function ScrubbedVideo({
     <video
       ref={videoRef}
       className={className}
+      data-ready={ready}
       muted
       playsInline
       preload="auto"
@@ -106,6 +109,9 @@ export function ScrubbedVideo({
       src={canLoad ? activeSrc : undefined}
       tabIndex={-1}
       aria-hidden="true"
+      onLoadedData={(event) =>
+        revealAfterFirstVideoFrame(event.currentTarget, () => setReady(true))
+      }
       onError={onError}
     />
   );

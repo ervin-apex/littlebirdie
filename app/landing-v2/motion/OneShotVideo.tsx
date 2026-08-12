@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { revealAfterFirstVideoFrame } from "./videoReadiness";
 
 type OneShotVideoProps = {
   active: boolean;
@@ -24,6 +25,7 @@ export function OneShotVideo({
 }: OneShotVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [inView, setInView] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -68,6 +70,7 @@ export function OneShotVideo({
       ref={videoRef}
       className={className}
       data-active={active}
+      data-ready={ready}
       muted
       playsInline
       preload="auto"
@@ -75,6 +78,9 @@ export function OneShotVideo({
       src={src}
       tabIndex={-1}
       aria-hidden="true"
+      onLoadedData={(event) =>
+        revealAfterFirstVideoFrame(event.currentTarget, () => setReady(true))
+      }
       onError={onError}
     />
   );

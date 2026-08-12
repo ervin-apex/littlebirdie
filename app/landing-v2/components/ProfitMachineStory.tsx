@@ -1,11 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { LANDING_V2_MEDIA } from "../media";
-import { ScrubbedVideo } from "../motion/ScrubbedVideo";
 import { usePrefersReducedMotion, useScrollStage } from "../motion/useScrollStage";
-import { machineAct, machineMediaProgress } from "../motion/timeline";
+import { machineMediaProgress } from "../motion/timeline";
+import { useMachineSequenceAct } from "../motion/useMachineSequenceAct";
+import { MachineImageSequence } from "./MachineImageSequence";
 
 const MACHINE_ACTS = [
   { lead: "Takes", accent: "historical numbers", tail: "from yr business." },
@@ -20,8 +21,8 @@ export function ProfitMachineStory() {
   const progress = useScrollStage(sectionRef);
   const mediaProgress = machineMediaProgress(progress);
   const reduced = usePrefersReducedMotion();
-  const [videoFailed, setVideoFailed] = useState(false);
-  const actIndex = machineAct(mediaProgress);
+  const sequenceAct = useMachineSequenceAct(mediaProgress);
+  const actIndex = sequenceAct;
 
   if (reduced) {
     return (
@@ -58,31 +59,17 @@ export function ProfitMachineStory() {
     >
       <div className="lb2-scroll-story__sticky">
         <div className="lb2-machine__stage" aria-hidden="true" data-act={actIndex + 1}>
-          {!videoFailed && (
-            <div className="lb2-machine__mobile-copy" key={actIndex}>
-              <p>What Little Birdee does.</p>
-              <h2><span className="lb2-machine__phrase">{MACHINE_ACTS[actIndex].lead} <em>{MACHINE_ACTS[actIndex].accent}</em></span>{MACHINE_ACTS[actIndex].tail && <> {MACHINE_ACTS[actIndex].tail}</>}</h2>
-            </div>
-          )}
+          <div className="lb2-machine__mobile-copy" key={actIndex}>
+            <p>What Little Birdee does.</p>
+            <h2><span className="lb2-machine__phrase">{MACHINE_ACTS[actIndex].lead} <em>{MACHINE_ACTS[actIndex].accent}</em></span>{MACHINE_ACTS[actIndex].tail && <> {MACHINE_ACTS[actIndex].tail}</>}</h2>
+          </div>
           <div className="lb2-machine__media">
-            {videoFailed ? (
-              <Image
-                src={LANDING_V2_MEDIA.machine.posters[actIndex]}
-                alt=""
-                fill
-                sizes="100vw"
-                priority={false}
-              />
-            ) : (
-              <ScrubbedVideo
-                className="lb2-machine__video"
-                duration={LANDING_V2_MEDIA.machine.duration}
-                progress={mediaProgress}
-                src={LANDING_V2_MEDIA.machine.master}
-                mobileSrc={LANDING_V2_MEDIA.machine.mobileMaster}
-                onError={() => setVideoFailed(true)}
-              />
-            )}
+            <MachineImageSequence
+              activeAct={sequenceAct}
+              frames={LANDING_V2_MEDIA.machine.mobileSequence}
+              phoneFrames={LANDING_V2_MEDIA.machine.phoneSequence}
+              desktopFrames={LANDING_V2_MEDIA.machine.desktopSequence}
+            />
           </div>
         </div>
       </div>

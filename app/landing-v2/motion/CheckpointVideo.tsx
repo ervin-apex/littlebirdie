@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { revealAfterFirstVideoFrame } from "./videoReadiness";
 
 type VideoCheckpoint = {
   start: number;
@@ -42,6 +43,7 @@ export function CheckpointVideo({
   const runRef = useRef(0);
   const previousIndexRef = useRef(activeIndex);
   const [inView, setInView] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const safeIndex = Math.min(
     checkpoints.length - 1,
@@ -194,10 +196,11 @@ export function CheckpointVideo({
   );
 
   return (
-    <div ref={rootRef} className={className}>
+    <div ref={rootRef} className={className} data-ready={ready}>
       <video
         ref={videoRef}
         className="lb2-checkpoint-video__media"
+        data-ready={ready}
         muted
         playsInline
         preload="auto"
@@ -205,6 +208,9 @@ export function CheckpointVideo({
         src={source}
         tabIndex={-1}
         aria-hidden="true"
+        onLoadedData={(event) =>
+          revealAfterFirstVideoFrame(event.currentTarget, () => setReady(true))
+        }
         onError={onError}
         onTimeUpdate={(event) => {
           // Fallback for browsers without requestVideoFrameCallback.

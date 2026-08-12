@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { LANDING_V2_MEDIA } from "../media";
 import { OneShotVideo } from "../motion/OneShotVideo";
 import { visibilityAct } from "../motion/timeline";
+import { useRichStoryMedia } from "../motion/useRichStoryMedia";
 import { usePrefersReducedMotion, useScrollStage } from "../motion/useScrollStage";
 
 const QUESTIONS = ["Yesterday?", "Last week?", "Tomorrow?", "This week?"];
@@ -13,6 +14,7 @@ export function VisibilityStory() {
   const sectionRef = useRef<HTMLElement>(null);
   const progress = useScrollStage(sectionRef);
   const reduced = usePrefersReducedMotion();
+  const richMedia = useRichStoryMedia();
   const [videoFailed, setVideoFailed] = useState(false);
   const act = visibilityAct(progress);
 
@@ -96,14 +98,7 @@ export function VisibilityStory() {
             </div>
 
             <div className="lb2-visibility__birdee">
-              {videoFailed ? (
-                <Image
-                  src={act === 2 ? LANDING_V2_MEDIA.visibility.whyNotPoster : LANDING_V2_MEDIA.visibility.searchingPoster}
-                  alt=""
-                  fill
-                  sizes="(max-width: 700px) 58vw, 34vw"
-                />
-              ) : (
+              {richMedia && !videoFailed && (
                 <>
                   <OneShotVideo
                     active={act < 2}
@@ -125,6 +120,13 @@ export function VisibilityStory() {
                   />
                 </>
               )}
+              <Image
+                className="lb2-visibility__birdee-still"
+                src={act === 2 ? LANDING_V2_MEDIA.visibility.whyNotPoster : LANDING_V2_MEDIA.visibility.searchingPoster}
+                alt=""
+                fill
+                sizes="(max-width: 700px) 58vw, 34vw"
+              />
             </div>
           </div>
 
