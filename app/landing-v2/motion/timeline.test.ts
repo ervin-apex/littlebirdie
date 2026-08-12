@@ -33,8 +33,8 @@ describe("landing v2 story timelines", () => {
 
   it("holds the finished machine frame for the tail of the scroll story", () => {
     expect(machineMediaProgress(0)).toBe(0);
-    expect(machineMediaProgress(0.43)).toBeCloseTo(0.5);
-    expect(machineMediaProgress(0.86)).toBe(1);
+    expect(machineMediaProgress(0.47)).toBeCloseTo(0.5);
+    expect(machineMediaProgress(0.94)).toBe(1);
     expect(machineMediaProgress(0.98)).toBe(1);
   });
 });

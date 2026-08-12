@@ -18,7 +18,9 @@ export function machineAct(progress: number) {
   return 4;
 }
 
-export const MACHINE_SCRUB_END = 0.86;
+// The final 6% is an intentional, brief hold on the budget-versus-actual
+// result before the sticky story releases into the next section.
+export const MACHINE_SCRUB_END = 0.94;
 
 export function machineMediaProgress(progress: number) {
   return clamp01(progress / MACHINE_SCRUB_END);

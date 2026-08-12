@@ -11,9 +11,9 @@ type MachineImageSequenceProps = {
 };
 
 /**
- * A five-composition horizontal track driven directly by the settled scroll
- * chapter. The transform is interruptible and has no internal queue, timers,
- * autoplay, crossfade, or intermediate cover.
+ * A five-composition horizontal track driven directly by crossed scroll
+ * thresholds. The transform is interruptible and has no internal queue,
+ * timers, autoplay, crossfade, or intermediate cover.
  */
 export function MachineImageSequence({
   activeAct,

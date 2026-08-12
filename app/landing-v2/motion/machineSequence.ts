@@ -8,7 +8,6 @@ export const MACHINE_SEQUENCE_RANGES = [
 
 export const MACHINE_SEQUENCE_SLIDE_MS = 280;
 export const MACHINE_SEQUENCE_HYSTERESIS = 0.02;
-export const MACHINE_SEQUENCE_SETTLE_MS = 140;
 
 // Give each of the five approved chapters the same amount of active scroll
 // distance. The section-level timeline still keeps its separate end hold.
