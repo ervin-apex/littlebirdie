@@ -68,3 +68,45 @@ export const LANDING_V2_MEDIA = {
   },
   privacy: "/media/landing-v2/privacy/hero-v2/birdee-shield.webp",
 } as const;
+
+/**
+ * Images that must be decoded before the landing page is revealed.
+ *
+ * Only the machine composition needed by the current breakpoint is included;
+ * loading all three art directions would make the loading screen slower on the
+ * mobile devices it is intended to protect.
+ */
+export function getLandingV2PreloadImages(viewportWidth: number) {
+  const machineFrames = viewportWidth <= 520
+    ? LANDING_V2_MEDIA.machine.phoneSequence
+    : viewportWidth <= 820
+      ? LANDING_V2_MEDIA.machine.mobileSequence
+      : LANDING_V2_MEDIA.machine.desktopSequence;
+
+  const road = viewportWidth <= 520
+    ? LANDING_V2_MEDIA.visibility.roadMobile
+    : LANDING_V2_MEDIA.visibility.roadDesktop;
+
+  return Array.from(new Set([
+    "/brand/birdee-face-square.png",
+    LANDING_V2_MEDIA.hero.poster,
+    road,
+    LANDING_V2_MEDIA.visibility.calendar,
+    LANDING_V2_MEDIA.visibility.searchingPoster,
+    LANDING_V2_MEDIA.visibility.whyNotPoster,
+    LANDING_V2_MEDIA.accountant.receipt,
+    LANDING_V2_MEDIA.accountant.board,
+    LANDING_V2_MEDIA.accountant.objection,
+    LANDING_V2_MEDIA.accountant.attitude,
+    LANDING_V2_MEDIA.accountant.presenting,
+    LANDING_V2_MEDIA.accountant.action,
+    ...machineFrames,
+    LANDING_V2_MEDIA.daily,
+    LANDING_V2_MEDIA.pricing.birdee,
+    LANDING_V2_MEDIA.pricing.coffees,
+    LANDING_V2_MEDIA.fit.forBoard,
+    LANDING_V2_MEDIA.fit.birdee,
+    LANDING_V2_MEDIA.fit.notForBoard,
+    LANDING_V2_MEDIA.privacy,
+  ]));
+}

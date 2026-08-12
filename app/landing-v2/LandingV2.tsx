@@ -3,6 +3,7 @@ import { DailyChirpSection } from "./components/DailyChirpSection";
 import { FitSection } from "./components/FitSection";
 import { FooterV2 } from "./components/FooterV2";
 import { HeroSection } from "./components/HeroSection";
+import { LandingPreloader } from "./components/LandingPreloader";
 import { PricingSection } from "./components/PricingSection";
 import { PrivacySection } from "./components/PrivacySection";
 import { ProfitMachineStory } from "./components/ProfitMachineStory";
@@ -23,19 +24,21 @@ export function LandingV2({ fontClassName, isAuthenticated }: LandingV2Props) {
 
   return (
     <div className={`lb2-page ${fontClassName}`}>
-      <a className="lb2-skip" href="#lb2-main">Skip to content</a>
-      <SiteNavV2 isAuthenticated={isAuthenticated} />
-      <main id="lb2-main" tabIndex={-1}>
-        <HeroSection primaryAction={primaryAction} />
-        <VisibilityStory />
-        <AccountantStory />
-        <ProfitMachineStory />
-        <DailyChirpSection />
-        <PricingSection primaryAction={primaryAction} />
-        <FitSection />
-        <PrivacySection />
-      </main>
-      <FooterV2 />
+      <LandingPreloader>
+        <a className="lb2-skip" href="#lb2-main">Skip to content</a>
+        <SiteNavV2 isAuthenticated={isAuthenticated} />
+        <main id="lb2-main" tabIndex={-1}>
+          <HeroSection primaryAction={primaryAction} />
+          <VisibilityStory />
+          <AccountantStory />
+          <ProfitMachineStory />
+          <DailyChirpSection />
+          <PricingSection primaryAction={primaryAction} />
+          <FitSection />
+          <PrivacySection />
+        </main>
+        <FooterV2 />
+      </LandingPreloader>
     </div>
   );
 }
