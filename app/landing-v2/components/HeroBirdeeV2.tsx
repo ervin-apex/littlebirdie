@@ -10,15 +10,29 @@ export function HeroBirdeeV2() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [mobilePhase, setMobilePhase] = useState<"entrance" | "hover">("entrance");
   const mediaMode = useHeroMediaMode();
   const richMedia = mediaMode === "rich";
   const mobileMedia = mediaMode === "mobile";
-  const videoEnabled = richMedia || mobileMedia;
+  // The authored WebM is yuv420p and therefore has no real alpha channel.
+  // Keep it on the desktop composition where its canvas blends into the hero,
+  // but never hand it to iOS/mobile browsers as a transparent asset.
+  const videoEnabled = richMedia;
 
   useEffect(() => {
     setFailed(false);
     setReady(false);
+    setMobilePhase("entrance");
   }, [mediaMode]);
+
+  useEffect(() => {
+    if (!mobileMedia) return;
+    const timer = window.setTimeout(
+      () => setMobilePhase("hover"),
+      LANDING_V2_MEDIA.hero.hoverStart * 1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [mobileMedia]);
 
   useEffect(() => {
     if (!videoEnabled || failed) return;
@@ -56,7 +70,22 @@ export function HeroBirdeeV2() {
 
   return (
     <>
-      {(richMedia || mediaMode === "still") && (
+      {mobileMedia ? (
+        <Image
+          key={mobilePhase}
+          className="lb2-hero__bird lb2-hero__bird--still"
+          src={
+            mobilePhase === "entrance"
+              ? LANDING_V2_MEDIA.hero.mobileEntrance
+              : LANDING_V2_MEDIA.hero.mobileHover
+          }
+          alt=""
+          width={640}
+          height={640}
+          priority
+          unoptimized
+        />
+      ) : (richMedia || mediaMode === "still") && (
         <Image
           className="lb2-hero__bird lb2-hero__bird--still"
           data-hidden={richMedia && !failed && ready}
@@ -78,11 +107,7 @@ export function HeroBirdeeV2() {
           playsInline
           preload="auto"
           poster={richMedia ? LANDING_V2_MEDIA.hero.poster : undefined}
-          src={
-            mobileMedia
-              ? LANDING_V2_MEDIA.hero.mobileMaster
-              : LANDING_V2_MEDIA.hero.master
-          }
+          src={LANDING_V2_MEDIA.hero.master}
           aria-hidden="true"
           tabIndex={-1}
           onLoadedData={(event) =>

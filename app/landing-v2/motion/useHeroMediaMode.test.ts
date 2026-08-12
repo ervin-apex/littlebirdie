@@ -17,7 +17,7 @@ describe("hero media policy", () => {
     expect(chooseHeroMediaMode(basePolicy)).toBe("rich");
   });
 
-  it("uses the lightweight H.264 entrance video on touch/mobile contexts", () => {
+  it("uses the mobile-safe animated image path on touch/mobile contexts", () => {
     expect(
       chooseHeroMediaMode({
         ...basePolicy,

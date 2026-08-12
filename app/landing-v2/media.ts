@@ -1,8 +1,10 @@
 export const LANDING_V2_MEDIA = {
   hero: {
     master: "/media/landing-v2/hero/birdee-entrance-hover-master-alpha-optimized.webm",
-    mobileMaster:
-      "/media/landing-v2/hero/birdee-entrance-hover-master-alpha-optimized.webm",
+    mobileEntrance:
+      "/media/landing-v2/hero/birdee-entrance-mobile-alpha-animated.webp",
+    mobileHover:
+      "/media/landing-v2/hero/birdee-hover-mobile-alpha-animated.webp",
     hoverStart: 6.292,
     poster: "/media/landing-v2/hero/birdee-poster.webp",
   },
@@ -90,6 +92,8 @@ export function getLandingV2PreloadImages(viewportWidth: number) {
   return Array.from(new Set([
     "/brand/birdee-face-square.png",
     LANDING_V2_MEDIA.hero.poster,
+    LANDING_V2_MEDIA.hero.mobileEntrance,
+    LANDING_V2_MEDIA.hero.mobileHover,
     road,
     LANDING_V2_MEDIA.visibility.calendar,
     LANDING_V2_MEDIA.visibility.searchingPoster,
