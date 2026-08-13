@@ -1,281 +1,91 @@
-"use client";
-
 import Image from "next/image";
-import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LANDING_V2_MEDIA } from "../media";
-import { usePrefersReducedMotion, useScrollStage } from "../motion/useScrollStage";
-import { accountantAct } from "../motion/timeline";
 
-const ACTS = [
+const ACCOUNTANT_MOMENTS = [
   {
-    heading: "But my accountant has that info.",
-    emphasis: "They should be telling me this stuff.",
-    support: "",
+    id: "objection",
+    heading: <>But my accountant has that info.<br />They should be telling me this stuff.</>,
     boardTitle: "YR PROFIT THIS WEEK",
     amount: "?",
-    boardNote: "",
+    note: "",
     pose: LANDING_V2_MEDIA.accountant.objection,
   },
   {
-    heading: "Right.",
-    emphasis: "But are they?",
-    support: "",
+    id: "are-they",
+    preface: <>But my accountant has that info.<br />They should be telling me this stuff.</>,
+    heading: <>Right.<br /><em>But are they?</em></>,
     boardTitle: "YR PROFIT TMRW",
     amount: "?",
-    boardNote: "",
+    note: "",
     pose: LANDING_V2_MEDIA.accountant.attitude,
   },
   {
-    heading: "Accountants report what has already happened.",
-    emphasis: "Little Birdee tells you YR PROFIT NOW.",
-    support: "",
+    id: "profit-now",
+    preface: <>Accountants report what has already happened.</>,
+    heading: <>Little Birdee tells you <em>YR PROFIT NOW.</em></>,
     boardTitle: "YR PROFIT LAST WEEK",
     amount: "$4,140",
-    boardNote: "Profit",
+    note: "Profit",
     pose: LANDING_V2_MEDIA.accountant.presenting,
   },
   {
-    heading: "So you can",
-    emphasis: "do something about it NOW.",
-    support: "Proactive, not reactive.",
+    id: "act-now",
+    heading: <>So you can <em>do something about it <b>NOW.</b></em></>,
+    support: <>Proactive, <span>not reactive.</span></>,
     boardTitle: "YR PROFIT TMRW",
     amount: "$916",
-    boardNote: "probable profit tomorrow",
+    note: "probable profit tomorrow",
     pose: LANDING_V2_MEDIA.accountant.action,
   },
 ] as const;
 
-function useActSwap(actIndex: number, exitMs = 220) {
-  const currentRef = useRef(actIndex);
-  const [current, setCurrent] = useState(actIndex);
-  const [previous, setPrevious] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (currentRef.current === actIndex) return;
-
-    setPrevious(currentRef.current);
-    currentRef.current = actIndex;
-    setCurrent(actIndex);
-
-    const timer = window.setTimeout(() => setPrevious(null), exitMs);
-    return () => window.clearTimeout(timer);
-  }, [actIndex, exitMs]);
-
-  return { current, previous };
-}
-
-function AccountantCopy({ actIndex }: { actIndex: number }) {
-  if (actIndex === 0) {
-    return (
-      <h2>
-        <span>But my accountant has that info.</span>
-        <span>They should be telling me this stuff.</span>
-      </h2>
-    );
-  }
-
-  if (actIndex === 1) {
-    return (
-      <>
-        <p className="lb2-accountant__ghost">
-          But my accountant has that info.<br />
-          They should be telling me this stuff.
-        </p>
-        <h2>
-          <span>Right.</span>
-          <span className="lb2-accountant__gold">But are they?</span>
-        </h2>
-      </>
-    );
-  }
-
-  if (actIndex === 2) {
-    return (
-      <h2>
-        <span className="lb2-accountant__context">
-          Accountants report what has already happened.
-        </span>
-        <span>
-          Little Birdee tells you{" "}
-          <b className="lb2-accountant__gold">YR PROFIT NOW.</b>
-        </span>
-      </h2>
-    );
-  }
-
+function Receipt() {
   return (
-    <>
-      <h2>
-        <span>So you can</span>
-        <span className="lb2-accountant__gold">
-          do something about it <b className="lb2-accountant__now">NOW.</b>
-        </span>
-      </h2>
-      <p className="lb2-accountant__support">
-        Proactive, <span>not reactive.</span>
-      </p>
-    </>
-  );
-}
-
-function TransitionLayers({
-  actIndex,
-  className,
-  exitMs = 220,
-  render,
-}: {
-  actIndex: number;
-  className: string;
-  exitMs?: number;
-  render: (index: number) => ReactNode;
-}) {
-  const { current, previous } = useActSwap(actIndex, exitMs);
-
-  return (
-    <>
-      {previous !== null && (
-        <div
-          className={className}
-          data-phase="exit"
-          data-copy-act={previous}
-          data-next-act={current}
-        >
-          {render(previous)}
-        </div>
-      )}
-      <div
-        key={current}
-        className={className}
-        data-phase="enter"
-        data-copy-act={current}
-      >
-        {render(current)}
+    <div className="lb2-flow-accountant__receipt">
+      <Image src={LANDING_V2_MEDIA.accountant.receipt} alt="" fill sizes="(max-width: 520px) 31vw, 25vw" />
+      <div>
+        <span>LAST MONTH<br />YOU MADE</span><i /><strong>$15,470</strong><b>Profit</b>
       </div>
-    </>
+    </div>
   );
 }
 
-function AccountantBoardDetails({ actIndex }: { actIndex: number }) {
-  const act = ACTS[actIndex];
-
+function ProfitBoard({ title, amount, note }: { title: string; amount: string; note: string }) {
   return (
-    <>
-      <span className="lb2-accountant__board-title">{act.boardTitle}</span>
-      <div
-        className="lb2-accountant__board-screen"
-        data-value={act.amount === "?" ? "unknown" : "profit"}
-      >
-        <strong>{act.amount}</strong>
-        {act.boardNote && <small>{act.boardNote}</small>}
+    <div className="lb2-flow-accountant__board">
+      <Image src={LANDING_V2_MEDIA.accountant.board} alt="" fill sizes="(max-width: 520px) 38vw, 29vw" />
+      <span>{title}</span>
+      <div data-value={amount === "?" ? "unknown" : "profit"}>
+        <strong>{amount}</strong>{note && <small>{note}</small>}
       </div>
-    </>
-  );
-}
-
-function AccountantBird({ actIndex }: { actIndex: number }) {
-  return (
-    <Image
-      src={ACTS[actIndex].pose}
-      alt=""
-      fill
-      sizes="(max-width: 820px) 48vw, 27vw"
-    />
+    </div>
   );
 }
 
 export function AccountantStory() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const progress = useScrollStage(sectionRef);
-  const reduced = usePrefersReducedMotion();
-  const actIndex = accountantAct(progress);
-
-  if (reduced) {
-    return (
-      <section
-        className="lb2-accountant lb2-reduced-story lb2-reduced-story--dark"
-        id="accountant"
-        aria-labelledby="lb2-accountant-title"
-      >
-        <div className="lb2-shell">
-          <h2 id="lb2-accountant-title">The accountant question, answered plainly.</h2>
-          <div className="lb2-reduced-story__grid lb2-reduced-story__grid--four">
-            {ACTS.map((item) => (
-              <article key={item.boardTitle + item.amount}>
-                <div className="lb2-reduced-story__pose">
-                  <Image src={item.pose} alt="" fill sizes="(max-width: 700px) 70vw, 22vw" />
-                </div>
-                <h3>{item.heading} <em>{item.emphasis}</em></h3>
-                <div className="lb2-reduced-story__score">
-                  <small>{item.boardTitle}</small>
-                  <strong>{item.amount}</strong>
-                  {item.boardNote && <b>{item.boardNote}</b>}
-                </div>
-                {item.support && <p>{item.support}</p>}
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section
-      ref={sectionRef}
-      className="lb2-accountant lb2-scroll-story"
-      id="accountant"
-      aria-labelledby="lb2-accountant-title"
-    >
-      <div className="lb2-scroll-story__sticky">
-        <div className="lb2-accountant__stage" data-act={actIndex} aria-hidden="true">
-          <div className="lb2-accountant__copy">
-            <TransitionLayers
-              actIndex={actIndex}
-              className="lb2-accountant__copy-layer"
-              exitMs={420}
-              render={(index) => <AccountantCopy actIndex={index} />}
-            />
+    <section className="lb2-accountant lb2-flow-story lb2-flow-accountant" id="accountant" aria-labelledby="lb2-accountant-title">
+      <h2 className="lb2-sr-only" id="lb2-accountant-title">Little Birdee gives you profit you can act on</h2>
+
+      {ACCOUNTANT_MOMENTS.map((moment, index) => (
+        <article className="lb2-flow-accountant__moment" data-moment={moment.id} key={moment.id}>
+          <div className="lb2-flow-accountant__copy">
+            <span className="lb2-flow-index">0{index + 1}</span>
+            {"preface" in moment && moment.preface && <p>{moment.preface}</p>}
+            <h3>{moment.heading}</h3>
+            {"support" in moment && moment.support && <p className="lb2-flow-accountant__support">{moment.support}</p>}
           </div>
 
-          <div className="lb2-accountant__scene">
-            <span className="lb2-accountant__line" />
-
-            <div className="lb2-accountant__receipt">
-              <Image src={LANDING_V2_MEDIA.accountant.receipt} alt="" fill sizes="(max-width: 820px) 48vw, 31vw" />
-              <div>
-                <span>LAST MONTH<br />YOU MADE</span>
-                <i />
-                <strong>$15,470</strong>
-                <b>Profit</b>
-              </div>
+          <div className="lb2-flow-accountant__scene">
+            <span className="lb2-flow-accountant__line" aria-hidden="true" />
+            <Receipt />
+            <div className="lb2-flow-accountant__birdee">
+              <Image src={moment.pose} alt="" fill sizes="(max-width: 520px) 25vw, 18vw" />
             </div>
-
-            <div className="lb2-accountant__bird">
-              <AccountantBird actIndex={actIndex} />
-            </div>
-
-            <div className="lb2-accountant__board">
-              <Image src={LANDING_V2_MEDIA.accountant.board} alt="" fill sizes="(max-width: 820px) 52vw, 38vw" />
-              <TransitionLayers
-                actIndex={actIndex}
-                className="lb2-accountant__board-layer"
-                render={(index) => <AccountantBoardDetails actIndex={index} />}
-              />
-            </div>
+            <ProfitBoard title={moment.boardTitle} amount={moment.amount} note={moment.note} />
           </div>
-        </div>
-      </div>
-
-      <div className="lb2-sr-only">
-        <h2 id="lb2-accountant-title">Little Birdee gives you profit you can act on</h2>
-        <ol>
-          {ACTS.map((item) => (
-            <li key={item.boardTitle + item.amount}>
-              {item.heading} {item.emphasis} Last month you made $15,470 profit. {item.boardTitle}: {item.amount}. {item.boardNote} {item.support}
-            </li>
-          ))}
-        </ol>
-      </div>
+        </article>
+      ))}
     </section>
   );
 }

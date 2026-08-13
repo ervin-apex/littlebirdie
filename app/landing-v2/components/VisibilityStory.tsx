@@ -1,150 +1,76 @@
-"use client";
-
 import Image from "next/image";
-import { useRef, useState } from "react";
 import { LANDING_V2_MEDIA } from "../media";
-import { OneShotVideo } from "../motion/OneShotVideo";
-import { visibilityAct } from "../motion/timeline";
-import { useRichStoryMedia } from "../motion/useRichStoryMedia";
-import { usePrefersReducedMotion, useScrollStage } from "../motion/useScrollStage";
+
+const VISIBILITY_MOMENTS = [
+  {
+    id: "yesterday",
+    heading: <>Do you know how much profit you made <em>yesterday?</em></>,
+    activeQuestion: 0,
+    birdee: LANDING_V2_MEDIA.visibility.searchingPoster,
+    birdeeAlt: "Little Birdee looking for the answer",
+  },
+  {
+    id: "this-week",
+    heading: <>This week?</>,
+    activeQuestion: 3,
+    birdee: LANDING_V2_MEDIA.visibility.searchingPoster,
+    birdeeAlt: "Little Birdee looking ahead to this week",
+  },
+  {
+    id: "why-not",
+    heading: <>Sorry, but&hellip; <em>why not?</em></>,
+    activeQuestion: -1,
+    birdee: LANDING_V2_MEDIA.visibility.whyNotPoster,
+    birdeeAlt: "Little Birdee lowering the binoculars",
+    answer: <>If you knew this week&rsquo;s probable profit, <strong>you&rsquo;d change something now.</strong></>,
+  },
+] as const;
 
 const QUESTIONS = ["Yesterday?", "Last week?", "Tomorrow?", "This week?"];
 
 export function VisibilityStory() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const progress = useScrollStage(sectionRef);
-  const reduced = usePrefersReducedMotion();
-  const richMedia = useRichStoryMedia();
-  const [videoFailed, setVideoFailed] = useState(false);
-  const act = visibilityAct(progress);
-
-  if (reduced) {
-    return (
-      <section
-        className="lb2-visibility lb2-reduced-story"
-        id="visibility"
-        aria-labelledby="lb2-visibility-title"
-      >
-        <div className="lb2-shell">
-          <h2 id="lb2-visibility-title">Do you know your profit <em>now?</em></h2>
-          <div className="lb2-reduced-story__grid">
-            <article>
-              <div className="lb2-reduced-story__media">
-                <Image src={LANDING_V2_MEDIA.visibility.searchingPoster} alt="Little Birdee looking for the answer" fill sizes="92vw" />
-              </div>
-              <span>01</span>
-              <h3>Do you know how much profit you made <em>yesterday?</em></h3>
-            </article>
-            <article>
-              <div className="lb2-reduced-story__media">
-                <Image src={LANDING_V2_MEDIA.visibility.searchingPoster} alt="Little Birdee still looking for the answer" fill sizes="92vw" />
-              </div>
-              <span>02</span>
-              <h3><em>This week?</em></h3>
-            </article>
-            <article>
-              <div className="lb2-reduced-story__media">
-                <Image src={LANDING_V2_MEDIA.visibility.whyNotPoster} alt="Little Birdee lowering the binoculars" fill sizes="92vw" />
-              </div>
-              <span>03</span>
-              <h3>Sorry, but… <em>why not?</em></h3>
-              <p>If you knew this week&rsquo;s probable profit, you&rsquo;d change something now.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section
-      ref={sectionRef}
-      className="lb2-visibility lb2-scroll-story"
-      id="visibility"
-      aria-labelledby="lb2-visibility-title"
-    >
-      <div className="lb2-scroll-story__sticky">
-        <div className="lb2-visibility__stage" data-act={act} aria-hidden="true">
-          <div className="lb2-visibility__headline">
-            <h2 data-visible={act === 0}>
-              Do you know how much<br className="lb2-visibility__desktop-break" /> profit you made <br className="lb2-visibility__mobile-break" />yesterday?
-            </h2>
-            <h2 data-visible={act === 1}>This week?</h2>
-            <h2 className="lb2-visibility__why" data-visible={act === 2}>
-              Sorry, but…<br /><em>why not?</em>
-            </h2>
+    <section className="lb2-visibility lb2-flow-story lb2-flow-visibility" id="visibility" aria-labelledby="lb2-visibility-title">
+      <h2 className="lb2-sr-only" id="lb2-visibility-title">Do you know your profit now?</h2>
+
+      {VISIBILITY_MOMENTS.map((moment, momentIndex) => (
+        <article className="lb2-flow-visibility__moment" data-moment={moment.id} key={moment.id}>
+          <div className="lb2-flow-visibility__copy">
+            <span className="lb2-flow-index">0{momentIndex + 1}</span>
+            <h3>{moment.heading}</h3>
+            {"answer" in moment && moment.answer && <p>{moment.answer}</p>}
           </div>
 
-          <div className="lb2-visibility__scene">
-            <picture className="lb2-visibility__road">
+          <div className="lb2-flow-visibility__scene" aria-hidden="true">
+            <picture className="lb2-flow-visibility__road">
               <source media="(max-width: 520px)" srcSet={LANDING_V2_MEDIA.visibility.roadMobile} />
-              <Image src={LANDING_V2_MEDIA.visibility.roadDesktop} alt="" fill sizes="100vw" />
+              <Image
+                src={LANDING_V2_MEDIA.visibility.roadDesktop}
+                alt=""
+                fill
+                sizes="(max-width: 820px) 88vw, 72vw"
+              />
             </picture>
 
-            <div className="lb2-visibility__questions">
+            <div className="lb2-flow-visibility__questions">
               {QUESTIONS.map((question, index) => (
-                <div
-                  key={question}
-                  className={(act === 0 && index === 0) || (act === 1 && index === 3) ? "is-active" : ""}
-                >
-                  <span>{question}</span><b>?</b>
-                </div>
+                <span className={moment.activeQuestion === index ? "is-active" : ""} key={question}>
+                  {question}<b>?</b>
+                </span>
               ))}
             </div>
 
-            <div className="lb2-visibility__calendar">
+            <div className="lb2-flow-visibility__calendar">
               <Image src={LANDING_V2_MEDIA.visibility.calendar} alt="" fill sizes="180px" />
               <span><b>10<sup>th</sup></b>next month</span>
             </div>
 
-            <div className="lb2-visibility__birdee">
-              {richMedia && !videoFailed && (
-                <>
-                  <OneShotVideo
-                    active={act < 2}
-                    className="lb2-visibility__searching"
-                    playKey={act}
-                    playbackRate={1.45}
-                    poster={LANDING_V2_MEDIA.visibility.searchingPoster}
-                    src={LANDING_V2_MEDIA.visibility.searching}
-                    onError={() => setVideoFailed(true)}
-                  />
-                  <OneShotVideo
-                    active={act === 2}
-                    className="lb2-visibility__lowering"
-                    playKey={act}
-                    playbackRate={1.2}
-                    poster={LANDING_V2_MEDIA.visibility.whyNotPoster}
-                    src={LANDING_V2_MEDIA.visibility.lowering}
-                    onError={() => setVideoFailed(true)}
-                  />
-                </>
-              )}
-              <Image
-                className="lb2-visibility__birdee-still"
-                src={act === 2 ? LANDING_V2_MEDIA.visibility.whyNotPoster : LANDING_V2_MEDIA.visibility.searchingPoster}
-                alt=""
-                fill
-                sizes="(max-width: 700px) 58vw, 34vw"
-              />
+            <div className="lb2-flow-visibility__birdee">
+              <Image src={moment.birdee} alt={moment.birdeeAlt} fill sizes="(max-width: 520px) 58vw, 32vw" />
             </div>
           </div>
-
-          <p className="lb2-visibility__answer" data-visible={act === 2}>
-            If you knew this week&rsquo;s probable profit,
-            <strong>you&rsquo;d change something now.</strong>
-          </p>
-        </div>
-      </div>
-
-      <div className="lb2-sr-only">
-        <h2 id="lb2-visibility-title">Do you know your profit now?</h2>
-        <ol>
-          <li>Do you know how much profit you made yesterday?</li>
-          <li>Do you know how much profit you made this week?</li>
-          <li>Sorry, but why not? If you knew this week&rsquo;s probable profit, you&rsquo;d change something now.</li>
-        </ol>
-      </div>
+        </article>
+      ))}
     </section>
   );
 }
