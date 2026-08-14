@@ -95,7 +95,7 @@ export function LandingPreloader({ children }: LandingPreloaderProps) {
         image.decoding = "async";
       }
 
-      const sourceUrls = getLandingV2PreloadImages(window.innerWidth);
+      const sourceUrls = getLandingV2PreloadImages(window.innerWidth, window.innerHeight);
       const essentialWork = Promise.allSettled([
         preloadWithLimit(sourceUrls, () => undefined),
         Promise.allSettled(pageImages.map(waitForImage)),

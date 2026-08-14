@@ -1,6 +1,13 @@
 export const LANDING_V2_MEDIA = {
   hero: {
+    /*
+     * The same 24fps animation twice, both with a real alpha channel: VP9 keeps
+     * it in a second WebM stream, HEVC in an auxiliary layer. Two files because
+     * no single container plays transparently everywhere - WebKit will not take
+     * the WebM, everything else will not take the HEVC.
+     */
     master: "/media/landing-v2/hero/birdee-entrance-hover-master-alpha-optimized.webm",
+    masterHevc: "/media/landing-v2/hero/birdee-entrance-hover-master-alpha.mp4",
     mobileEntrance:
       "/media/landing-v2/hero/birdee-entrance-mobile-alpha-animated.webp",
     mobileHover:
@@ -9,21 +16,31 @@ export const LANDING_V2_MEDIA = {
     poster: "/media/landing-v2/hero/birdee-poster.webp",
   },
   visibility: {
-    searching: "/media/landing-v2/visibility/birdee-searching-clean-alpha.webm",
-    lowering: "/media/landing-v2/visibility/birdee-lowers-binoculars-concerned-alpha.webm",
-    searchingPoster: "/media/landing-v2/visibility/hero-v2/birdee-searching.webp",
-    whyNotPoster: "/media/landing-v2/visibility/hero-v2/birdee-concerned.webp",
-    roadDesktop: "/media/landing-v2/visibility/road-desktop.png",
-    roadMobile: "/media/landing-v2/visibility/road-mobile.png",
-    calendar: "/media/landing-v2/visibility/calendar-blank.png",
+    calendar: "/media/landing-v2/visibility/calendar-blank.webp",
+    journey: {
+      yesterdayWide: "/media/landing-v2/visibility/journey-v3/yesterday-wide.webp",
+      thisWeekWide: "/media/landing-v2/visibility/journey-v3/this-week-wide.webp",
+      whyNotWide: "/media/landing-v2/visibility/journey-v3/why-not-wide.webp",
+      yesterdayMobile: "/media/landing-v2/visibility/journey-v3/yesterday-mobile.webp",
+      thisWeekMobile: "/media/landing-v2/visibility/journey-v3/this-week-mobile.webp",
+      whyNotMobile: "/media/landing-v2/visibility/journey-v3/why-not-mobile.webp",
+    },
   },
+  /*
+   * These props are trimmed to their own drawn pixels, so a CSS box is the
+   * artwork rather than the artwork plus a transparent margin. The margins were
+   * not uniform - the four poses filled 42%, 57%, 67% and 69% of their own
+   * width - so a single CSS width used to render four visibly different birds.
+   * The ratios below are those trimmed files, and the stylesheet places every
+   * prop against them.
+   */
   accountant: {
-    receipt: "/media/landing-v2/accountant/receipt-blank.png",
-    board: "/media/landing-v2/accountant/profit-board-blank.png",
-    objection: "/media/landing-v2/accountant/hero-v2/birdee-objection.webp",
-    attitude: "/media/landing-v2/accountant/hero-v2/birdee-attitude.webp",
-    presenting: "/media/landing-v2/accountant/hero-v2/birdee-presenting.webp",
-    action: "/media/landing-v2/accountant/hero-v2/birdee-action.webp",
+    receipt: "/media/landing-v2/accountant/v3/receipt.webp",
+    board: "/media/landing-v2/accountant/v3/board.webp",
+    objection: "/media/landing-v2/accountant/v3/birdee-objection.webp",
+    attitude: "/media/landing-v2/accountant/v3/birdee-attitude.webp",
+    presenting: "/media/landing-v2/accountant/v3/birdee-presenting.webp",
+    action: "/media/landing-v2/accountant/v3/birdee-action.webp",
   },
   machine: {
     master: "/media/landing-v2/machine/profit-machine-master-text-locked.mp4",
@@ -35,14 +52,19 @@ export const LANDING_V2_MEDIA = {
       "/media/landing-v2/machine/chapter-04-static.webp",
       "/media/landing-v2/machine/chapter-05-static.webp",
     ],
-    mobileSequence: [
-      "/media/landing-v2/machine/mobile-slides-v4/01-historical.webp",
-      "/media/landing-v2/machine/mobile-slides-v4/02-prediction.webp",
-      "/media/landing-v2/machine/mobile-slides-v4/03-packages.webp",
-      "/media/landing-v2/machine/mobile-slides-v4/04-impact.webp",
-      "/media/landing-v2/machine/mobile-slides-v4/05-budget-actual.webp",
-    ],
-    phoneSequence: [
+    /*
+     * Two art directions, not three. A portrait screen gets the 9:16 renders,
+     * which are composed for that frame - machine bleeding off both sides, the
+     * whole upper half left clear for the heading. Everything else gets the wide
+     * renders. The old 16:9 mobile slides are gone: a window narrower than 820px
+     * but still landscape is better served by the wide art, which is now also
+     * the smaller download.
+     *
+     * The wide renders are not all one ratio - packages and impact are much
+     * wider than 16:9 - so each moment carries its own --art-ratio in the
+     * stylesheet.
+     */
+    portraitSequence: [
       "/media/landing-v2/machine/mobile-fullbleed-v5/01-historical.webp",
       "/media/landing-v2/machine/mobile-fullbleed-v5/02-prediction.webp",
       "/media/landing-v2/machine/mobile-fullbleed-v5/03-packages.webp",
@@ -50,54 +72,68 @@ export const LANDING_V2_MEDIA = {
       "/media/landing-v2/machine/mobile-fullbleed-v5/05-budget-actual-v2.webp",
     ],
     desktopSequence: [
-      "/media/landing-v2/machine/desktop-slides-v3/slide-01-historical.webp",
-      "/media/landing-v2/machine/desktop-slides-v3/slide-02-prediction.webp",
-      "/media/landing-v2/machine/desktop-slides-v3/slide-03-packages.webp",
-      "/media/landing-v2/machine/desktop-slides-v3/slide-04-impact.webp",
-      "/media/landing-v2/machine/desktop-slides-v3/slide-05-budget-actual.webp",
+      "/media/landing-v2/machine/desktop-slides-v4/slide-01-historical.webp",
+      "/media/landing-v2/machine/desktop-slides-v4/slide-02-prediction.webp",
+      "/media/landing-v2/machine/desktop-slides-v4/slide-03-packages.webp",
+      "/media/landing-v2/machine/desktop-slides-v4/slide-04-impact.webp",
+      "/media/landing-v2/machine/desktop-slides-v4/slide-05-budget-actual.webp",
     ],
     duration: 33.208333,
   },
-  daily: "/media/landing-v2/daily/birdee-phone-hug.png",
   pricing: {
     birdee: "/media/landing-v2/pricing/hero-v2/birdee.webp",
-    coffees: "/media/landing-v2/pricing/two-coffees.png",
+    coffees: "/media/landing-v2/pricing/two-coffees.webp",
   },
   fit: {
-    forBoard: "/media/landing-v2/fit/who-its-for-board.png",
+    forBoard: "/media/landing-v2/fit/who-its-for-board.webp",
     birdee: "/media/landing-v2/fit/hero-v2/birdee.webp",
-    notForBoard: "/media/landing-v2/fit/who-its-not-for-board.png",
+    notForBoard: "/media/landing-v2/fit/who-its-not-for-board.webp",
   },
   privacy: "/media/landing-v2/privacy/hero-v2/birdee-shield.webp",
 } as const;
 
 /**
+ * When the machine chapters use the 9:16 portrait renders: any screen shaped
+ * like a portrait phone or tablet. It is deliberately not the 820px layout
+ * breakpoint - a 900px-wide tablet held upright still wants the upright art -
+ * only wide enough to stop the 941px renders being upscaled past sense.
+ *
+ * Shared by the `<picture>` source, the preload list and the `--art-ratio`
+ * block in the stylesheet - all three have to agree or a screen preloads one
+ * art direction, is styled for a second and displays a third.
+ */
+export const LANDING_V2_MACHINE_PORTRAIT = "(max-width: 1100px) and (max-aspect-ratio: 3 / 4)";
+
+/**
  * Images that must be decoded before the landing page is revealed.
  *
  * Only the machine composition needed by the current breakpoint is included;
- * loading all three art directions would make the loading screen slower on the
+ * loading both art directions would make the loading screen slower on the
  * mobile devices it is intended to protect.
  */
-export function getLandingV2PreloadImages(viewportWidth: number) {
-  const machineFrames = viewportWidth <= 520
-    ? LANDING_V2_MEDIA.machine.phoneSequence
-    : viewportWidth <= 820
-      ? LANDING_V2_MEDIA.machine.mobileSequence
-      : LANDING_V2_MEDIA.machine.desktopSequence;
+export function getLandingV2PreloadImages(viewportWidth: number, viewportHeight: number) {
+  const machinePortrait = viewportWidth <= 1100 && viewportWidth / viewportHeight <= 0.75;
+  const machineFrames = machinePortrait
+    ? LANDING_V2_MEDIA.machine.portraitSequence
+    : LANDING_V2_MEDIA.machine.desktopSequence;
 
-  const road = viewportWidth <= 520
-    ? LANDING_V2_MEDIA.visibility.roadMobile
-    : LANDING_V2_MEDIA.visibility.roadDesktop;
+  const visibilityJourney = viewportWidth <= 820
+    ? [
+        LANDING_V2_MEDIA.visibility.journey.yesterdayMobile,
+        LANDING_V2_MEDIA.visibility.journey.thisWeekMobile,
+        LANDING_V2_MEDIA.visibility.journey.whyNotMobile,
+      ]
+    : [
+        LANDING_V2_MEDIA.visibility.journey.yesterdayWide,
+        LANDING_V2_MEDIA.visibility.journey.thisWeekWide,
+        LANDING_V2_MEDIA.visibility.journey.whyNotWide,
+      ];
 
   return Array.from(new Set([
     "/brand/birdee-face-square.png",
     LANDING_V2_MEDIA.hero.poster,
-    LANDING_V2_MEDIA.hero.mobileEntrance,
-    LANDING_V2_MEDIA.hero.mobileHover,
-    road,
+    ...visibilityJourney,
     LANDING_V2_MEDIA.visibility.calendar,
-    LANDING_V2_MEDIA.visibility.searchingPoster,
-    LANDING_V2_MEDIA.visibility.whyNotPoster,
     LANDING_V2_MEDIA.accountant.receipt,
     LANDING_V2_MEDIA.accountant.board,
     LANDING_V2_MEDIA.accountant.objection,
@@ -105,7 +141,6 @@ export function getLandingV2PreloadImages(viewportWidth: number) {
     LANDING_V2_MEDIA.accountant.presenting,
     LANDING_V2_MEDIA.accountant.action,
     ...machineFrames,
-    LANDING_V2_MEDIA.daily,
     LANDING_V2_MEDIA.pricing.birdee,
     LANDING_V2_MEDIA.pricing.coffees,
     LANDING_V2_MEDIA.fit.forBoard,

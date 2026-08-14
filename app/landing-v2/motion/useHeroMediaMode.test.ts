@@ -2,47 +2,42 @@ import { describe, expect, it } from "vitest";
 import { chooseHeroMediaMode, type HeroMediaPolicy } from "./useHeroMediaMode";
 
 const basePolicy: HeroMediaPolicy = {
-  hasFinePointer: true,
-  hasHover: true,
-  hasWideAspectRatio: true,
-  isWideEnough: true,
-  isMobileContext: false,
+  canPlayAlphaVideo: true,
   prefersReducedMotion: false,
   saveData: false,
-  supportsVp9Webm: true,
 };
 
 describe("hero media policy", () => {
-  it("uses the authored WebM on capable desktop contexts", () => {
-    expect(chooseHeroMediaMode(basePolicy)).toBe("rich");
+  it("uses the transparent master wherever it can play", () => {
+    expect(chooseHeroMediaMode(basePolicy)).toBe("video");
   });
 
-  it("uses the mobile-safe animated image path on touch/mobile contexts", () => {
+  it("falls back to the animated image only when no master will play", () => {
     expect(
-      chooseHeroMediaMode({
-        ...basePolicy,
-        hasFinePointer: false,
-        hasHover: false,
-        isMobileContext: true,
-        isWideEnough: false,
-      }),
-    ).toBe("mobile");
+      chooseHeroMediaMode({ ...basePolicy, canPlayAlphaVideo: false }),
+    ).toBe("image");
   });
 
   it.each([
     ["reduced motion", { prefersReducedMotion: true }],
     ["data saver", { saveData: true }],
-    ["missing transparent VP9 WebM", { supportsVp9Webm: false }],
-  ])("keeps the still fallback for mobile users with %s", (_label, override) => {
+  ])("keeps the still poster for %s", (_label, override) => {
+    expect(chooseHeroMediaMode({ ...basePolicy, ...override })).toBe("still");
     expect(
-      chooseHeroMediaMode({
-        ...basePolicy,
-        hasFinePointer: false,
-        hasHover: false,
-        isMobileContext: true,
-        isWideEnough: false,
-        ...override,
-      }),
+      chooseHeroMediaMode({ ...basePolicy, canPlayAlphaVideo: false, ...override }),
     ).toBe("still");
+  });
+
+  /*
+   * The shape of the old bug: a 1280x900 window is a perfectly capable desktop
+   * browser, and it used to get a static poster because it is narrower than 3:2.
+   * Nothing about the viewport reaches this decision any more.
+   */
+  it("does not consider viewport shape or input device", () => {
+    expect(Object.keys(basePolicy).sort()).toEqual([
+      "canPlayAlphaVideo",
+      "prefersReducedMotion",
+      "saveData",
+    ]);
   });
 });
