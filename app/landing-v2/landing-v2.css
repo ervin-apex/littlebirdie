@@ -993,17 +993,19 @@
   .lb2-flow-accountant__moment {
     --scene-w: calc(100vw - 24px);
     --stage: min(calc(var(--scene-w) * 1.15), 52dvh);
-    /*
-     * The scene is two levels here, so the horizon has no prop to stop at:
-     * it runs the width of the stage at the middle of Birdee, who is the only
-     * thing standing on the ground. Every other prop is up on the shelf, well
-     * clear of it - which is what keeps it off the paper and the screen.
-     */
-    --line-l: 5%;
-    --line-r: 5%;
     min-height: 100dvh;
     padding: calc(var(--lb2-nav-height) + 28px) 12px 0;
   }
+
+  /*
+   * No horizon on a phone. The line exists to tie three props standing on one
+   * ground into a single scene, and this layout deliberately has no such
+   * ground: the paper and the screen are up on a shelf and Birdee is alone
+   * below them. Drawn anyway it lands a hundred-odd pixels under the props it
+   * is meant to join and a few dozen above the navy band, reading as a second
+   * horizontal rather than a horizon. The band already carries that job here.
+   */
+  .lb2-flow-accountant__line { display: none; }
 
   .lb2-flow-accountant__copy { padding-inline: 8px; }
   .lb2-flow-accountant__copy > p:not(.lb2-flow-accountant__support) { margin-bottom: 12px; font-size: 19px; }
@@ -1027,7 +1029,6 @@
     --board-x: 68%;
     --board-h: 0.4;
     --board-y: 0.52;
-    --line-split: 44%;
   }
 
   .lb2-flow-accountant__moment[data-moment="are-they"] {
