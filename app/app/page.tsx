@@ -331,6 +331,7 @@ function DashboardInner() {
       trail?: Screen[];
       day?: number | null;
       scope?: "period" | "day";
+      replace?: boolean;
     } = {},
   ) => {
     setScreen(next);
@@ -350,7 +351,13 @@ function DashboardInner() {
       query.set("trail", options.trail.join(","));
     }
     if (options.scope === "day") query.set("scope", "day");
-    router.replace(appPathForScreen(next, query), { scroll: false });
+    const path = appPathForScreen(next, query);
+    // Moving deeper adds a history entry so the phone's back gesture steps
+    // back one view instead of leaving the app entirely. Stepping back via
+    // navigateBack replaces instead, so the in-app trail and the browser
+    // history do not fight each other.
+    if (options.replace) router.replace(path, { scroll: false });
+    else router.push(path, { scroll: false });
   };
 
   const selectPeriod = (key: PeriodKey) => {
@@ -458,6 +465,7 @@ function DashboardInner() {
       trail,
       day: selectedDay,
       scope: numbersScope,
+      replace: true,
     });
   };
 
