@@ -1,4 +1,6 @@
 import { AccountantStory } from "./components/AccountantStory";
+import { CallToActionSection } from "./components/CallToActionSection";
+import { CommunitySection } from "./components/CommunitySection";
 import { DailyChirpSection } from "./components/DailyChirpSection";
 import { FitSection } from "./components/FitSection";
 import { FooterV2 } from "./components/FooterV2";
@@ -8,7 +10,9 @@ import { PricingSection } from "./components/PricingSection";
 import { PrivacySection } from "./components/PrivacySection";
 import { ProfitMachineStory } from "./components/ProfitMachineStory";
 import { SiteNavV2 } from "./components/SiteNavV2";
+import { TestimonialsSection } from "./components/TestimonialsSection";
 import { VisibilityStory } from "./components/VisibilityStory";
+import { WhatWeDoSection } from "./components/WhatWeDoSection";
 import "./landing-v2.css";
 
 type LandingV2Props = {
@@ -30,12 +34,16 @@ export function LandingV2({ fontClassName, isAuthenticated }: LandingV2Props) {
         <main id="lb2-main" tabIndex={-1}>
           <HeroSection primaryAction={primaryAction} />
           <VisibilityStory />
+          <WhatWeDoSection />
           <AccountantStory />
           <ProfitMachineStory />
           <DailyChirpSection />
           <PricingSection primaryAction={primaryAction} />
           <FitSection />
           <PrivacySection />
+          <CallToActionSection primaryAction={primaryAction} />
+          <CommunitySection />
+          <TestimonialsSection />
         </main>
         <FooterV2 />
       </LandingPreloader>

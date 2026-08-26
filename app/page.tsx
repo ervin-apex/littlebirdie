@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Little Birdee — Yr profit, visible and increasable",
+  title: "Little Birdee — see and improve your profit in real time",
   description:
     "See probable profit while there is still time to improve it. Ten minutes to set up, one minute a day, $12 AUD a week.",
 };

@@ -1,34 +1,21 @@
 import Image from "next/image";
 import { LANDING_V2_MEDIA } from "../media";
 
-const QUESTIONS = ["Yesterday?", "Last week?", "Tomorrow?", "This week?"] as const;
-
 const VISIBILITY_MOMENTS = [
   {
     id: "yesterday",
     heading: <>
-      Do you know how much profit you made <em>yesterday?</em>
+      <span>Do you know how much</span>
+      <span>profit your business made</span>
+      <em>yesterday?</em>
     </>,
-    activeQuestion: 0,
-    wide: LANDING_V2_MEDIA.visibility.journey.yesterdayWide,
-    mobile: LANDING_V2_MEDIA.visibility.journey.yesterdayMobile,
-  },
-  {
-    id: "this-week",
-    heading: <>This week?</>,
-    activeQuestion: 3,
-    wide: LANDING_V2_MEDIA.visibility.journey.thisWeekWide,
-    mobile: LANDING_V2_MEDIA.visibility.journey.thisWeekMobile,
   },
   {
     id: "why-not",
     heading: <>Sorry, but&hellip; <em>why not?</em></>,
-    activeQuestion: -1,
-    wide: LANDING_V2_MEDIA.visibility.journey.whyNotWide,
-    mobile: LANDING_V2_MEDIA.visibility.journey.whyNotMobile,
     answer: <>
-      If you knew this week&rsquo;s probable profit,
-      <strong>you&rsquo;d change something now.</strong>
+      <span>If you could see this week&rsquo;s probable profit</span>
+      <strong>you&rsquo;d try and improve it, right?</strong>
     </>,
   },
 ] as const;
@@ -50,45 +37,45 @@ export function VisibilityStory() {
           data-moment={moment.id}
           key={moment.id}
         >
-          {/*
-            The stage reproduces the box `object-fit: cover` gives the plate, so
-            the questions and the calendar can be placed as percentages of the
-            artwork and stay pinned to the road however the plate is cropped.
-          */}
-          <div className="lb2-flow-visibility__stage" aria-hidden="true">
-            <picture className="lb2-flow-visibility__plate">
-              <source media="(max-width: 820px)" srcSet={moment.mobile} />
+          {moment.id === "yesterday" ? (
+            <div className="lb2-flow-visibility__approved">
+              <div className="lb2-flow-visibility__copy lb2-flow-visibility__approved-copy">
+                <h3>{moment.heading}</h3>
+                <div className="lb2-flow-visibility__alternatives" aria-label="Other profit periods">
+                  <p>or tomorrow</p>
+                  <p>or last week</p>
+                  <p>or next week</p>
+                </div>
+              </div>
+
               <Image
-                src={moment.wide}
+                className="lb2-flow-visibility__approved-birdee"
+                src={LANDING_V2_MEDIA.visibility.searching}
                 alt=""
-                fill
+                width={1254}
+                height={1254}
                 priority
-                sizes="100vw"
+                sizes="(max-width: 820px) 72vw, (max-width: 1100px) 48vw, 34vw"
               />
-            </picture>
-
-            <div className="lb2-flow-visibility__questions">
-              {QUESTIONS.map((question, questionIndex) => (
-                <span
-                  className={moment.activeQuestion === questionIndex ? "is-active" : ""}
-                  key={question}
-                >
-                  {question}
-                  <b>?</b>
-                </span>
-              ))}
             </div>
+          ) : (
+            <div className="lb2-flow-visibility__why-not">
+              <div className="lb2-flow-visibility__why-not-copy">
+                <h3>{moment.heading}</h3>
+                {moment.answer && <p>{moment.answer}</p>}
+              </div>
 
-            <div className="lb2-flow-visibility__calendar">
-              <Image src={LANDING_V2_MEDIA.visibility.calendar} alt="" fill sizes="180px" />
-              <span><b>10<sup>th</sup></b>next month</span>
+              <Image
+                className="lb2-flow-visibility__why-not-birdee"
+                src={LANDING_V2_MEDIA.visibility.concerned}
+                alt=""
+                width={1254}
+                height={1254}
+                priority
+                sizes="(max-width: 820px) 134vw, (max-width: 1100px) 74vw, 56vw"
+              />
             </div>
-          </div>
-
-          <div className="lb2-flow-visibility__copy">
-            <h3>{moment.heading}</h3>
-            {"answer" in moment && moment.answer && <p>{moment.answer}</p>}
-          </div>
+          )}
         </article>
       ))}
     </section>
