@@ -111,7 +111,7 @@ export default async function BillingPage({
 
         <aside
           className="billing-stage billing-offer__stage"
-          aria-label={`One weekly membership for ${context.businessName}. Every venue. One simple plan.`}
+          aria-label={`One weekly membership for ${context.businessName}. Every venue. One simple price.`}
         >
           <div className="billing-offer-art">
             <Image
@@ -133,12 +133,12 @@ export default async function BillingPage({
             <div className="billing-offer-art__copy billing-offer-art__copy--desktop" aria-hidden="true">
               <span>One weekly membership</span>
               <strong>{context.businessName}</strong>
-              <p>Every venue. One simple plan.</p>
+              <p>Every venue. One simple price.</p>
             </div>
             <div className="billing-offer-art__copy billing-offer-art__copy--compact" aria-hidden="true">
               <span>One weekly membership</span>
               <strong>{context.businessName}</strong>
-              <p>Every venue. One simple plan.</p>
+              <p>Every venue. One simple price.</p>
             </div>
           </div>
         </aside>

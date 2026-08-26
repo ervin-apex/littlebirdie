@@ -62,7 +62,7 @@ export function FullNumbersView({
     : "Your sales budget clears the current cost mix."
   const breakEvenCallout = isShortOfBreakEven
     ? `At this cost mix, you need another ${money(breakEvenGap)} in sales to reach $0 profit.`
-    : `At this cost mix, the plan clears break-even by ${money(breakEvenGap)}.`;
+    : `At this cost mix, the budget clears break-even by ${money(breakEvenGap)}.`;
   const enteredRows = rows.filter((row) => row.actual).length;
   const currentRow = rows.find((row) => row.status === "today");
   const isDailyDetail = rowLabel === "Day";
@@ -288,7 +288,7 @@ export function FullNumbersView({
             fullWidth
             leadingIcon={<PencilSimpleLine weight="bold" />}
           >
-            Weekly plan
+            Weekly budget
           </ProductButton>
         </div>,
         document.body,

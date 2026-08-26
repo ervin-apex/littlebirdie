@@ -54,7 +54,7 @@ export function RecurringIncomeInput({
           ? "Got it — this will be added to weekly EBITDA."
           : week.recurringIncomeConfirmed
             ? "Confirmed — no recurring other income."
-            : "Confirm zero before Birdee saves the plan."}
+            : "Confirm zero before Birdee saves the budget."}
       </p>
     </section>
   );

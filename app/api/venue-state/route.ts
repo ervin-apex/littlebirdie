@@ -235,7 +235,7 @@ export async function GET(request: Request) {
   ]);
 
   if (planError || draftError) {
-    return NextResponse.json({ error: "Birdee could not load this venue's plan." }, { status: 500 });
+    return NextResponse.json({ error: "Birdee could not load this venue's budget." }, { status: 500 });
   }
   const setupDraft = resumableDraft(
     draftRow as SetupDraftRow | null,
@@ -268,7 +268,7 @@ export async function GET(request: Request) {
     .order("day_index");
 
   if (dayError || dayRows?.length !== 7) {
-    return NextResponse.json({ error: "This saved plan is missing its daily allocations." }, { status: 500 });
+    return NextResponse.json({ error: "This saved budget is missing its daily allocations." }, { status: 500 });
   }
 
   const from = dayRows[0].service_date;
@@ -344,7 +344,7 @@ export async function GET(request: Request) {
 
   if (snapshotPlanError) {
     return NextResponse.json(
-      { error: "Birdee could not load the saved plan assumptions." },
+      { error: "Birdee could not load the saved budget assumptions." },
       { status: 500 },
     );
   }
@@ -498,7 +498,7 @@ export async function PUT(request: Request) {
   const { data, error } = await supabase.rpc("save_week_plan", payload);
 
   if (error || !data?.[0]) {
-    return NextResponse.json({ error: "Birdee could not save this weekly plan." }, { status: 500 });
+    return NextResponse.json({ error: "Birdee could not save this weekly budget." }, { status: 500 });
   }
 
   // Setup is finished for this venue, so the in-progress draft is spent. Leaving

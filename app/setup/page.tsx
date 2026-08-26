@@ -373,7 +373,7 @@ export default function SetupPage() {
             <div className="setup-venue-context" role="status">
               <span>
                 {isWeeklyPlanEdit
-                  ? "Weekly plan"
+                  ? "Weekly budget"
                   : includesVenueStep
                     ? "New venue setup"
                     : "Setting up"}
@@ -529,12 +529,12 @@ export default function SetupPage() {
               ? step.key === "venue"
                 ? "Saving venue…"
                 : stepIndex === steps.length - 1
-                  ? "Saving your plan…"
+                  ? "Saving your budget…"
                   : "Saving this step…"
               : loadingVenue
                 ? "Opening venue…"
                 : isWeeklyPlanEdit && stepIndex === steps.length - 1
-                  ? "Save weekly plan"
+                  ? "Save weekly budget"
                   : step.nextLabel}
           </ProductButton>
         </nav>

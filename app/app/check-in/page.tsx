@@ -245,7 +245,7 @@ export default function DailyCheckInPage() {
           <small>{state.venueName}</small>
         </div>
 
-        <div className="daily-date-row" role="list" aria-label="Days in this plan">
+        <div className="daily-date-row" role="list" aria-label="Days in this budget">
           {dates.map((date, index) => {
             const eligible = eligibleDates.includes(date);
             const actual = state.actuals?.actuals[index] ?? null;
@@ -348,7 +348,7 @@ export default function DailyCheckInPage() {
             )}
             {isCorrection && (
               <p className="daily-correction-note">
-                This saves a new correction. The original plan comparison stays locked.
+                This saves a new correction. The original budget comparison stays locked.
               </p>
             )}
             {error && error !== revenueFieldError && (
@@ -374,7 +374,7 @@ export default function DailyCheckInPage() {
                 variant="tertiary"
                 leadingIcon={<PencilSimpleLine weight="bold" />}
               >
-                Edit weekly plan
+                Edit weekly budget
               </ProductButton>
             </div>
           </section>
@@ -386,7 +386,7 @@ export default function DailyCheckInPage() {
             </div>
             <div className="daily-birdee-guide__copy">
               <span><Storefront weight="duotone" aria-hidden /> {state.venueName}</span>
-              <h2>I&rsquo;ll use your weekly plan for costs.</h2>
+              <h2>I&rsquo;ll use your weekly budget for costs.</h2>
               <p>One actual number is all I need from you today.</p>
             </div>
           </aside>
@@ -405,7 +405,7 @@ export default function DailyCheckInPage() {
             <LockKey weight="duotone" aria-hidden />
             <p>
               <strong>Labour stays estimated</strong>
-              <span>from your weekly plan.</span>
+              <span>from your weekly budget.</span>
             </p>
           </div>
         </div>

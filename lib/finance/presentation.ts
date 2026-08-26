@@ -12,7 +12,7 @@ export function describeEbitdaResult(
     return {
       label: "Forecast EBITDA",
       explanation:
-        "This period uses forecast sales and planned or estimated costs.",
+        "This period uses forecast sales and budgeted or estimated costs.",
     };
   }
 
@@ -35,7 +35,7 @@ export function describeEbitdaResult(
       return {
         label: "Estimated EBITDA",
         explanation:
-          "Some components use historical rates, averages, or planned labour.",
+          "Some components use historical rates, averages, or budgeted labour.",
       };
     case "provisional":
       return {
