@@ -30,16 +30,26 @@ export function HeroSection({ primaryAction }: HeroSectionProps) {
           <h1 id="lb2-hero-title">
             Improve
             <br />
-            yr profit.
+            <span>your profit</span>
           </h1>
           <div className="lb2-hero__lede">
-            <p>Your profit, visible and increasable.</p>
-            <div className="lb2-hero__price-line">
-              <p>For <strong>$12 AUD</strong> a week.</p>
-              <div className="lb2-hero__coffee-art" aria-label="About the price of two coffees">
-                <Image src={LANDING_V2_MEDIA.pricing.coffees} alt="" fill sizes="120px" priority />
-                <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--one" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
-                <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--two" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
+            <p>See and improve your profit in real time</p>
+            <div
+              className="lb2-hero__price-lockup"
+              aria-label="$12 per week, about the price of two coffees"
+            >
+              <p className="lb2-hero__price">
+                <strong>$12</strong>
+                <span>per week</span>
+              </p>
+              <span className="lb2-hero__price-divider" aria-hidden="true" />
+              <div className="lb2-hero__coffee-comparison">
+                <div className="lb2-hero__coffee-art" aria-hidden="true">
+                  <Image src={LANDING_V2_MEDIA.pricing.coffees} alt="" fill sizes="140px" priority />
+                  <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--one" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
+                  <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--two" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
+                </div>
+                <span>about two coffees</span>
               </div>
             </div>
           </div>

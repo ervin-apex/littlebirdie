@@ -16,15 +16,8 @@ export const LANDING_V2_MEDIA = {
     poster: "/media/landing-v2/hero/birdee-poster.webp",
   },
   visibility: {
-    calendar: "/media/landing-v2/visibility/calendar-blank.webp",
-    journey: {
-      yesterdayWide: "/media/landing-v2/visibility/journey-v3/yesterday-wide.webp",
-      thisWeekWide: "/media/landing-v2/visibility/journey-v3/this-week-wide.webp",
-      whyNotWide: "/media/landing-v2/visibility/journey-v3/why-not-wide.webp",
-      yesterdayMobile: "/media/landing-v2/visibility/journey-v3/yesterday-mobile.webp",
-      thisWeekMobile: "/media/landing-v2/visibility/journey-v3/this-week-mobile.webp",
-      whyNotMobile: "/media/landing-v2/visibility/journey-v3/why-not-mobile.webp",
-    },
+    searching: "/media/landing-v2/visibility/hero-v2/birdee-searching.webp",
+    concerned: "/media/landing-v2/visibility/hero-v2/birdee-concerned.webp",
   },
   /*
    * These props are trimmed to their own drawn pixels, so a CSS box is the
@@ -78,6 +71,18 @@ export const LANDING_V2_MEDIA = {
       "/media/landing-v2/machine/desktop-slides-v4/slide-04-impact.webp",
       "/media/landing-v2/machine/desktop-slides-v4/slide-05-budget-actual.webp",
     ],
+    twoPage: {
+      inputs: {
+        wide: "/media/landing-v2/machine/two-page-v5/inputs-wide.webp",
+        medium: "/media/landing-v2/machine/two-page-v5/inputs-medium.webp",
+        portrait: "/media/landing-v2/machine/two-page-v5/inputs-portrait.webp",
+      },
+      outcome: {
+        wide: "/media/landing-v2/machine/two-page-v5/outcome-wide.webp",
+        medium: "/media/landing-v2/machine/two-page-v5/outcome-medium.webp",
+        portrait: "/media/landing-v2/machine/two-page-v5/outcome-portrait.webp",
+      },
+    },
     duration: 33.208333,
   },
   pricing: {
@@ -85,24 +90,38 @@ export const LANDING_V2_MEDIA = {
     coffees: "/media/landing-v2/pricing/two-coffees.webp",
   },
   fit: {
-    forBoard: "/media/landing-v2/fit/who-its-for-board.webp",
+    forBoard: "/media/landing-v2/fit/who-its-for-board-scott-v2.png",
     birdee: "/media/landing-v2/fit/hero-v2/birdee.webp",
     notForBoard: "/media/landing-v2/fit/who-its-not-for-board.webp",
   },
   privacy: "/media/landing-v2/privacy/hero-v2/birdee-shield.webp",
+  community: {
+    supportCall: "/media/landing-v2/community/birdee-support-call.png",
+    discordSymbol: "/media/landing-v2/community/discord-symbol-white.svg",
+  },
+  cta: {
+    shellDesktop: "/media/landing-v2/cta/cta-shell-desktop-v2.png",
+    shellMedium: "/media/landing-v2/cta/cta-shell-medium-v2.png",
+    shellMobile: "/media/landing-v2/cta/cta-shell-mobile-v2.png",
+  },
+  testimonials: {
+    idlePoster: "/media/landing-v2/testimonials/birdee-grounded-idle-poster-v3.png",
+    idleVideo: "/media/landing-v2/testimonials/birdee-grounded-one-shot-v4.mp4",
+    idleImage: "/media/landing-v2/testimonials/birdee-grounded-idle-loop-v3.webp",
+  },
 } as const;
 
 /**
- * When the machine chapters use the 9:16 portrait renders: any screen shaped
- * like a portrait phone or tablet. It is deliberately not the 820px layout
- * breakpoint - a 900px-wide tablet held upright still wants the upright art -
- * only wide enough to stop the 941px renders being upscaled past sense.
+ * Phones held upright use the compact 4:5 composition. Wider upright devices
+ * use the 4:3 medium composition so each breakpoint has an asset shaped for
+ * the space it actually occupies.
  *
  * Shared by the `<picture>` source, the preload list and the `--art-ratio`
  * block in the stylesheet - all three have to agree or a screen preloads one
  * art direction, is styled for a second and displays a third.
  */
-export const LANDING_V2_MACHINE_PORTRAIT = "(max-width: 1100px) and (max-aspect-ratio: 3 / 4)";
+export const LANDING_V2_MACHINE_PORTRAIT = "(max-width: 820px) and (orientation: portrait)";
+export const LANDING_V2_MACHINE_MEDIUM = "(min-width: 600px) and (max-aspect-ratio: 3 / 2)";
 
 /**
  * Images that must be decoded before the landing page is revealed.
@@ -112,28 +131,28 @@ export const LANDING_V2_MACHINE_PORTRAIT = "(max-width: 1100px) and (max-aspect-
  * mobile devices it is intended to protect.
  */
 export function getLandingV2PreloadImages(viewportWidth: number, viewportHeight: number) {
-  const machinePortrait = viewportWidth <= 1100 && viewportWidth / viewportHeight <= 0.75;
+  const machinePortrait = viewportWidth <= 820 && viewportWidth <= viewportHeight;
+  const machineMedium = viewportWidth >= 600 && viewportWidth / viewportHeight <= 1.5;
   const machineFrames = machinePortrait
-    ? LANDING_V2_MEDIA.machine.portraitSequence
-    : LANDING_V2_MEDIA.machine.desktopSequence;
-
-  const visibilityJourney = viewportWidth <= 820
     ? [
-        LANDING_V2_MEDIA.visibility.journey.yesterdayMobile,
-        LANDING_V2_MEDIA.visibility.journey.thisWeekMobile,
-        LANDING_V2_MEDIA.visibility.journey.whyNotMobile,
+        LANDING_V2_MEDIA.machine.twoPage.inputs.portrait,
+        LANDING_V2_MEDIA.machine.twoPage.outcome.portrait,
       ]
-    : [
-        LANDING_V2_MEDIA.visibility.journey.yesterdayWide,
-        LANDING_V2_MEDIA.visibility.journey.thisWeekWide,
-        LANDING_V2_MEDIA.visibility.journey.whyNotWide,
-      ];
+    : machineMedium
+      ? [
+          LANDING_V2_MEDIA.machine.twoPage.inputs.medium,
+          LANDING_V2_MEDIA.machine.twoPage.outcome.medium,
+        ]
+      : [
+          LANDING_V2_MEDIA.machine.twoPage.inputs.wide,
+          LANDING_V2_MEDIA.machine.twoPage.outcome.wide,
+        ];
 
   return Array.from(new Set([
     "/brand/birdee-face-square.png",
     LANDING_V2_MEDIA.hero.poster,
-    ...visibilityJourney,
-    LANDING_V2_MEDIA.visibility.calendar,
+    LANDING_V2_MEDIA.visibility.searching,
+    LANDING_V2_MEDIA.visibility.concerned,
     LANDING_V2_MEDIA.accountant.receipt,
     LANDING_V2_MEDIA.accountant.board,
     LANDING_V2_MEDIA.accountant.objection,

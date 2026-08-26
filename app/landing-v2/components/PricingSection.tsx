@@ -7,21 +7,21 @@ type PricingSectionProps = {
 };
 
 const PROMISES = [
-  ["No introductory offer.", "No free trial."],
-  ["No 45-minute sales call.", "No tiered pricing."],
-  ["No lock-in.", "Cancel anytime."],
+  ["No introductory offer", "No free trial"],
+  ["No 45-minute sales call", "No tiered pricing"],
+  ["No lock-in", "Cancel anytime"],
 ] as const;
 
 export function PricingSection({ primaryAction }: PricingSectionProps) {
   return (
     <section className="lb2-pricing" id="pricing" aria-labelledby="lb2-pricing-title">
+      <h2 className="lb2-sr-only" id="lb2-pricing-title">Pricing</h2>
       <div className="lb2-shell lb2-pricing__main">
         <div className="lb2-pricing__price">
           <div className="lb2-pricing__amount">
             <strong><sup>$</sup>12</strong>
-            <span>AUD<br />a week.</span>
+            <span>AUD<br />a week</span>
           </div>
-          <h2 id="lb2-pricing-title">That&rsquo;s the price.</h2>
           <a className="lb2-button lb2-button--ink" href={primaryAction.href}>
             {primaryAction.label}<ArrowUpRight size={21} weight="bold" aria-hidden="true" />
           </a>
@@ -37,7 +37,7 @@ export function PricingSection({ primaryAction }: PricingSectionProps) {
         </div>
 
         <div className="lb2-pricing__aside">
-          <div className="lb2-pricing__bubble">And we&rsquo;re not trying to sell you a course.</div>
+          <div className="lb2-pricing__bubble">And we&rsquo;re not trying to sell you a course</div>
           <Image src={LANDING_V2_MEDIA.pricing.birdee} alt="" width={1254} height={1254} sizes="340px" />
         </div>
       </div>

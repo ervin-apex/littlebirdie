@@ -10,7 +10,7 @@ export function DailyChirpSection() {
           <h2 id="lb2-daily-title">Your<br /><em>Daily Chirp.</em></h2>
           <p>Little Birdee will chirp your profit<br />right to your phone.</p>
           <div className="lb2-daily__proof">
-            <span><i><Timer size={25} weight="bold" aria-hidden="true" /></i><b>10 min max to set up</b></span>
+            <span><i><Timer size={25} weight="bold" aria-hidden="true" /></i><b>10 min to set up</b></span>
             <span><i><CalendarBlank size={25} weight="bold" aria-hidden="true" /></i><b>1 min a day</b></span>
           </div>
         </div>
