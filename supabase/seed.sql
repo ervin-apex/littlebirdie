@@ -167,8 +167,11 @@ begin
   -- 3. Actuals for every day already finished, a little either side of budget
   --    so the dashboard shows a mix of ahead and behind.
   -- -------------------------------------------------------------------------
+  -- Deliberately stop short of yesterday. Landing on a venue with nothing
+  -- outstanding hides the daily check-in prompt, the attention overlay and the
+  -- pinned "add today's actual" dock - the states most worth exercising.
   for i in 1..7 loop
-    exit when v_week_start + (i - 1) >= current_date;
+    exit when v_week_start + (i - 1) >= current_date - 1;
 
     select id into v_snapshot
     from public.weekly_plan_days

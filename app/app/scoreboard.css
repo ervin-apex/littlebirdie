@@ -4560,7 +4560,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   .dashboard-view .day-rail.is-preview-open .day-flight-breakdown {
     position: fixed;
     right: 24px;
-    bottom: 24px;
+    bottom: calc(24px + var(--app-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
     left: auto;
     z-index: 82;
     width: min(360px, calc(100vw - 48px));
@@ -4830,7 +4830,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   .dashboard-view .day-rail.is-preview-open .day-flight-breakdown {
     position: fixed;
     right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(calc(12px + env(safe-area-inset-bottom)) + var(--app-nav-height, 0px));
     left: 12px;
     z-index: 82;
     width: auto;
@@ -4923,7 +4923,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   .dashboard-mobile-dock {
     position: fixed;
     right: 12px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    bottom: calc(calc(10px + env(safe-area-inset-bottom)) + var(--app-nav-height, 0px));
     left: 12px;
     z-index: 60;
     display: block;
@@ -5010,7 +5010,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   .day-preview-panel {
     position: fixed;
     right: 24px;
-    bottom: 24px;
+    bottom: calc(24px + var(--app-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
     z-index: 2;
     width: min(380px, calc(100vw - 48px));
     border: 1px solid color-mix(in srgb, var(--sb-yellow-deep) 58%, var(--sb-line));
@@ -5045,7 +5045,7 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
   .day-preview-panel {
     position: fixed;
     right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(calc(12px + env(safe-area-inset-bottom)) + var(--app-nav-height, 0px));
     left: 12px;
     z-index: 2;
     max-height: min(72dvh, 560px);
@@ -7312,7 +7312,7 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   .full-numbers-mobile-dock {
     position: fixed;
     right: 0;
-    bottom: 0;
+    bottom: calc(0px + var(--app-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
     left: 0;
     z-index: 40;
     display: block;
@@ -7592,7 +7592,7 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   position: fixed;
   z-index: 120;
   right: clamp(16px, 3vw, 42px);
-  bottom: clamp(16px, 3vw, 34px);
+  bottom: calc(clamp(16px, 3vw, 34px) + var(--app-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
   display: grid;
   width: min(440px, calc(100vw - 32px));
   grid-template-columns: auto minmax(0, 1fr) auto;
