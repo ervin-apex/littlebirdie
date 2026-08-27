@@ -115,7 +115,7 @@ export function DashboardAttentionOverlay({
           <div className="dashboard-attention-actions">
             {weekly ? (
               <ProductButton
-                href="/app/plan"
+                href="/app/budget"
                 variant="primary"
                 trailingIcon={<ArrowRight weight="bold" />}
               >

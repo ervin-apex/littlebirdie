@@ -284,7 +284,7 @@ export function FullNumbersView({
       {typeof document !== "undefined" && createPortal(
         <div className="full-numbers-mobile-dock" aria-label="Full numbers action">
           <ProductButton
-            href="/app/plan"
+            href="/app/budget"
             variant="primary"
             fullWidth
             leadingIcon={<PencilSimpleLine weight="bold" />}

@@ -38,7 +38,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     href: "/setup",
     label: "My Budget",
     icon: Wallet,
-    match: ["/setup", "/app/plan", "/venues/new"],
+    match: ["/setup", "/app/budget", "/venues/new"],
   },
 ];
 

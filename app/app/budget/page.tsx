@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function WeeklyPlanPage() {
+export default function WeeklyBudgetPage() {
   redirect("/setup?from=weekly-update");
 }

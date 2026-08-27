@@ -463,7 +463,7 @@ export default function DailyCheckInPage() {
                     : `Show ${dayName}’s result`}
               </ProductButton>
               <ProductButton
-                href="/app/plan"
+                href="/app/budget"
                 variant="tertiary"
                 leadingIcon={<PencilSimpleLine weight="bold" />}
               >
