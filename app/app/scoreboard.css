@@ -3058,16 +3058,16 @@ body:has(.dashboard-view) .app-dashboard-backdrop {
   font-size: 14px;
 }
 
+/* Colour comes from .good / .bad on each figure, set from its own sign.
+   These used to hardcode budget green and actual red, which read as a
+   meaningful comparison while encoding nothing - a day that beat budget
+   still showed its result in the loss colour. */
 .day-comparison-point strong {
-  color: var(--sb-positive);
+  color: var(--sb-ink);
   font-size: clamp(34px, 3.2vw, 50px);
   font-weight: 740;
   line-height: 1;
   letter-spacing: -0.035em;
-}
-
-.day-comparison-point.is-actual strong {
-  color: var(--sb-negative);
 }
 
 .day-comparison-arrow {

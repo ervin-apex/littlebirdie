@@ -17,9 +17,15 @@ export function YesterdayComparison({ row }: { row: LedgerRow }) {
       <div className="day-comparison-card">
         <h2 id="day-comparison-title">Yesterday vs budget</h2>
         <div className="day-comparison-track" aria-label={`Budget profit ${signedProfit(row.predicted.net)}, estimated profit ${signedProfit(row.actual.net)}`}>
+          {/* Each figure is coloured by its own sign, the same way the day
+              verdict does it. The colours used to be fixed - budget always
+              green, actual always red - so a day that beat budget still
+              showed the operator's result in the loss colour. */}
           <div className="day-comparison-point is-budget">
             <span>Budget profit</span>
-            <strong className="tnum">{signedProfit(row.predicted.net)}</strong>
+            <strong className={`tnum ${row.predicted.net >= 0 ? "good" : "bad"}`}>
+              {signedProfit(row.predicted.net)}
+            </strong>
           </div>
           <div className="day-comparison-arrow" aria-hidden="true">
             <span />
@@ -27,7 +33,9 @@ export function YesterdayComparison({ row }: { row: LedgerRow }) {
           </div>
           <div className="day-comparison-point is-actual">
             <span>Estimated profit</span>
-            <strong className="tnum">{signedProfit(row.actual.net)}</strong>
+            <strong className={`tnum ${row.actual.net >= 0 ? "good" : "bad"}`}>
+              {signedProfit(row.actual.net)}
+            </strong>
           </div>
         </div>
         <div className={variance >= 0 ? "day-comparison-verdict is-positive" : "day-comparison-verdict is-concerned"}>
