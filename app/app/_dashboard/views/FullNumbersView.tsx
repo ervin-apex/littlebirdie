@@ -3,13 +3,11 @@ import { totalCells } from "../numbers";
 import { ReconciliationTable } from "../parts/ReconciliationTable";
 import { ViewBack } from "../parts/ViewBack";
 import { BirdeeMascot } from "@/components/BirdeeMascot";
-import { ProductButton } from "@/components/ProductButton";
 import { money, profit, scopeBreakeven, signedProfit } from "@/lib/profit";
 import type { LedgerRow, Week } from "@/lib/profit";
-import { ArrowDown, ArrowRight, Check, PencilSimpleLine } from "@phosphor-icons/react";
+import { ArrowDown, ArrowRight, Check } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { createPortal } from "react-dom";
 
 export function FullNumbersView({
   backLabel,
@@ -72,8 +70,7 @@ export function FullNumbersView({
     : `${enteredRows} ${enteredRows === 1 ? "week" : "weeks"} in this range`;
 
   return (
-    <>
-      <div className="full-numbers-view">
+    <div className="full-numbers-view">
       <div className="full-numbers-heading">
         <ViewBack label={backLabel} onClick={onBack} />
         <h1>{title}</h1>
@@ -280,20 +277,5 @@ export function FullNumbersView({
       )}
 
       </div>
-
-      {typeof document !== "undefined" && createPortal(
-        <div className="full-numbers-mobile-dock" aria-label="Full numbers action">
-          <ProductButton
-            href="/app/budget"
-            variant="primary"
-            fullWidth
-            leadingIcon={<PencilSimpleLine weight="bold" />}
-          >
-            Weekly budget
-          </ProductButton>
-        </div>,
-        document.body,
-      )}
-    </>
   );
 }
