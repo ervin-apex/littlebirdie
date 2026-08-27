@@ -1,4 +1,4 @@
-import { Gear, House, NotePencil } from "@phosphor-icons/react";
+import { House, NotePencil, Wallet } from "@phosphor-icons/react";
 
 /** The three things anyone opens Little Birdee to do. Scott, on the call:
  *  "Are you here to look at your results? Are you here to enter new numbers?
@@ -7,7 +7,7 @@ import { Gear, House, NotePencil } from "@phosphor-icons/react";
  *  One definition, rendered two ways: a bottom bar on phones and labelled
  *  links in the header on wider screens. */
 export type AppNavItem = {
-  key: "home" | "actuals" | "setup";
+  key: "home" | "actuals" | "budget";
   href: string;
   label: string;
   icon: typeof House;
@@ -31,10 +31,13 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     match: ["/app/check-in", "/app/update"],
   },
   {
-    key: "setup",
+    // Route is still /setup, but the wizard's whole job is the weekly budget -
+    // revenue, wages, COGS, other costs, other income. "Budget" says what you
+    // do there and pairs with Actuals as the two halves of the comparison.
+    key: "budget",
     href: "/setup",
-    label: "Setup",
-    icon: Gear,
+    label: "Budget",
+    icon: Wallet,
     match: ["/setup", "/app/plan", "/venues/new"],
   },
 ];
