@@ -27,14 +27,11 @@ export function trailFromParam(value: string | null): Screen[] {
     .filter((item): item is Screen => SCREENS.includes(item as Screen) && item !== "dashboard");
 }
 
+/** Every screen is a `view` on /app. "what-happened" used to be special-cased
+ *  to its own route, which re-mounted the whole dashboard and threw away its
+ *  state on every visit. /app/what-happened now redirects here instead. */
 export function appPathForScreen(screen: Screen, query: URLSearchParams) {
   query.delete("view");
-
-  if (screen === "what-happened") {
-    const search = query.toString();
-    return `/app/what-happened${search ? `?${search}` : ""}`;
-  }
-
   if (screen !== "dashboard") query.set("view", screen);
   const search = query.toString();
   return `/app${search ? `?${search}` : ""}`;

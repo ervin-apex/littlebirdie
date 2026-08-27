@@ -212,12 +212,6 @@ function DashboardInner() {
   }, [screen]);
 
   useEffect(() => {
-    if (screenParam !== "what-happened" || initialScreen === "what-happened") return;
-    const query = new URLSearchParams(params.toString());
-    router.replace(appPathForScreen("what-happened", query), { scroll: false });
-  }, [initialScreen, params, router, screenParam]);
-
-  useEffect(() => {
     setChapter(chapterParam);
   }, [chapterParam]);
 
