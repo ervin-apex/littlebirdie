@@ -1890,7 +1890,10 @@
   border-right: 0;
 }
 
-.day-verdict-comparison span {
+/* Only the stat blocks - the button is a direct child here, and it renders
+   its label and icon as spans, so an unscoped rule greyed out its text and
+   dropped it to 13px despite the button setting white at 15px. */
+.day-verdict-comparison > div > span {
   color: var(--sb-muted);
   font-size: 13px;
 }
