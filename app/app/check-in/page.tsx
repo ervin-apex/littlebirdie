@@ -83,7 +83,39 @@ export default function DailyCheckInPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revenueTouched, setRevenueTouched] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const revenueInputRef = useRef<HTMLInputElement>(null);
+
+  /* The decimal keypad has no return key, so the only way to submit is to
+     reach the button - and iOS does not shrink the layout viewport when the
+     keyboard opens, so anything anchored to the bottom sits behind it. Track
+     how much of the viewport the keyboard is covering and publish it as a
+     custom property the pinned bar can offset by.
+
+     Everything degrades to today's behaviour: no visualViewport, or a zero
+     inset, leaves the actions in normal flow. */
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const root = document.documentElement;
+    const update = () => {
+      const covered = window.innerHeight - viewport.height - viewport.offsetTop;
+      const inset = Math.max(0, Math.round(covered));
+      root.style.setProperty("--keyboard-inset", `${inset}px`);
+      // Small insets are browser chrome settling, not a keyboard.
+      setKeyboardOpen(inset > 120);
+    };
+
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      root.style.removeProperty("--keyboard-inset");
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -218,7 +250,7 @@ export default function DailyCheckInPage() {
   }
 
   return (
-    <div className="daily-update-page">
+    <div className={`daily-update-page ${keyboardOpen ? "is-keyboard-open" : ""}`}>
       <header className="daily-update-heading">
         <ProductButton
           href={selectedDate

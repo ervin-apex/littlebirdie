@@ -26,6 +26,11 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Shrink the layout viewport when the on-screen keyboard opens, so a
+  // pinned control stays above it instead of behind it. Chrome and Android
+  // honour this; iOS ignores it, which is why the check-in screen also
+  // tracks visualViewport directly.
+  interactiveWidget: "resizes-content",
   themeColor: "#f9f9f9",
 };
 

@@ -743,6 +743,44 @@
     min-width: 0;
   }
 
+  /* While the keypad is up, lift the submit to sit directly on top of it.
+     Fixed rather than sticky: sticky cannot leave .daily-revenue-entry, and
+     the card ends barely below the actions, so it would have nowhere to go.
+     Fixed positions against the layout viewport, and --keyboard-inset is
+     measured from that same edge, so it maps straight onto bottom. The nav
+     is behind the keyboard at this point and needs no allowance. */
+  .is-keyboard-open .daily-form-actions {
+    position: fixed;
+    z-index: 6;
+    right: 0;
+    bottom: var(--keyboard-inset, 0px);
+    left: 0;
+    margin-top: 0;
+    border-top: 1px solid color-mix(in oklch, var(--lb-ink) 18%, var(--lb-line));
+    background: var(--lb-white);
+    padding: 10px 16px;
+  }
+
+  /* Editing the budget is not what you came here to do mid-entry, and it
+     keeps the pinned bar to a single control. */
+  .is-keyboard-open .daily-form-actions .product-button--tertiary {
+    display: none;
+  }
+
+  /* Hold the space the actions vacated so the card does not collapse. */
+  .is-keyboard-open .daily-revenue-entry {
+    padding-bottom: 76px;
+  }
+
+  /* The strip above a keypad is about 510px, and the field plus the pinned
+     bar need more of that than the page had spare - so the bar landed on top
+     of the very input it serves. The page title is the one block that earns
+     nothing mid-entry: the day strip still says which day, and the card still
+     says what the number is. */
+  .is-keyboard-open .daily-update-heading {
+    display: none;
+  }
+
   .daily-revenue-form__mascot {
     width: 50px;
   }
