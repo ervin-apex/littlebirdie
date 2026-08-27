@@ -244,6 +244,12 @@
   gap: 18px;
 }
 
+/* Wide layouts get the full guide card beside the form, so the inline
+   mascot stays out of the way until that card is dropped. */
+.daily-revenue-form__mascot {
+  display: none;
+}
+
 .daily-revenue-form__intro h2 {
   font-size: 21px;
 }
@@ -600,31 +606,28 @@
   }
 
   .daily-check-in-main {
+    min-height: 0;
     grid-template-columns: 1fr;
   }
 
+  /* Once the columns stack, the guide card lands between the input and the
+     budget figures - decoration pushing the numbers under the fold. Its two
+     lines only repeated the labour note further down, so drop the card and
+     keep Birdee as a badge beside the question. */
   .daily-birdee-guide {
-    min-height: 170px;
-    grid-template-columns: 180px minmax(0, 1fr);
-    border-top: 1px solid var(--lb-line);
-    border-left: 0;
-    padding: 14px 28px 10px 6px;
+    display: none;
   }
 
-  .daily-birdee-guide::before {
-    inset: -65% -12% -65% 16%;
+  .daily-revenue-form__mascot {
+    display: block;
+    width: 58px;
+    height: auto;
+    flex: 0 0 auto;
+    margin-top: 2px;
   }
 
-  .daily-birdee-guide__art {
-    align-self: center;
-  }
-
-  .daily-birdee-guide__art img {
-    width: 170px;
-  }
-
-  .daily-birdee-guide h2 {
-    font-size: 23px;
+  .daily-revenue-form__intro > div {
+    flex: 1;
   }
 }
 
@@ -734,32 +737,16 @@
     min-width: 0;
   }
 
-  .daily-birdee-guide {
-    min-height: 140px;
-    grid-template-columns: 120px minmax(0, 1fr);
-    padding: 12px 17px 8px 2px;
+  .daily-revenue-form__mascot {
+    width: 50px;
   }
 
-  .daily-birdee-guide::before {
-    inset: -80% -20% -80% 14%;
-  }
-
-  .daily-birdee-guide__art img {
-    width: 128px;
-  }
-
-  .daily-birdee-guide__copy > span {
-    font-size: 10px;
-  }
-
-  .daily-birdee-guide h2 {
-    margin-top: 8px;
-    font-size: 19px;
-  }
-
-  .daily-birdee-guide p {
-    margin-top: 6px;
-    font-size: 12px;
+  /* One instruction per thing. The header sentence ("Add one number and
+     Birdee will show...") and the GST chip both restated what the entry
+     card's own heading and helper line already say. */
+  .daily-update-heading p,
+  .daily-gst-basis {
+    display: none;
   }
 
   .daily-plan-context {
@@ -767,15 +754,31 @@
   }
 
   .daily-plan-context > div {
-    min-height: 76px;
-    padding: 13px 16px;
+    min-height: 64px;
+    padding: 11px 16px;
   }
 
+  /* A slim caption rather than a third tile - it is a footnote to the two
+     figures beside it, not a figure of its own. */
   .daily-plan-context .daily-labour-note {
     grid-column: 1 / -1;
-    min-height: 68px;
+    min-height: 0;
+    align-items: flex-start;
+    gap: 8px;
     border-top: 1px solid var(--lb-line);
     border-left: 0;
+    padding: 10px 16px 12px;
+  }
+
+  .daily-labour-note > svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .daily-plan-context .daily-labour-note strong,
+  .daily-plan-context .daily-labour-note span {
+    display: inline;
+    font-size: 12px;
   }
 }
 
@@ -788,12 +791,16 @@
     font-size: 11px;
   }
 
+  /* Wrap rather than stack: the correction badge still drops to its own line
+     on the narrowest screens, but Birdee stays beside the question instead of
+     sitting on a line of its own. */
   .daily-revenue-form__intro {
     align-items: flex-start;
-    flex-direction: column;
+    flex-wrap: wrap;
   }
 
   .daily-correction-badge {
+    flex-basis: 100%;
     align-self: flex-start;
   }
 

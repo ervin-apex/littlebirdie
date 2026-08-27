@@ -285,6 +285,16 @@ export default function DailyCheckInPage() {
         <div className="daily-check-in-main">
           <section className="daily-revenue-entry" aria-labelledby="daily-revenue-heading">
             <div className="daily-revenue-form__intro">
+              {/* Shown only on narrow layouts, where the guide card below is
+                  hidden. Keeps Birdee next to the question instead of in a
+                  card under the fold. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                className="daily-revenue-form__mascot"
+                src={assetPath("/brand/birdee-setup-revenue-v1.png")}
+                alt=""
+                aria-hidden="true"
+              />
               <div>
                 <h2 id="daily-revenue-heading">
                   {isToday ? "Today’s actual" : `${dayName}’s actual`}
