@@ -15,9 +15,35 @@ export const LANDING_V2_MEDIA = {
     hoverStart: 6.292,
     poster: "/media/landing-v2/hero/birdee-poster.webp",
   },
+  /*
+   * The two product videos. Each poster is built from a real frame of the
+   * finished cut, so the thumbnail promises exactly what plays. The 960 variant
+   * is the <video poster>, which cannot go through next/image.
+   */
+  videos: {
+    setup: {
+      src: "/media/landing-v2/videos/setup-walkthrough.mp4",
+      poster: "/media/landing-v2/videos/setup-poster.jpg",
+      posterSmall: "/media/landing-v2/videos/setup-poster-960.jpg",
+      length: "0:49",
+    },
+    chirp: {
+      src: "/media/landing-v2/videos/daily-chirp.mp4",
+      poster: "/media/landing-v2/videos/chirp-poster.jpg",
+      posterSmall: "/media/landing-v2/videos/chirp-poster-960.jpg",
+      length: "0:35",
+    },
+  },
   visibility: {
     searching: "/media/landing-v2/visibility/hero-v2/birdee-searching.webp",
     concerned: "/media/landing-v2/visibility/hero-v2/birdee-concerned.webp",
+  },
+  whatWeDo: {
+    productStory: {
+      desktop: "/media/landing-v2/what-we-do/product-story-desktop-v2.webp",
+      medium: "/media/landing-v2/what-we-do/product-story-medium-v2.webp",
+      mobile: "/media/landing-v2/what-we-do/product-story-mobile-v2.webp",
+    },
   },
   /*
    * These props are trimmed to their own drawn pixels, so a CSS box is the
