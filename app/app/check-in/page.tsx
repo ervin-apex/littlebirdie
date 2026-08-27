@@ -414,7 +414,9 @@ export default function DailyCheckInPage() {
           <div className="daily-labour-note">
             <LockKey weight="duotone" aria-hidden />
             <p>
-              <strong>Labour stays estimated</strong>
+              {/* Explicit space: these sit on one line below 700px, and JSX
+                  drops the newline between them. */}
+              <strong>Labour stays estimated</strong>{" "}
               <span>from your weekly budget.</span>
             </p>
           </div>
