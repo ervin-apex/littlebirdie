@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CaretDown,
-  CalendarBlank,
   CheckCircle,
   Plus,
   SignOut,
@@ -14,17 +13,11 @@ import {
 } from "@phosphor-icons/react";
 import type { VenueNavigationItem } from "@/lib/venues/navigation";
 import { assetPath, BRAND_LOGO_PATH, withoutBasePath } from "@/lib/site";
+import { APP_NAV_ITEMS, activeNavKey } from "./app-nav";
 
-const NAV = [
-  {
-    href: "/app/plan",
-    matchPath: "/app/plan",
-    label: "Weekly Budget",
-    mobileLabel: "Budget",
-    icon: CalendarBlank,
-    className: "brand-header__update-link",
-  },
-];
+/* The three sections come from components/app-nav.ts so the header and the
+   phone tab bar can never drift apart. Only one of the two is ever in the
+   DOM: this row is hidden below the tablet breakpoint, the bar above it. */
 
 export function BrandHeader({
   variant = "default",
@@ -40,6 +33,7 @@ export function BrandHeader({
   brandHref?: string;
 }) {
   const pathname = withoutBasePath(usePathname());
+  const activeSection = activeNavKey(pathname);
   const isHomeReference = variant === "home";
   const selectedVenue =
     venues.find((venue) => venue.id === selectedVenueId) ?? venues[0];
@@ -77,24 +71,23 @@ export function BrandHeader({
 
       {!isHomeReference && (
         <nav className="brand-header__nav" aria-label="Product">
-          {NAV.map((item) => {
-            const active = pathname === item.matchPath;
-            const Icon = item.icon;
-            const label = item.label;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                aria-current={active ? "page" : undefined}
-                className={`brand-header__update ${item.className}${active ? " is-active" : ""}`}
-              >
-                <Icon size={18} weight={active ? "fill" : "regular"} aria-hidden />
-                <span className="brand-header__nav-label">{label}</span>
-                <span className="brand-header__nav-mobile-label">{item.mobileLabel}</span>
-              </Link>
-            );
-          })}
+          <span className="brand-header__sections">
+            {APP_NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = activeSection === item.key;
+              return (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`brand-header__section${active ? " is-active" : ""}`}
+                >
+                  <Icon size={18} weight={active ? "fill" : "regular"} aria-hidden />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </span>
           <AccountMenu
             accountLabel={accountLabel || "Account"}
             pathname={pathname}

@@ -434,6 +434,68 @@ h3 {
   background: var(--lb-yellow-soft);
 }
 
+/* Home / Actuals / Setup in the header, from the tablet breakpoint up. Below
+   that the bottom tab bar carries them and this row is removed entirely, so
+   only one of the two is ever in the accessibility tree. Deliberately lighter
+   than .brand-header__update - three bordered buttons would crowd the bar and
+   compete with the venue switcher. */
+.brand-header__sections {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.brand-header__section {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+  color: color-mix(in oklch, var(--lb-ink) 62%, var(--lb-paper));
+  font-family: var(--font-ui), "Trebuchet MS", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  transition:
+    color var(--lb-duration-state) var(--lb-ease-out),
+    border-color var(--lb-duration-state) var(--lb-ease-out);
+}
+
+.brand-header__section > svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.brand-header__section.is-active {
+  color: var(--lb-ink);
+  border-bottom-color: var(--lb-yellow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .brand-header__section:hover {
+    color: var(--lb-ink);
+    border-bottom-color: color-mix(in oklch, var(--lb-yellow) 55%, transparent);
+  }
+}
+
+.brand-header__section:focus-visible {
+  outline: 2px solid var(--lb-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Phones get the bottom bar instead. */
+@media (max-width: 759.98px) {
+  .brand-header__sections {
+    display: none;
+  }
+}
+
 .venue-switcher {
   position: relative;
   min-width: 0;

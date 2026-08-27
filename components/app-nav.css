@@ -1,0 +1,84 @@
+/* Bottom tab bar. Phones only; the header carries the same three items from
+   the tablet breakpoint up.
+
+   --app-nav-height is published on :root so the views that already pin
+   something to the bottom edge (the check-in dock, the full-numbers dock,
+   the day preview sheet, the scenario footer) can clear it instead of
+   fighting it. */
+
+:root {
+  --app-nav-height: 0px;
+}
+
+.app-nav {
+  display: none;
+}
+
+@media (max-width: 759.98px) {
+  :root {
+    --app-nav-height: 60px;
+  }
+
+  .app-nav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 90;
+    display: block;
+    background: var(--lb-white);
+    border-top: 1px solid var(--lb-line);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -2px 12px color-mix(in oklch, var(--lb-ink) 8%, transparent);
+  }
+
+  .app-nav ul {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .app-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    /* comfortably past the 44px minimum; the venue switcher's 38px trigger
+       is the mistake this avoids repeating */
+    min-height: var(--app-nav-height);
+    padding: 6px 4px 8px;
+    color: var(--lb-muted);
+    text-decoration: none;
+    font-family: var(--font-outfit), "Segoe UI", system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border-top: 3px solid transparent;
+    transition: color var(--lb-duration-state, 180ms) var(--lb-ease-out, ease),
+      border-color var(--lb-duration-state, 180ms) var(--lb-ease-out, ease);
+  }
+
+  /* The active tab is the only persistent answer to "which part am I in?",
+     so it is deliberately loud: brand accent above, full ink below. */
+  .app-nav__item.is-active {
+    color: var(--lb-ink);
+    border-top-color: var(--lb-yellow);
+  }
+
+  .app-nav__item:active {
+    background: var(--lb-surface-muted);
+  }
+
+  .app-nav__item:focus-visible {
+    outline: 2px solid var(--lb-focus);
+    outline-offset: -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav__item {
+    transition: none;
+  }
+}

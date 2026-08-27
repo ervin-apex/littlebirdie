@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
+import { AppNav } from "@/components/AppNav";
 import { createClient } from "@/lib/supabase/server";
 import { loadVenueNavigation } from "@/lib/venues/navigation";
 import { billingEnforcementEnabled, loadBillingBusinessContext } from "@/lib/billing/server";
@@ -39,7 +40,7 @@ export default async function ProductLayout({ children }: { children: React.Reac
   );
 
   return (
-    <div className="relative flex h-[100dvh] w-screen max-w-full min-h-0 flex-col overflow-hidden text-ink">
+    <div className="app-shell-root relative flex h-[100dvh] w-screen max-w-full min-h-0 flex-col overflow-hidden text-ink">
       <PageBackground faint />
       <svg
         className="app-dashboard-backdrop"
@@ -71,6 +72,8 @@ export default async function ProductLayout({ children }: { children: React.Reac
       <main className="app-main relative z-10 min-h-0 w-full flex-1 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
         {children}
       </main>
+
+      <AppNav />
     </div>
   );
 }

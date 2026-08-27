@@ -7,3 +7,12 @@
   height: 100%;
   pointer-events: none;
 }
+
+/* Reserve the bottom bar's height on the shell itself rather than on each
+   scrolling region. The shell is a border-box 100dvh flex column, so padding
+   here shrinks <main>, and every scroller inside it ends above the bar - no
+   need to find and patch each one, and nothing can drift under it later.
+   --app-nav-height is 0 above the phone breakpoint, so this is inert there. */
+.app-shell-root {
+  padding-bottom: var(--app-nav-height, 0px);
+}
