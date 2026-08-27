@@ -19,7 +19,6 @@
   color: var(--sb-ink);
 }
 
-
 .scoreboard-stage *,
 .scoreboard-stage *::before,
 .scoreboard-stage *::after {
@@ -3562,8 +3561,13 @@ body:has(.dashboard-view) .app-dashboard-backdrop {
     margin-inline: 14px;
   }
 
+  /* Stretched to the full content width, so the side margins above shift
+     this block right rather than insetting it - 14px off centre, with
+     14px clipped off the right edge. .chapter-tabs already sidesteps the
+     same rule this way, which is what keeps the two aligned. */
   .dashboard-view .scoreboard-heading {
     min-height: 136px;
+    align-self: center;
   }
 
   .dashboard-view .period-nav {
@@ -6784,10 +6788,6 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   line-height: 1.35;
 }
 
-.full-numbers-mobile-dock {
-  display: none;
-}
-
 @media (min-width: 761px) and (max-width: 1280px) {
   body:has(.full-numbers-view) .app-main {
     padding-inline: 24px;
@@ -6913,7 +6913,10 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
     height: auto;
     min-height: 100%;
     overflow: visible;
-    padding: 0 0 calc(98px + env(safe-area-inset-bottom));
+    /* 98px used to clear the pinned Weekly budget dock. That is gone, and
+       the shell already insets the tab bar's 60px - but not the safe area
+       the bar adds on top, so that part stays. */
+    padding: 0 0 calc(16px + env(safe-area-inset-bottom));
   }
 
   .full-numbers-heading {
@@ -7326,22 +7329,6 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
     font-size: 12px;
   }
 
-  .full-numbers-mobile-dock {
-    position: fixed;
-    right: 0;
-    bottom: calc(0px + var(--app-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
-    left: 0;
-    z-index: 40;
-    display: block;
-    border-top: 1px solid var(--lb-line);
-    background: color-mix(in oklch, var(--lb-paper) 96%, transparent);
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-    backdrop-filter: blur(14px);
-  }
-
-  .full-numbers-mobile-dock .product-button {
-    min-height: 54px;
-  }
 }
 
 /* Mobile acceptance pass: preserve every action, make Custom a real anchored
