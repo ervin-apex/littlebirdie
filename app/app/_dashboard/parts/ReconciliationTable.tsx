@@ -30,12 +30,13 @@ export function ReconciliationTable({
       /* The row is named for the thing, not the mode - the Result and Budget
          columns already say which lens each figure is under. What an operator
          cannot tell from the columns is whether the figure carries GST, so
-         that is what the definition line spells out. The wording tracks the
-         venue's entry basis so it always matches the prompt on the check-in
-         screen where the number was typed in. */
+         that is all this line spells out. It deliberately avoids naming the
+         figure a second time: "Revenue" above "Sales including GST" read as
+         two different things rather than one. Tracks the venue's entry basis,
+         so it always agrees with the check-in prompt. */
       definition: revenueEntryBasis === "gst-inclusive"
-        ? "Sales including GST"
-        : "Sales excluding GST",
+        ? "Total including GST"
+        : "Total excluding GST",
       actual: actual.rev,
       budget: budget.rev,
       variance: actual.rev - budget.rev,
