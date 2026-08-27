@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CalendarBlank,
+  ChartLineUp,
   Check,
   CheckCircle,
   LockKey,
@@ -22,10 +23,15 @@ import {
   saveDailyRevenue,
   type VenueState,
 } from "@/lib/persistence/venue-state";
+import { BirdeeMascot } from "@/components/BirdeeMascot";
 import {
   DAY_FULL,
+  dailyLedger,
   money,
+  signedProfit,
   type DayActual,
+  type DayCell,
+  type LedgerRow,
 } from "@/lib/profit";
 import { assetPath } from "@/lib/site";
 import "../update/update.css";
@@ -84,6 +90,9 @@ export default function DailyCheckInPage() {
   const [error, setError] = useState<string | null>(null);
   const [revenueTouched, setRevenueTouched] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  // Set once a save lands, so the result can be shown here instead of
+  // pushing the operator out to the dashboard for it.
+  const [savedDate, setSavedDate] = useState<string | null>(null);
   const revenueInputRef = useRef<HTMLInputElement>(null);
 
   /* The decimal keypad has no return key, so the only way to submit is to
@@ -196,6 +205,25 @@ export default function DailyCheckInPage() {
       ? revenueValidation.error
       : null;
 
+  /* The saved day's result, computed from the same ledger the dashboard
+     uses so the two can never disagree. */
+  const savedIndex = savedDate ? dates.indexOf(savedDate) : -1;
+  const savedRow = useMemo(() => {
+    if (savedIndex < 0 || !state?.week || !state.actuals) return null;
+    const row = dailyLedger(state.week, state.actuals)[savedIndex];
+    return row?.actual ? row : null;
+  }, [savedIndex, state?.week, state?.actuals]);
+
+  // The next day still waiting on a number, so catching up is one tap.
+  const nextMissingDate = useMemo(
+    () =>
+      eligibleDates.find((date) => {
+        if (date === savedDate) return false;
+        return !state?.actuals?.actuals[dates.indexOf(date)];
+      }) ?? null,
+    [dates, eligibleDates, savedDate, state?.actuals],
+  );
+
   const chooseDate = (date: string) => {
     const index = dates.indexOf(date);
     const actual = state?.actuals?.actuals[index] ?? null;
@@ -203,6 +231,7 @@ export default function DailyCheckInPage() {
     setRevenueInput(actual ? inputMoney(actual.rev) : "");
     setRevenueTouched(false);
     setError(null);
+    setSavedDate(null);
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -223,12 +252,13 @@ export default function DailyCheckInPage() {
         serviceDate: selectedDate,
         revenue: validation.value,
       });
-      const dayIndex = dates.indexOf(selectedDate);
-      router.push(
-        dayIndex >= 0
-          ? `/app?period=this-week&view=day-verdict&day=${dayIndex}&scope=day&service-date=${selectedDate}`
-          : "/app?period=this-week",
-      );
+      /* Catching up a few days used to mean a round trip to the dashboard
+         and back for each one. Reload the week and show the result here, so
+         the next day is one tap away. */
+      const refreshed = await loadVenueState(selectedDate);
+      setState(refreshed);
+      setSavedDate(selectedDate);
+      setRevenueTouched(false);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -317,6 +347,21 @@ export default function DailyCheckInPage() {
         </div>
       </section>
 
+      {savedRow ? (
+        <DailyResult
+          row={savedRow}
+          dayName={savedIndex >= 0 ? DAY_FULL[savedIndex] : "That day"}
+          nextDayName={
+            nextMissingDate ? DAY_FULL[dates.indexOf(nextMissingDate)] : null
+          }
+          onNextDay={() => nextMissingDate && chooseDate(nextMissingDate)}
+          onExplain={() =>
+            router.push(
+              `/app?period=this-week&view=day-explanation&day=${savedIndex}&scope=day&service-date=${savedDate}`,
+            )
+          }
+        />
+      ) : (
       <form className="daily-check-in-surface" onSubmit={submit}>
         <div className="daily-check-in-main">
           <section className="daily-revenue-entry" aria-labelledby="daily-revenue-heading">
@@ -460,7 +505,80 @@ export default function DailyCheckInPage() {
           </div>
         </div>
       </form>
+      )}
     </div>
+  );
+}
+
+function DailyResult({
+  row,
+  dayName,
+  nextDayName,
+  onNextDay,
+  onExplain,
+}: {
+  row: LedgerRow;
+  dayName: string;
+  nextDayName: string | null;
+  onNextDay: () => void;
+  onExplain: () => void;
+}) {
+  const actual = row.actual as DayCell;
+  const difference = actual.net - row.predicted.net;
+  // Same wording as the dashboard's day verdict, so saving here and
+  // arriving there from the week view read identically.
+  const verdict = Math.abs(difference) < 0.5
+    ? `${dayName} matched budget.`
+    : `${dayName} finished ${money(Math.abs(difference))} ${difference >= 0 ? "ahead of" : "behind"} budget.`;
+
+  return (
+    <section className="daily-result" aria-live="polite">
+      <div className="daily-result__headline">
+        <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={84} />
+        <div>
+          <h2>{verdict}</h2>
+          <span>Estimated profit</span>
+          <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>
+            {signedProfit(actual.net)}
+          </strong>
+        </div>
+      </div>
+
+      <div className="daily-result__stats">
+        <div>
+          <span>Budget</span>
+          <strong className="tnum">{signedProfit(row.predicted.net)}</strong>
+        </div>
+        <div>
+          <span>Difference</span>
+          <strong className={`tnum ${difference >= 0 ? "good" : "bad"}`}>
+            {signedProfit(difference)}
+          </strong>
+        </div>
+      </div>
+
+      <div className="daily-result__actions">
+        {nextDayName && (
+          <ProductButton
+            variant="primary"
+            onClick={onNextDay}
+            trailingIcon={<ArrowRight weight="bold" />}
+          >
+            Add {nextDayName}&rsquo;s actual
+          </ProductButton>
+        )}
+        <ProductButton
+          variant="secondary"
+          onClick={onExplain}
+          leadingIcon={<ChartLineUp size={20} weight="bold" />}
+        >
+          What happened
+        </ProductButton>
+        <ProductButton href="/app?period=this-week" variant="tertiary">
+          Back to Home
+        </ProductButton>
+      </div>
+    </section>
   );
 }
 
