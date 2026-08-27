@@ -7563,6 +7563,13 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
     width: 100%;
     margin: 16px 0 0;
     flex-wrap: wrap;
+    /* .dashboard-view is a fixed-height flex column. With the default
+       flex-shrink this card gets squeezed back to its 68px min-height while
+       its wrapped content needs two rows, and the overflow paints over
+       .week-progress below it. Hold the content height and let the column
+       scroll, which it is already set up to do. */
+    flex: 0 0 auto;
+    min-height: 0;
   }
 
   .dashboard-view .daily-check-in-task__copy {
