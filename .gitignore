@@ -23,3 +23,17 @@ next-env.d.ts
 # (client meeting transcripts, requirements/architecture notes, local tooling)
 /docs
 /.claude
+
+# Local build output for the throwaway dist dirs used while capturing footage
+# and QA screenshots (next build -> NEXT_DIST_DIR=.next-something).
+/.next-*
+
+# Working assets and QA output from landing page and video production. These are
+# generated locally and run to well over a gigabyte, so the repo keeps only the
+# finished assets that ship in /public.
+/output
+/outputs
+/landing
+/design
+/.media
+/animation-plans
