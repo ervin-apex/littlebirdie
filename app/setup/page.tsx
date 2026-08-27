@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -60,6 +60,7 @@ export default function SetupPage() {
     isNewVenueFlow ? BLANK_WEEK : null,
   );
   const [stepIndex, setStepIndex] = useState(0);
+  const inputAreaRef = useRef<HTMLDivElement>(null);
   const [stepDirection, setStepDirection] = useState(1);
   const [helpOpen, setHelpOpen] = useState(false);
   const [loadingVenue, setLoadingVenue] = useState(!isNewVenueFlow);
@@ -136,6 +137,32 @@ export default function SetupPage() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [helpOpen]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onPopState = (event: PopStateEvent) => {
+      const target = (event.state as { setupStep?: unknown } | null)?.setupStep;
+      if (typeof target !== "number") return;
+      setHelpOpen(false);
+      setStepDirection(-1);
+      setStepIndex(target);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Tag the entry the wizard opened on, so returning to it restores step 0
+  // rather than leaving a bare entry the popstate handler ignores.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window.history.state as { setupStep?: unknown } | null)?.setupStep !== undefined) return;
+    window.history.replaceState(
+      { ...window.history.state, setupStep: stepIndex },
+      "",
+    );
+    // Only ever tags the first entry; later steps are pushed by advanceToStep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const leaveSetup = () => {
     if (isWeeklyPlanEdit) {
       router.push("/app?period=this-week");
@@ -211,20 +238,77 @@ export default function SetupPage() {
     setHelpOpen((open) => !open);
   };
 
-  const goBack = () => {
-    setHelpOpen(false);
-    if (stepIndex === 0) {
-      if (setupSource === "onboarding") {
-        router.push("/onboarding");
-      } else if (includesVenueStep) {
-        router.push(hasVenueRecord ? "/account?setup=pending" : "/account");
-      } else {
-        router.push("/app?period=this-week");
-      }
+  /* Enter moves to the next field, and from the last field to the next step.
+     The revenue step has seven day inputs, so tabbing or reaching for the
+     button between each was the slow part. Mirrors the disabled state of the
+     Continue button so Enter can never advance past a step the button itself
+     would refuse. */
+  const stepBlocked =
+    loadingVenue
+    || (step.key === "venue" && !venueName.trim())
+    || (
+      step.key === "income"
+      && week.recurringIncome === 0
+      && !week.recurringIncomeConfirmed
+    );
+
+  const onStepKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" || event.shiftKey) return;
+    const field = event.target as HTMLElement;
+    if (field.tagName !== "INPUT") return;
+    const type = (field as HTMLInputElement).type;
+    if (type === "checkbox" || type === "radio") return;
+
+    event.preventDefault();
+
+    const fields = Array.from(
+      inputAreaRef.current?.querySelectorAll<HTMLInputElement>(
+        'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([disabled])',
+      ) ?? [],
+    );
+    const next = fields[fields.indexOf(field as HTMLInputElement) + 1];
+    if (next) {
+      next.focus();
+      next.select();
       return;
     }
-    setStepDirection(-1);
-    setStepIndex((index) => index - 1);
+    if (saving || stepBlocked) return;
+    void goNext();
+  };
+
+  /* Each step gets its own history entry so the phone's back gesture steps
+     back through the wizard instead of dropping the operator out of it. The
+     URL does not change - the step lives in history state - so this stays out
+     of the way of the draft-resume logic, which is the sole owner of which
+     step you land on. Next's own history state is preserved on each entry. */
+  const advanceToStep = (nextIndex: number) => {
+    setStepDirection(1);
+    setStepIndex(nextIndex);
+    if (typeof window === "undefined") return;
+    window.history.pushState(
+      { ...window.history.state, setupStep: nextIndex },
+      "",
+    );
+  };
+
+
+
+  const goBack = () => {
+    setHelpOpen(false);
+    // Let the browser pop, so the in-wizard Back and the phone gesture stay
+    // on the same history stack rather than drifting apart.
+    if (stepIndex > 0) {
+      window.history.back();
+      return;
+    }
+    // Step 0: leave the wizard for wherever this flow was entered from.
+    if (setupSource === "onboarding") {
+      router.push("/onboarding");
+    } else if (includesVenueStep) {
+      router.push(hasVenueRecord ? "/account?setup=pending" : "/account");
+    } else {
+      router.push("/app?period=this-week");
+    }
   };
 
   const goNext = async () => {
@@ -260,8 +344,7 @@ export default function SetupPage() {
         });
         setSavedCompletedSteps(setupDraft.completedSteps);
         setSaving(false);
-        setStepDirection(1);
-        setStepIndex((index) => index + 1);
+        advanceToStep(stepIndex + 1);
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Birdee could not save this venue.";
@@ -322,8 +405,7 @@ export default function SetupPage() {
       });
       setSavedCompletedSteps(setupDraft.completedSteps);
       setSaving(false);
-      setStepDirection(1);
-      setStepIndex((index) => index + 1);
+      advanceToStep(stepIndex + 1);
     } catch (error) {
       setSaveError(
         error instanceof Error ? error.message : "Birdee could not save this setup step.",
@@ -444,7 +526,7 @@ export default function SetupPage() {
                 </AnimatePresence>
             </div>
 
-            <div className="setup-input-area">
+            <div className="setup-input-area" ref={inputAreaRef} onKeyDown={onStepKeyDown}>
               {step.key === "venue" ? (
                 <VenueNameInput
                   value={venueName}
