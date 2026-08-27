@@ -113,9 +113,9 @@ export function DayScore({
               type="button"
               className="day-breakdown-action"
               onClick={onOpen}
-              aria-label={`See ${fullDayName(row.label)} numbers`}
+              aria-label={`How ${fullDayName(row.label)} went`}
             >
-              See {fullDayName(row.label)}&rsquo;s numbers
+              How {fullDayName(row.label)} went
               <ArrowRight weight="bold" aria-hidden="true" />
             </button>
           )}

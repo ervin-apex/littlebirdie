@@ -20,9 +20,9 @@ export function periodExplanationTitle(periodTitle: string) {
 }
 
 export function periodNumbersActionLabel(periodTitle: string) {
-  if (periodTitle === "Yesterday") return "See yesterday’s numbers";
-  if (periodTitle === "This week") return "See this week’s numbers";
-  if (periodTitle === "Last week") return "See last week’s numbers";
-  if (periodTitle === "Custom range") return "See this range’s numbers";
-  return `See ${periodTitle} numbers`;
+  if (periodTitle === "Yesterday") return "See all yesterday’s numbers";
+  if (periodTitle === "This week") return "See all this week’s numbers";
+  if (periodTitle === "Last week") return "See all last week’s numbers";
+  if (periodTitle === "Custom range") return "See all this range’s numbers";
+  return `See all ${periodTitle} numbers`;
 }

@@ -154,7 +154,7 @@ export function ReconciliationTable({
         aria-controls="full-reconciliation-table"
         onClick={onToggle}
       >
-        {expanded ? "Hide numbers" : "See all numbers"}
+        {expanded ? "Hide the breakdown" : "Show the breakdown"}
         {expanded ? <CaretUp weight="bold" /> : <CaretDown weight="bold" />}
       </button>
     </section>

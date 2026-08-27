@@ -55,7 +55,7 @@ export function DayPreviewOverlay({ row, onClose, onOpen }: {
           <p>{driverInsight}</p>
         </div>
         <ProductButton variant="secondary" fullWidth onClick={onOpen} trailingIcon={<ArrowRight weight="bold" />}>
-          See {dayName}&rsquo;s numbers
+          How {dayName} went
         </ProductButton>
         <button type="button" className="day-preview-close-action" onClick={onClose}>Close</button>
       </section>

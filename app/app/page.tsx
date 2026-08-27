@@ -543,7 +543,7 @@ function DashboardInner() {
             backLabel={fullDayName(selectedRow.label)}
             resultLabel={`${fullDayName(selectedRow.label)}'s result`}
             title="What happened?"
-            numbersActionLabel={`See ${fullDayName(selectedRow.label)}’s numbers`}
+            numbersActionLabel={`See all ${fullDayName(selectedRow.label)}’s numbers`}
             rows={[selectedRow]}
             week={view.week}
             onBack={navigateBack}
