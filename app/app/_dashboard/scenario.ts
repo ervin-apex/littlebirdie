@@ -64,7 +64,7 @@ export function adjustmentDraftError(
 
 export function scenarioDriverResultCopy(driver: Driver, scenarioWeek: Week, unchanged: boolean) {
   const prefix = unchanged ? "Current" : "New";
-  if (driver === "revenue") return `${prefix} actual ${money(scenarioWeek.rev)}`;
+  if (driver === "revenue") return `${prefix} revenue ${money(scenarioWeek.rev)}`;
   if (driver === "wages") return `${prefix} wages ${money(scenarioWeek.lab)}`;
   if (driver === "fixed") return `${prefix} other costs ${money(scenarioWeek.fix)}`;
   return `${prefix} COGS rate ${formatAdjustmentInput(scenarioWeek.cogs)}%`;

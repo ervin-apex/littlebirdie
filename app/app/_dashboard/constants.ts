@@ -8,7 +8,7 @@ export const CHAPTERS: { key: Chapter; label: string }[] = [
 ];
 
 export const DRIVER_LABELS: Record<Driver, string> = {
-  revenue: "Actual",
+  revenue: "Revenue",
   cogs: "COGS",
   wages: "Wages",
   fixed: "Fixed & variable",

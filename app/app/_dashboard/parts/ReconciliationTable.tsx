@@ -1,6 +1,7 @@
 import { componentEvidenceLabel, reconciliationValue, varianceValue } from "../reconciliation";
 import { profit } from "@/lib/profit";
 import type { DayCell } from "@/lib/profit";
+import type { RevenueEntryBasis } from "@/lib/finance";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 
 export function ReconciliationTable({
@@ -9,6 +10,7 @@ export function ReconciliationTable({
   gstActual,
   gstBudget,
   actualLabel,
+  revenueEntryBasis,
   expanded,
   onToggle,
 }: {
@@ -17,13 +19,23 @@ export function ReconciliationTable({
   gstActual: number;
   gstBudget: number;
   actualLabel: "Result" | "Forecast";
+  revenueEntryBasis: RevenueEntryBasis;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const rows = [
     {
       key: "revenue",
-      label: "Actual",
+      label: "Revenue",
+      /* The row is named for the thing, not the mode - the Result and Budget
+         columns already say which lens each figure is under. What an operator
+         cannot tell from the columns is whether the figure carries GST, so
+         that is what the definition line spells out. The wording tracks the
+         venue's entry basis so it always matches the prompt on the check-in
+         screen where the number was typed in. */
+      definition: revenueEntryBasis === "gst-inclusive"
+        ? "Sales including GST"
+        : "Sales excluding GST",
       actual: actual.rev,
       budget: budget.rev,
       variance: actual.rev - budget.rev,
@@ -133,6 +145,7 @@ export function ReconciliationTable({
                   {item.driver && <i aria-hidden="true" />}
                   {item.label}
                 </strong>
+                {item.definition && <small>{item.definition}</small>}
                 {expanded && (
                   <small>{componentEvidenceLabel(item.evidence)}</small>
                 )}

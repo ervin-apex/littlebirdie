@@ -7,10 +7,10 @@ export function YesterdayComparison({ row }: { row: LedgerRow }) {
 
   const variance = row.variance.net;
   const driverText = row.variance.driver === "revenue"
-    ? `Actual was ${money(Math.abs(row.variance.rev))} ${row.variance.rev < 0 ? "below" : "above"} budget.`
+    ? `Actual revenue was ${money(Math.abs(row.variance.rev))} ${row.variance.rev < 0 ? "below" : "above"} budget.`
     : row.variance.driver === "labour"
       ? `Wages were ${money(Math.abs(row.variance.lab))} ${row.variance.lab > 0 ? "over" : "under"} budget.`
-      : "Actual and wages were the biggest drivers.";
+      : "Revenue and wages were the biggest drivers.";
 
   return (
     <section className="day-comparison" aria-labelledby="day-comparison-title">

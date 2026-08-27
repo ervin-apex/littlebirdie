@@ -134,7 +134,7 @@ export function profitDrivers(actual: DayCell, budget: DayCell, week: Week): Pro
   const candidates: ProfitDriver[] = [
     {
       key: "revenue",
-      label: "Actual",
+      label: "Revenue",
       detail: `${money(revenueDelta)} ${revenueDelta >= 0 ? "above" : "below"} budget`,
       impact: revenueImpact,
     },

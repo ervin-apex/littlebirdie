@@ -151,6 +151,7 @@ export function FullNumbersView({
             gstActual={displayedResult.gst}
             gstBudget={comparisonBudget.gst}
             actualLabel={isFutureScope ? "Forecast" : "Result"}
+            revenueEntryBasis={week.revenueEntryBasis}
             expanded={showAllNumbers}
             onToggle={() => setShowAllNumbers((current) => !current)}
           />

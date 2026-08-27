@@ -3001,7 +3001,12 @@ body:has(.dashboard-view) .app-dashboard-backdrop {
 .dashboard-view .day-comparison {
   display: flex;
   min-height: 0;
-  flex: 1;
+  /* Grow into spare space, but never shrink below the card. The card sets its
+     own min-height and align-items keeps it from shrinking along with the
+     section, so a plain "flex: 1" let the section compress under the card and
+     the overhang landed on top of the footer button - the driver sentence and
+     "See all numbers" printed over each other. */
+  flex: 1 0 auto;
   align-items: flex-start;
 }
 
@@ -3221,6 +3226,10 @@ body:has(.dashboard-view) .app-dashboard-backdrop {
 .dashboard-answer {
   display: flex;
   min-height: 0;
+  /* This card clips what overflows it, so shrinking it hides the buttons
+     rather than revealing them. The view above is already an overflow-y:auto
+     scroller - let it take the overflow and scroll instead. */
+  flex-shrink: 0;
   flex-direction: column;
   align-items: flex-start;
   padding: clamp(64px, 9vh, 108px) clamp(32px, 4vw, 72px) clamp(18px, 3vh, 34px);
