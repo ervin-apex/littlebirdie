@@ -5878,6 +5878,11 @@ body:has(.dashboard-view) .app-brand-bar > .brand-header::after {
     width: 100%;
     grid-template-columns: 1fr;
     gap: 8px;
+    /* The buttons already span both columns here, so drop the 480px cap set
+       further up for wider layouts - it left them hard against the left edge
+       with the space under the bird empty. Full width keeps them lined up
+       with the heading above. */
+    max-width: none;
     margin-top: 16px;
   }
 
