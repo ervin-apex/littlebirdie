@@ -440,8 +440,11 @@ function DashboardInner() {
     isHistory,
   });
 
+  // Drilling into a day goes straight to what happened. The verdict strip in
+  // between repeated the same figures behind an extra tap; it is now only used
+  // as the landing screen after someone enters an actual.
   const openSelectedDay = () => {
-    if (selectedRow?.actual) navigateScreen("day-verdict", { trail: [], day: selectedRow.index });
+    if (selectedRow?.actual) navigateScreen("day-explanation", { trail: [], day: selectedRow.index });
   };
 
   const openChild = (
@@ -516,7 +519,7 @@ function DashboardInner() {
               const row = ledger[index];
               if (row?.actual) {
                 setSelectedDay(index);
-                openChild("day-verdict", { day: index, scope: fullNumbersScope });
+                openChild("day-explanation", { day: index, scope: fullNumbersScope });
               }
             }}
           />

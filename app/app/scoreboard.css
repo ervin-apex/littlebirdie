@@ -1901,8 +1901,25 @@
   line-height: 1;
 }
 
+/* Matches the dashboard's What happened button. The yellow primary sat on a
+   cream card, so the control barely separated from its own background and the
+   label competed with the figures beside it. Ink on white reads at a glance
+   and keeps "What happened" looking the same wherever it appears. */
 .day-verdict-comparison .primary-action {
   margin-left: 22px;
+  border-color: var(--sb-ink);
+  background: var(--sb-ink);
+  box-shadow: 0 4px 0 color-mix(in oklch, var(--sb-ink) 78%, black);
+  color: var(--lb-white);
+  font-size: 15px;
+}
+
+@media (hover: hover) {
+  .day-verdict-comparison .primary-action:hover {
+    border-color: var(--sb-ink);
+    background: color-mix(in oklch, var(--sb-ink) 92%, var(--sb-yellow));
+    box-shadow: 0 5px 0 color-mix(in oklch, var(--sb-ink) 78%, black);
+  }
 }
 
 .day-verdict-rail {
