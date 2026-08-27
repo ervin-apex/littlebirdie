@@ -525,18 +525,34 @@ function DailyResult({
 }) {
   const actual = row.actual as DayCell;
   const difference = actual.net - row.predicted.net;
-  // Same wording as the dashboard's day verdict, so saving here and
-  // arriving there from the week view read identically.
-  const verdict = Math.abs(difference) < 0.5
-    ? `${dayName} matched budget.`
-    : `${dayName} finished ${money(Math.abs(difference))} ${difference >= 0 ? "ahead of" : "behind"} budget.`;
+  const matchedBudget = Math.abs(difference) < 0.5;
 
+  /* Every figure is coloured by its own sign, the way the What happened
+     screen does it - including the budget, which is a fact about the budget
+     rather than a comment on the day. Wording matches the day verdict, so
+     reaching the result from either direction reads the same. */
   return (
     <section className="daily-result" aria-live="polite">
       <div className="daily-result__headline">
-        <BirdeeMascot state={difference >= 0 ? "profit" : "loss"} size={84} />
+        <BirdeeMascot
+          state={difference >= 0 ? "profit" : "loss"}
+          variant={difference < 0 ? "concerned" : undefined}
+          size={84}
+        />
         <div>
-          <h2>{verdict}</h2>
+          <h2>
+            {matchedBudget ? (
+              `${dayName} matched budget.`
+            ) : (
+              <>
+                {dayName} finished{" "}
+                <strong className={difference >= 0 ? "good" : "bad"}>
+                  {money(Math.abs(difference))}
+                </strong>{" "}
+                {difference >= 0 ? "ahead of" : "behind"} budget.
+              </>
+            )}
+          </h2>
           <span>Estimated profit</span>
           <strong className={`tnum ${actual.net >= 0 ? "good" : "bad"}`}>
             {signedProfit(actual.net)}
@@ -547,7 +563,9 @@ function DailyResult({
       <div className="daily-result__stats">
         <div>
           <span>Budget</span>
-          <strong className="tnum">{signedProfit(row.predicted.net)}</strong>
+          <strong className={`tnum ${row.predicted.net >= 0 ? "good" : "bad"}`}>
+            {signedProfit(row.predicted.net)}
+          </strong>
         </div>
         <div>
           <span>Difference</span>

@@ -576,11 +576,17 @@
   font-weight: 700;
 }
 
-.daily-result__headline strong {
+/* Direct child only - the headline sentence carries its own inline figure,
+   which must stay inline at the heading's own size. */
+.daily-result__headline > div > strong {
   display: block;
   margin-top: 2px;
   font-size: 30px;
   letter-spacing: -0.03em;
+}
+
+.daily-result__headline h2 strong {
+  font-weight: inherit;
 }
 
 .daily-result__stats {
@@ -894,7 +900,7 @@
     font-size: 20px;
   }
 
-  .daily-result__headline strong {
+  .daily-result__headline > div > strong {
     font-size: 27px;
   }
 
