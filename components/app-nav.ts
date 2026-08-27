@@ -36,7 +36,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     // do there and pairs with Actuals as the two halves of the comparison.
     key: "budget",
     href: "/setup",
-    label: "Budget",
+    label: "My Budget",
     icon: Wallet,
     match: ["/setup", "/app/plan", "/venues/new"],
   },
