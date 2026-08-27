@@ -31,7 +31,7 @@ export const NUMBER_STEPS: StepDefinition[] = [
   {
     key: "revenue",
     label: "Revenue",
-    title: "What revenue are ya expecting?",
+    title: "What revenue are you expecting?",
     description: "Pop in each day. We’ll keep the weekly total sorted.",
     helpLabel: "What counts as revenue?",
     help: "Enter the sales figure you normally use, then tell us below whether it already excludes GST.",
@@ -43,7 +43,7 @@ export const NUMBER_STEPS: StepDefinition[] = [
   {
     key: "wages",
     label: "Wages",
-    title: "What will wages cost ya?",
+    title: "What will wages cost you?",
     description: "Use the weekly total from your roster.",
     helpLabel: "What counts as wages?",
     help: "Your full roster cost, including super and other employment on-costs, plus your own wage if that applies.",

@@ -123,7 +123,7 @@ export default function OnboardingPage() {
           </div>
 
           <section className="onboarding-business-copy" aria-labelledby="business-heading">
-            <h1 id="business-heading">Quick bit about ya business.</h1>
+            <h1 id="business-heading">Quick bit about your business.</h1>
             <p>This keeps your numbers in the right place. Takes less than a minute.</p>
           </section>
 

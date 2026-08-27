@@ -87,7 +87,7 @@ export function AuthGateway({
 
         <div className="auth-gateway__promise-copy">
           <p className="auth-gateway__eyebrow">Your profit companion</p>
-          <h1 id="auth-promise-title">Improve yr profit.</h1>
+          <h1 id="auth-promise-title">Improve your profit.</h1>
           <p className="auth-gateway__lede">
             See your profit before and as it happens — using the numbers already in your business.
           </p>
