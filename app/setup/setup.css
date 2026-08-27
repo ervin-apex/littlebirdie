@@ -17,6 +17,24 @@
   isolation: isolate;
 }
 
+/* The rest of the product sits on PageBackground: the same paper colour
+   with a soft yellow wash in the corners. This page paints its own paper
+   and skips the wash, and .setup-wave starts below the header, so the
+   header strip read as flat grey next to the dashboard's warm one.
+   Same gradients and the same 0.4 the dashboard passes as `faint`, so
+   the two headers match rather than merely resemble each other. */
+.setup-page::before {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  opacity: 0.4;
+  background-image:
+    radial-gradient(circle at 102% -8%, color-mix(in srgb, var(--lb-yellow) 18%, transparent) 0 18%, transparent 45%),
+    radial-gradient(circle at -8% 108%, color-mix(in srgb, var(--lb-yellow) 10%, transparent) 0 16%, transparent 42%);
+  pointer-events: none;
+}
+
 .setup-wave {
   position: absolute;
   z-index: 0;
