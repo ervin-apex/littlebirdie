@@ -2,7 +2,13 @@
   min-height: 100svh;
   display: grid;
   grid-template-columns: minmax(390px, 42fr) minmax(560px, 58fr);
-  overflow-x: hidden;
+  /* The promise panel's decorative circle sits 120px below its bottom edge,
+     meant to be clipped here. It was not: overflow-x: hidden with overflow-y
+     left visible forces overflow-y to auto, so this quietly became a nested
+     scroller with 57px of reachable travel. Scrolling it lifted the yellow
+     panel and left a strip of background beneath. `clip` clips both axes and
+     creates no scroll container at all, so focus cannot shift it either. */
+  overflow: clip;
   background: color-mix(in oklch, var(--lb-paper) 88%, var(--lb-yellow-soft));
 }
 
