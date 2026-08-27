@@ -36,7 +36,7 @@ export function HeroSection({ primaryAction }: HeroSectionProps) {
             <p>See and improve your profit in real time</p>
             <div
               className="lb2-hero__price-lockup"
-              aria-label="$12 per week, about the price of two coffees"
+              aria-label="$12 per week, thats two coffees"
             >
               <p className="lb2-hero__price">
                 <strong>$12</strong>
@@ -49,7 +49,7 @@ export function HeroSection({ primaryAction }: HeroSectionProps) {
                   <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--one" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
                   <Image className="lb2-hero__coffee-mark lb2-hero__coffee-mark--two" src="/brand/birdee-face-square.png" alt="" width={300} height={300} />
                 </div>
-                <span>about two coffees</span>
+                <span>... thats two coffees</span>
               </div>
             </div>
           </div>

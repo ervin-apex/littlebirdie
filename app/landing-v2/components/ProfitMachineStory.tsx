@@ -41,12 +41,12 @@ export function ProfitMachineStory() {
       aria-labelledby="lb2-machine-title"
     >
       <h2 className="lb2-sr-only" id="lb2-machine-title">
-        What Little Birdee does
+        How it works
       </h2>
 
       <article className="lb2-machine-page" data-page="inputs">
         <div className="lb2-machine-page__copy">
-          <p>What Little Birdee does</p>
+          <p>How it works</p>
           <h3>
             <span className="lb2-machine-page__primary">
               Takes <em>historical numbers</em>
@@ -62,7 +62,6 @@ export function ProfitMachineStory() {
 
       <article className="lb2-machine-page" data-page="outcome">
         <div className="lb2-machine-page__copy lb2-machine-page__copy--outcome">
-          <p>What Little Birdee does</p>
           <h3>
             <span className="lb2-machine-page__setup">Packages it up</span>
             <span className="lb2-machine-page__comparison">Then compares budget to actual</span>

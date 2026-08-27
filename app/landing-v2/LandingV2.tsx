@@ -1,6 +1,7 @@
 import { AccountantStory } from "./components/AccountantStory";
 import { CallToActionSection } from "./components/CallToActionSection";
 import { CommunitySection } from "./components/CommunitySection";
+import { ContactSection } from "./components/ContactSection";
 import { DailyChirpSection } from "./components/DailyChirpSection";
 import { FitSection } from "./components/FitSection";
 import { FooterV2 } from "./components/FooterV2";
@@ -11,6 +12,7 @@ import { PrivacySection } from "./components/PrivacySection";
 import { ProfitMachineStory } from "./components/ProfitMachineStory";
 import { SiteNavV2 } from "./components/SiteNavV2";
 import { TestimonialsSection } from "./components/TestimonialsSection";
+import { VideoSection } from "./components/VideoSection";
 import { VisibilityStory } from "./components/VisibilityStory";
 import { WhatWeDoSection } from "./components/WhatWeDoSection";
 import "./landing-v2.css";
@@ -40,10 +42,12 @@ export function LandingV2({ fontClassName, isAuthenticated }: LandingV2Props) {
           <DailyChirpSection />
           <PricingSection primaryAction={primaryAction} />
           <FitSection />
+          <VideoSection />
           <PrivacySection />
           <CallToActionSection primaryAction={primaryAction} />
           <CommunitySection />
           <TestimonialsSection />
+          <ContactSection />
         </main>
         <FooterV2 />
       </LandingPreloader>
