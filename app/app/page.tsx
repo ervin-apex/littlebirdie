@@ -247,9 +247,11 @@ function DashboardInner() {
   useEffect(() => {
     if (!ready || effectivePeriodKey === periodKey) return;
     setPeriodKey(effectivePeriodKey);
-    setChapter("revenue");
     setScreen("dashboard");
-    router.replace(`/app?period=${effectivePeriodKey}`, { scroll: false });
+    router.replace(
+      `/app?period=${effectivePeriodKey}&chapter=${chapter}`,
+      { scroll: false },
+    );
   }, [effectivePeriodKey, periodKey, ready, router]);
 
   const view = useMemo(
@@ -331,7 +333,7 @@ function DashboardInner() {
     setScreen(next);
     if (options.day !== undefined) setSelectedDay(options.day);
     const query = new URLSearchParams({ period: effectivePeriodKey });
-    if (chapter !== "revenue") query.set("chapter", chapter);
+    query.set("chapter", chapter);
     if (effectivePeriodKey === "custom") {
       query.set("from-date", customRange.from);
       query.set("to-date", customRange.to);
@@ -359,11 +361,11 @@ function DashboardInner() {
     if (key === "custom") {
       setPeriodKey("custom");
       setCustomRange(customDraft);
-      setChapter("revenue");
       setScreen("dashboard");
       setCustomOpen(true);
       const query = new URLSearchParams({
         period: "custom",
+        chapter,
         "from-date": customDraft.from,
         "to-date": customDraft.to,
       });
@@ -371,16 +373,17 @@ function DashboardInner() {
       return;
     }
     setPeriodKey(key);
-    setChapter("revenue");
     setCustomOpen(false);
     setScreen("dashboard");
-    router.replace(`/app?period=${key}`, { scroll: false });
+    router.replace(`/app?period=${key}&chapter=${chapter}`, { scroll: false });
   };
 
   const selectChapter = (nextChapter: Chapter) => {
     setChapter(nextChapter);
-    const query = new URLSearchParams({ period: effectivePeriodKey });
-    if (nextChapter !== "revenue") query.set("chapter", nextChapter);
+    const query = new URLSearchParams({
+      period: effectivePeriodKey,
+      chapter: nextChapter,
+    });
     if (effectivePeriodKey === "custom") {
       query.set("from-date", customRange.from);
       query.set("to-date", customRange.to);
@@ -392,11 +395,11 @@ function DashboardInner() {
     if (customDraft.from > customDraft.to) return;
     setCustomRange(customDraft);
     setPeriodKey("custom");
-    setChapter("revenue");
     setScreen("dashboard");
     setCustomOpen(false);
     const query = new URLSearchParams({
       period: "custom",
+      chapter,
       "from-date": customDraft.from,
       "to-date": customDraft.to,
     });
