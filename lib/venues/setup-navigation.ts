@@ -72,3 +72,10 @@ export function isResumableDraft(
   if (Number.isNaN(planAt)) return true;
   return draftAt > planAt;
 }
+
+/** Steps a venue that already exists has left: everything except naming it.
+ *  Shared so the wizard, the paused screen and the account venue list cannot
+ *  quote different totals for the same venue. */
+export const SETUP_NUMBER_STEP_COUNT = SETUP_STEP_KEYS.filter(
+  (key) => key !== "venue",
+).length;

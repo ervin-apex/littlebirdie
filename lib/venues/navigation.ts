@@ -2,6 +2,7 @@ import type { createClient } from "@/lib/supabase/server";
 import {
   isResumableDraft,
   venueNeedsInitialSetup,
+  SETUP_NUMBER_STEP_COUNT,
 } from "@/lib/venues/setup-navigation";
 import { resolveSelectedVenueId } from "./selection";
 
@@ -140,14 +141,21 @@ export async function loadVenueNavigation(
       name: venue.name,
       businessName: businessById.get(venue.business_id) ?? "My business",
       hasPlan,
-      /* Fallbacks for a venue with no saved draft. Every venue in this list
-         already exists and is already named, so the work left is the five
-         number steps - the six-step flow only applies while a venue is being
-         created, and such a venue is not in this list yet. Defaulting to
-         "1 of 6" made the paused screen claim a step was saved and offer a
-         different total from the wizard, which showed "1 of 5". */
-      setupCompletedSteps: setupDraft?.completed_steps ?? 0,
-      setupTotalSteps: setupDraft?.total_steps ?? 5,
+      /* Every venue in this list already exists and is already named, so the
+         work left is always the five number steps. The six-step flow only
+         applies while a venue is being created, and such a venue is not in
+         this list yet.
+
+         Defaulting to "1 of 6" made the paused screen claim a step was saved
+         and quote a different total from the wizard's "1 of 5". A draft
+         written under the older six-step flow is treated as stale for the
+         same reason, rather than reporting a total this venue can no longer
+         reach - it self-corrects on the next save. */
+      setupCompletedSteps:
+        setupDraft?.total_steps === SETUP_NUMBER_STEP_COUNT
+          ? setupDraft.completed_steps
+          : 0,
+      setupTotalSteps: SETUP_NUMBER_STEP_COUNT,
       setupNextStep: setupDraft?.next_step ?? (hasPlan ? null : "revenue"),
     };
   });

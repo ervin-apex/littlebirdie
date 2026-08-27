@@ -51,8 +51,16 @@ export default function SetupPage() {
   const setupSource = searchParams.get("from");
   const isNewVenueFlow = setupSource === "new-venue";
   const isWeeklyPlanEdit = setupSource === "weekly-update";
-  const includesVenueStep =
-    isNewVenueFlow || setupSource === "venue-switch";
+  /* Only a genuinely new venue needs naming. Every ?from=venue-switch caller
+     - the account venue list, the paused screen, the venue select routes -
+     is switching to a venue that already exists and already has a name, so
+     asking "What should Birdee call this venue?" again was both redundant and
+     the most confusing screen in the flow. */
+  const includesVenueStep = isNewVenueFlow;
+  /* Where step 0 exits to, which is still the venue list for both flows that
+     arrive from it. Kept separate from step composition so the two cannot
+     drift again. */
+  const returnsToVenueList = isNewVenueFlow || setupSource === "venue-switch";
   const steps = includesVenueStep
     ? VENUE_STEPS
     : NUMBER_STEPS;
@@ -304,7 +312,7 @@ export default function SetupPage() {
     // Step 0: leave the wizard for wherever this flow was entered from.
     if (setupSource === "onboarding") {
       router.push("/onboarding");
-    } else if (includesVenueStep) {
+    } else if (returnsToVenueList) {
       router.push(hasVenueRecord ? "/account?setup=pending" : "/account");
     } else {
       router.push("/app?period=this-week");
