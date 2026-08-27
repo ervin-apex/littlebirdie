@@ -108,6 +108,25 @@ begin
   select id into v_business from public.businesses where owner_user_id = v_user;
   select id into v_venue    from public.venues where business_id = v_business limit 1;
 
+  -- Entitle the business before anything else touches its financial tables.
+  --
+  -- The billing gate is enforced in RLS, not just in application code, so
+  -- BILLING_ENFORCEMENT_ENABLED=false does NOT exempt the database. The
+  -- policies on venue_setup_drafts, weekly_plans and daily_actual_revisions
+  -- all require has_product_access(business) OR initial_setup_open(business,
+  -- venue), and initial_setup_open stops being true the moment a plan is
+  -- locked. Seeding a locked plan without a grant therefore produces an
+  -- account that cannot occur in production and cannot edit its own setup -
+  -- every draft save fails with "Birdee could not save this setup step."
+  --
+  -- Uses the same RPC as `npm run access:grant`.
+  perform public.grant_business_complimentary_access(
+    p_business_id => v_business,
+    p_grant_type  => 'permanent',
+    p_reason      => 'Local development seed',
+    p_granted_by  => 'supabase/seed.sql'
+  );
+
   select sum(x) into v_week_rev from unnest(v_day_rev) as x;
 
   -- Days can only be written while the plan is a draft; the guard rejects
