@@ -16,7 +16,7 @@ import { dashboardAttentionPrompt, dashboardPromptStorageKey } from "@/lib/dashb
 import type { DashboardAttentionPrompt } from "@/lib/dashboard/attention";
 import { profit, signedProfit } from "@/lib/profit";
 import type { HistoryRange, LedgerRow, PeriodKey } from "@/lib/profit";
-import { ArrowRight, CalendarBlank, ChartLineUp, Flask, Plus } from "@phosphor-icons/react";
+import { ArrowRight, CalendarBlank, ChartLineUp, Flask } from "@phosphor-icons/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -348,20 +348,6 @@ export function DashboardView({
             trailingIcon={<ArrowRight weight="bold" />}
           >
             See all numbers
-          </ProductButton>
-        </div>
-      )}
-
-      {dailyCheckInTask && (
-        <div className="dashboard-mobile-dock" aria-label="Daily check-in">
-          <ProductButton
-            href={`/app/check-in?date=${encodeURIComponent(dailyCheckInTask.date)}`}
-            variant="primary"
-            fullWidth
-            leadingIcon={<Plus size={20} weight="bold" />}
-            trailingIcon={<ArrowRight size={18} weight="bold" />}
-          >
-            Add {dailyCheckInTask.dayName}&rsquo;s actual
           </ProductButton>
         </div>
       )}

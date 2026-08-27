@@ -7552,9 +7552,26 @@ body:has(.full-numbers-view) .app-main > .scoreboard-stage {
   }
 }
 
+/* Phones used to hide this and float .dashboard-mobile-dock instead, because
+   without persistent navigation a pinned button was the only guarantee the
+   action could be reached without scrolling. Actuals is now a permanent tab,
+   so the float was redundant - and stacking it above the tab bar put two
+   fixed bars at the bottom of the screen with content sliding behind both.
+   The prompt sits in the flow and scrolls with the day it refers to. */
 @media (max-width: 760px) {
   .dashboard-view .daily-check-in-task {
-    display: none;
+    width: 100%;
+    margin: 16px 0 0;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-view .daily-check-in-task__copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .dashboard-view .daily-check-in-task .product-button {
+    width: 100%;
   }
 }
 
