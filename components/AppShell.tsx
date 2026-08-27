@@ -1,5 +1,6 @@
 import { PageBackground } from "@/components/PageBackground";
 import { BrandHeader } from "@/components/BrandHeader";
+import { AppNav } from "@/components/AppNav";
 import type { VenueNavigationItem } from "@/lib/venues/navigation";
 
 /**
@@ -18,6 +19,7 @@ export function AppShell({
   selectedVenueId,
   headerWide = false,
   brandHref,
+  showAppNav = false,
 }: {
   children: React.ReactNode;
   maxWidth?: string;
@@ -29,9 +31,17 @@ export function AppShell({
   selectedVenueId?: string | null;
   headerWide?: boolean;
   brandHref?: string;
+  /** Opt in per screen: this shell is also used by onboarding and the paused
+   *  screen, where the product tabs would offer routes that are not reachable
+   *  yet. */
+  showAppNav?: boolean;
 }) {
   return (
-    <div className="relative flex min-h-[100dvh] flex-col text-ink">
+    <div
+      className={`relative flex min-h-[100dvh] flex-col text-ink${
+        showAppNav ? " app-nav-inset" : ""
+      }`}
+    >
       <PageBackground />
 
       {!hideHeader && (
@@ -61,6 +71,8 @@ export function AppShell({
       >
         {children}
       </main>
+
+      {showAppNav && <AppNav />}
     </div>
   );
 }

@@ -10,6 +10,13 @@
   --app-nav-height: 0px;
 }
 
+/* Screens outside the /app layout opt into the bar through AppShell, and need
+   the same bottom inset its own shell gets - otherwise the last of the page
+   sits under the tabs. */
+.app-nav-inset {
+  padding-bottom: var(--app-nav-height, 0px);
+}
+
 .app-nav {
   display: none;
 }

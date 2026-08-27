@@ -1,5 +1,6 @@
 import Image from "next/image";
 import {
+  ArrowLeft,
   ArrowRight,
   Buildings,
   CalendarBlank,
@@ -161,8 +162,20 @@ export default async function AccountPage({
       venues={venueNavigation.venues}
       selectedVenueId={venueNavigation.selectedVenueId}
       headerWide
+      showAppNav
     >
       <div className="account-page fade-up">
+        {/* Reached from the header menu on any screen, and until now the only
+            way out was that menu again or the browser's own back. */}
+        <ProductButton
+          href="/app?period=this-week"
+          variant="tertiary"
+          size="compact"
+          leadingIcon={<ArrowLeft weight="bold" />}
+        >
+          Back to Home
+        </ProductButton>
+
         <header className="account-heading">
           <h1>Account &amp; venues</h1>
           <p>Manage your sign-in and the places Birdee uses.</p>
@@ -313,9 +326,18 @@ export default async function AccountPage({
         )}
 
         <section className="account-venue-section" aria-labelledby="venue-list-heading">
+          {/* The header switcher only appears once there is a second venue,
+              so pointing at it would be describing a control that is not
+              there for most accounts. */}
           <div className="account-section-heading">
-            <h2 id="venue-list-heading">Your venues</h2>
-            <p>The venue in the header controls which numbers you see throughout the app.</p>
+            <h2 id="venue-list-heading">
+              {venueNavigation.venues.length > 1 ? "Your venues" : "Your venue"}
+            </h2>
+            <p>
+              {venueNavigation.venues.length > 1
+                ? "The venue in the header controls which numbers you see throughout the app."
+                : "Everything in the app reports on this venue."}
+            </p>
           </div>
 
           <div className="account-venues">

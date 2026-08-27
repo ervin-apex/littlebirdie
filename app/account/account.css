@@ -4,6 +4,14 @@
   padding-block: 8px 38px;
 }
 
+/* Grid items stretch by default, which made the back control span the column
+   and centre its own label. It should sit at the left, sized to its text,
+   the way it does on the other screens. */
+.account-page > .product-button {
+  justify-self: start;
+  margin-bottom: -8px;
+}
+
 .account-heading {
   max-width: 760px;
 }
