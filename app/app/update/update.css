@@ -326,8 +326,11 @@
   letter-spacing: -0.04em;
 }
 
+/* Set at 42px and bold, this hint used to render nearly as dark as a real
+   entry, so an empty field read as a typed zero. Keep it light enough to
+   scan as a placeholder - the "$" and "AUD" already frame the field. */
 .daily-revenue-input input::placeholder {
-  color: color-mix(in oklch, var(--lb-muted) 86%, var(--lb-ink));
+  color: color-mix(in oklch, var(--lb-muted) 62%, var(--lb-white));
   opacity: 1;
 }
 
@@ -656,17 +659,17 @@
     font-size: 13px;
   }
 
+  /* Each card already reads "Mon / 24 Aug / Recorded", so an icon and a
+     "Choose a day" heading above them earn nothing on a phone. Hide the bar
+     but leave the text in the tree - the section is named by it. */
   .daily-date-heading {
-    min-height: 52px;
-    padding: 8px 12px;
-  }
-
-  .daily-date-heading > small {
-    display: none;
-  }
-
-  .daily-date-heading p {
-    display: none;
+    position: absolute;
+    width: 1px;
+    min-height: 0;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .daily-date-row {
@@ -676,6 +679,9 @@
     scroll-padding-inline: 1px;
     scroll-snap-type: inline mandatory;
     scrollbar-width: none;
+    /* Only three and a half days fit, and a clipped card alone reads as a
+       layout bug. Fading the trailing edge makes it read as more to come. */
+    mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
   }
 
   .daily-date-row::-webkit-scrollbar {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -83,6 +83,7 @@ export default function DailyCheckInPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revenueTouched, setRevenueTouched] = useState(false);
+  const revenueInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -180,7 +181,10 @@ export default function DailyCheckInPage() {
     try {
       const validation = validateMoney(revenueInput);
       if (validation.value == null) {
+        // The button stays live on an empty field so it never greets you
+        // greyed out - so say what is missing and put the caret back.
         setError(validation.error);
+        revenueInputRef.current?.focus();
         return;
       }
       await saveDailyRevenue({
@@ -296,9 +300,10 @@ export default function DailyCheckInPage() {
                 aria-hidden="true"
               />
               <div>
-                <h2 id="daily-revenue-heading">
-                  {isToday ? "Today’s actual" : `${dayName}’s actual`}
-                </h2>
+                {/* The day is already named by the h1, the highlighted card
+                    in the strip and the submit button, so it does not need a
+                    fourth mention here - name the figure instead. */}
+                <h2 id="daily-revenue-heading">Actual sales</h2>
                 <p>
                   {state.week.revenueEntryBasis === "gst-inclusive"
                     ? "Enter the sales total including GST."
@@ -318,6 +323,7 @@ export default function DailyCheckInPage() {
                 <span>$</span>
                 <input
                   id="daily-revenue"
+                  ref={revenueInputRef}
                   type="text"
                   inputMode="decimal"
                   autoComplete="off"
@@ -370,7 +376,7 @@ export default function DailyCheckInPage() {
                 type="submit"
                 variant="primary"
                 state={saving ? "loading" : undefined}
-                disabled={revenueValidation.value == null}
+                disabled={saving}
                 trailingIcon={<ArrowRight weight="bold" />}
               >
                 {saving
