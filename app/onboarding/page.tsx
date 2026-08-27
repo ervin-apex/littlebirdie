@@ -39,6 +39,11 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /* Most operators run one place, so the venue name is the business name
+     again. Mirror it while they type rather than asking twice - but stop the
+     moment they set it themselves, and never touch a name they already
+     chose on an earlier visit. */
+  const [venueRenamed, setVenueRenamed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -50,7 +55,10 @@ export default function OnboardingPage() {
         return body as OnboardingDetails;
       })
       .then((body) => {
-        if (active) setDetails(body);
+        if (!active) return;
+        setDetails(body);
+        // A name already on the record is the operator's own choice.
+        if (body.venueName.trim()) setVenueRenamed(true);
       })
       .catch((error: unknown) => {
         if (active) {
@@ -70,6 +78,19 @@ export default function OnboardingPage() {
 
   function set<K extends keyof OnboardingDetails>(key: K, value: OnboardingDetails[K]) {
     setDetails((current) => ({ ...current, [key]: value }));
+  }
+
+  function setBusinessName(value: string) {
+    setDetails((current) => ({
+      ...current,
+      businessName: value,
+      venueName: venueRenamed ? current.venueName : value,
+    }));
+  }
+
+  function setVenueName(value: string) {
+    setVenueRenamed(true);
+    set("venueName", value);
   }
 
   const canContinue =
@@ -169,7 +190,7 @@ export default function OnboardingPage() {
                 name="business-name"
                 type="text"
                 value={details.businessName}
-                onChange={(event) => set("businessName", event.target.value)}
+                onChange={(event) => setBusinessName(event.target.value)}
                 placeholder="e.g. Crema Café"
                 autoComplete="organization"
                 maxLength={160}
@@ -179,8 +200,9 @@ export default function OnboardingPage() {
             </Field>
 
             <Field
-              label="First venue"
+              label="Venue name"
               htmlFor="venue-name"
+              hint="Only matters if you run more than one place. Leaving this as your business name is fine."
               className="onboarding-field--wide"
             >
               <input
@@ -188,8 +210,7 @@ export default function OnboardingPage() {
                 name="venue-name"
                 type="text"
                 value={details.venueName}
-                onChange={(event) => set("venueName", event.target.value)}
-                placeholder="e.g. Surry Hills"
+                onChange={(event) => setVenueName(event.target.value)}
                 maxLength={160}
                 disabled={loading}
                 required
@@ -238,11 +259,13 @@ export default function OnboardingPage() {
 function Field({
   label,
   htmlFor,
+  hint,
   className,
   children,
 }: {
   label: string;
   htmlFor: string;
+  hint?: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -250,6 +273,7 @@ function Field({
     <label className={`onboarding-field ${className ?? ""}`} htmlFor={htmlFor}>
       <span>{label}</span>
       {children}
+      {hint && <small className="onboarding-field__hint">{hint}</small>}
     </label>
   );
 }

@@ -60,7 +60,11 @@ export function BrandHeader({
           </span>
         </Link>
 
-        {!isHomeReference && selectedVenue && (
+        {/* Almost everyone runs one place, and for them this switcher is a
+            control that never does anything - it just puts the word "venue"
+            on every screen. It appears once there is something to switch
+            between; until then, adding a second venue lives in Account. */}
+        {!isHomeReference && selectedVenue && venues.length > 1 && (
           <VenueSwitcher
             venues={venues}
             selectedVenue={selectedVenue}

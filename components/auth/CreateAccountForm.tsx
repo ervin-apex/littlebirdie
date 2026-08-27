@@ -68,7 +68,7 @@ export function CreateAccountForm({
       <div className="auth-success" role="status">
         <span aria-hidden>✉</span>
         <h2>Check your email</h2>
-        <p>Use the confirmation link to finish creating your business and first venue.</p>
+        <p>Use the confirmation link to finish setting up your business.</p>
         {onSwitchToLogin ? (
           <button type="button" className="auth-inline-switch" onClick={onSwitchToLogin}>
             Back to login
