@@ -207,7 +207,7 @@ export default function SetupPage() {
             className="exit-setup"
             onClick={leaveSetup}
           >
-            {isWeeklyPlanEdit ? "Back to dashboard" : "Exit setup"}
+            {isWeeklyPlanEdit ? "Back to Home" : "Exit setup"}
           </ProductButton>
         </header>
 
@@ -445,7 +445,7 @@ export default function SetupPage() {
           className="exit-setup"
           onClick={leaveSetup}
         >
-          {isWeeklyPlanEdit ? "Back to dashboard" : "Exit setup"}
+          {isWeeklyPlanEdit ? "Back to Home" : "Exit setup"}
         </ProductButton>
       </header>
 

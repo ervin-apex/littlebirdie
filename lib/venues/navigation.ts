@@ -140,8 +140,14 @@ export async function loadVenueNavigation(
       name: venue.name,
       businessName: businessById.get(venue.business_id) ?? "My business",
       hasPlan,
-      setupCompletedSteps: setupDraft?.completed_steps ?? (hasPlan ? 0 : 1),
-      setupTotalSteps: setupDraft?.total_steps ?? (hasPlan ? 5 : 6),
+      /* Fallbacks for a venue with no saved draft. Every venue in this list
+         already exists and is already named, so the work left is the five
+         number steps - the six-step flow only applies while a venue is being
+         created, and such a venue is not in this list yet. Defaulting to
+         "1 of 6" made the paused screen claim a step was saved and offer a
+         different total from the wizard, which showed "1 of 5". */
+      setupCompletedSteps: setupDraft?.completed_steps ?? 0,
+      setupTotalSteps: setupDraft?.total_steps ?? 5,
       setupNextStep: setupDraft?.next_step ?? (hasPlan ? null : "revenue"),
     };
   });
