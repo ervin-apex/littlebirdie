@@ -16,7 +16,11 @@
     "auth-emails:validate": "node scripts/validate-auth-email-templates.mjs",
     "access:grant": "node --env-file=.env.local scripts/manage-complimentary-access.mjs grant",
     "access:revoke": "node --env-file=.env.local scripts/manage-complimentary-access.mjs revoke",
-    "billing:uat-fixture": "node --env-file=.env.local scripts/manage-billing-recovery-fixture.mjs"
+    "billing:uat-fixture": "node --env-file=.env.local scripts/manage-billing-recovery-fixture.mjs",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:studio": "supabase status -o env"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -39,6 +43,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.185.1",
     "postcss": "8.5.18",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5",
     "vitest": "^4.1.10"
